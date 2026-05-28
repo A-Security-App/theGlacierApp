@@ -1,0 +1,429 @@
+/*
+  Localizable.strings
+  Glacier
+
+  Created by Prem Pratap Singh on 10/01/26.
+  Copyright © 2026 Glacier. All rights reserved.
+*/
+
+/***************************
+ Common
+ ***************************/
+
+"Glacier" = "Glacier";
+"Add" = "Add";
+"Continue" = "Continue";
+"Skip" = "Skip";
+"Ok" = "Ok";
+"or" = "or";
+"Terms of Use" = "Terms of Use";
+"Privacy Policy" = "Privacy Policy";
+"Resend" = "Resend";
+"Error" = "Error";
+"Success" = "Success";
+"Cancel" = "Cancel";
+"Please try again." = "Please try again.";
+"No Wi-Fi Connection" = "No Wi-Fi Connection";
+
+
+/***************************
+ Root Screen
+ ***************************/
+
+"Your session has expired. Please sign in again to continue." = "Your session has expired. Please sign in again to continue.";
+
+
+/***************************
+ Sliding Cards
+ ***************************/
+"Browse privately, ad-free." = "Browse privately, ad-free.";
+"VPN and DNS protection for safer browsing—from anywhere." = "VPN and DNS protection for safer browsing—from anywhere.";
+"Standard" = "Standard";
+"Know you’re protected." = "Know you’re protected.";
+"Get alerts and recommendations to ensure your device is secure." = "Get alerts and recommendations to ensure your device is secure.";
+"Make calls anonymously." = "Make calls anonymously.";
+"Conversations will never point back to you." = "Conversations will never point back to you.";
+"Ringing..." = "Ringing...";
+
+
+/***************************
+ User Authentication Module
+ ***************************/
+
+// MARK: - User Authentication Home Screen
+
+"Security that sets you free" = "Security that sets you free";
+"Military-level protection through a beautifully simple experience." = "Military-level protection through a beautifully simple experience.";
+"Sign Up" = "Sign Up";
+"Log In" = "Log In";
+
+// MARK: - User Registration Screen
+
+"Create your account" = "Create your account";
+"You’ll use this email to log in." = "You’ll use this email to log in.";
+"Set your Password" = "Set your Password";
+"Email" = "Email";
+"Password" = "Password";
+"Continue with Google" = "Continue with Google";
+"Continue with Apple" = "Continue with Apple";
+"Something went wrong while creating your account. Please try again." = "Something went wrong while creating your account. Please try again.";
+"Something went wrong while confirming your account. Please try again." = "Something went wrong while confirming your account. Please try again.";
+"An account with this email is already registered. Please log in or reset your password." = "An account with this email is already registered. Please log in or reset your password.";
+"Something went wrong while sending account confirmation email. Please try again." = "Something went wrong while sending account confirmation email. Please try again.";
+
+// MARK: - User Registration Confirmation Screen
+
+"Check your email" = "Check your email";
+"We sent you an email to verify you’re you." = "We sent you an email to verify you’re you.";
+"We sent you email for account confirmation." = "We sent you email for account confirmation.";
+"Something went wrong while resending the confirmation email. Please try again." = "Something went wrong while resending the confirmation email. Please try again.";
+"This confirmation email has expired. Please request a new one." = "This confirmation email has expired. Please request a new one.";
+
+// MARK: - User Login Screen
+
+"Log in" = "Log in";
+"Enter your email." = "Enter your email.";
+"Enter your password." = "Enter your password.";
+"Forgot password?" = "Forgot password?";
+"Something went wrong while logging you in. Please try again." = "Something went wrong while logging you in. Please try again.";
+"Something went wrong while emailing password reset link. Please try again." = "Something went wrong while emailing password reset link. Please try again.";
+"There’s no account associated with this email. Please verify the email or create a new account." = "There’s no account associated with this email. Please verify the email or create a new account.";
+
+// MARK: - Password Reset Screen
+
+"Reset your password" = "Reset your password";
+"We’ll send you a link to reset your password if this email is associated with an account." = "We’ll send you a link to reset your password if this email is associated with an account.";
+"Send Link" = "Send Link";
+
+"Enter Code" = "Enter Code";
+"Enter the 4-digit code sent to you at %@" = "Enter the 4-digit code sent to you at %@";
+"Tip: Make sure to check your inbox and spam folders" = "Tip: Make sure to check your inbox and spam folders";
+"Resend" = "Resend";
+"Resent!" = "Resent!";
+"Wrong code. Try again." = "Wrong code. Try again.";
+"Update Password" = "Update Password";
+"Enter your new password" = "Enter your new password";
+"• At least 8 characters\n" = "• At least 8 characters\n";
+"• At least one uppercase letter\n" = "• At least one uppercase letter\n";
+"• At least one lowercase letter\n" = "• At least one lowercase letter\n";
+"• At least one number\n" = "• At least one number\n";
+"• At least one special character (!@#$%^&*)" = "• At least one special character (!@#$%^&*)";
+"Re-enter password" = "Re-enter password";
+"Passwords don’t match" = "Passwords don’t match";
+"Something went wrong while sending the password reset link. Please try again." = "Something went wrong while sending the password reset link. Please try again.";
+"Something went wrong while updating your password. Please try again." = "Something went wrong while updating your password. Please try again.";
+"Your password has been updated successfully. Please log in with your new password." = "Your password has been updated successfully. Please log in with your new password.";
+
+
+/***************************
+ User Onboarding
+ ***************************/
+
+// MARK: - Common
+"Skip for Now" = "Skip for Now";
+"Open Settings" = "Open Settings";
+
+// MARK: - User Onboarding Home Screen
+
+"Welcome to Glacier" = "Welcome to Glacier";
+"Welcome." = "Welcome.";
+"Browse, call, and work with confidence." = "Browse, call, and work with confidence.";
+"Get Started" = "Get Started";
+
+// MARK: - Glacier Plan Purchase Screen
+"Restore purchase" = "Restore purchase";
+"Select your plan" = "Select your plan";
+"Instant privacy. Safe browsing." = "Instant privacy. Safe browsing.";
+"Get Glacier" = "Get Glacier";
+"Subscriptions renew automatically unless canceled at least 24 hours before the end of the current period. Manage or cancel anytime in Settings." = "Subscriptions renew automatically unless canceled at least 24 hours before the end of the current period. Manage or cancel anytime in Settings.";
+"Your purchase could not be completed" = "Your purchase could not be completed";
+"Please try again." = "Please try again.";
+
+// MARK: - DNS Setup Screen
+"You’re in." = "You’re in.";
+"Setup DNS." = "Setup DNS.";
+"Hides which sites you're visiting.\n\nFaster connection, no ads, and enough privacy for everyday use." = "Hides which sites you're visiting.\n\nFaster connection, no ads, and enough privacy for everyday use.";
+"Enable Glacier DNS in Settings" = "Enable Glacier DNS in Settings";
+"In Settings page, navigate to:\n\nGeneral →\nVPN & Device Management →\nDNS →\nGlacier." = "In Settings page, navigate to:\n\nGeneral →\nVPN & Device Management →\nDNS →\nGlacier.";
+"Something went wrong while adding DNS configuration. Please try again." = "Something went wrong while adding DNS configuration. Please try again.";
+
+// MARK: - VPN Setup Screen
+"DNS is setup." = "DNS is setup.";
+"Setup your VPN." = "Setup your VPN.";
+"Hides where you're going and everything you do along the way.\n\nIdeal for public Wi-Fi, travel, or untrusted networks.\n\nHeads up — can sometimes slow your connection or limit browsing." = "Hides where you're going and everything you do along the way.\n\nIdeal for public Wi-Fi, travel, or untrusted networks.\n\nHeads up — can sometimes slow your connection or limit browsing.";
+"Something went wrong while adding VPN configuration. Please try again." = "Something went wrong while adding VPN configuration. Please try again.";
+
+// MARK: - Trusted Network Setup Screen
+"VPN is ready." = "VPN is ready.";
+"Trust current wi-fi,\n'%@'" = "Trust current wi-fi,\n'%@'";
+"Add wi-fi to trusted network list." = "Add wi-fi to trusted network list.";
+"VPN will automatically turn off on this network. \nUpdate anytime." = "VPN will automatically turn off on this network. \nUpdate anytime.";
+"You are not currently using Wi-Fi and can try again later when connected to your Wi-Fi network." = "You are not currently using Wi-Fi and can try again later when connected to your Wi-Fi network.";
+"VPN turns off on '%@' network and back on when you disconnect." = "VPN turns off on '%@' network and back on when you disconnect.";
+"No, Don’t Trust" = "No, Don’t Trust";
+"Something went wrong while fetching your network details. Please try again." = "Something went wrong while fetching your network details. Please try again.";
+"Something went wrong while adding '%@' as a trusted network. Please try again." = "Something went wrong while adding '%@' as a trusted network. Please try again.";
+
+// MARK: - Phone Number Purchase Screen
+"Purchase external phone lines." = "Purchase external phone lines.";
+"For conversations that never point back to you." = "For conversations that never point back to you.";
+"Select your monthly plan" = "Select your monthly plan";
+"Completely private phone calls." = "Completely private phone calls.";
+"Restore" = "Restore";
+"Subscribe" = "Subscribe";
+"You're all set" = "You're all set";
+"Your purchase was successful." = "Your purchase was successful.";
+
+// MARK: - User Permissions Screen
+"Enable permissions." = "Enable permissions.";
+"Notifications help you receive calls in real time.\n\nContact access is only used to help identify or start calls. Your contacts never leave your phone." = "Notifications help you receive calls in real time.\n\nContact access is only used to help identify or start calls. Your contacts never leave your phone.";
+
+// MARK: - Phone Number Selection Screen
+"You're all set." = "You're all set.";
+"You have %@ phone lines ready to use." = "You have %@ phone lines ready to use.";
+"Choose your number." = "Choose your number.";
+"Add number" = "Add number";
+"Search area code or number" = "Search area code or number";
+"No results" = "No results";
+"There were no results for '%@'. Try a new search." = "There were no results for '%@'. Try a new search.";
+"Confirm new number" = "Confirm new number";
+"Are you sure you want to add %@?" = "Are you sure you want to add %@?";
+"Your number wasn’t added" = "Your number wasn’t added";
+"Your current subscription allows up to %@ phone numbers. You may upgrade your plan later to purchase more." = "Your current subscription allows up to %@ phone numbers. You may upgrade your plan later to purchase more.";
+"Add display name" = "Add display name";
+"This name is just for you and won’t be saved after logout." = "This name is just for you and won’t be saved after logout.";
+"Display name" = "Display name";
+"Add Name" = "Add Name";
+"Something went wrong while adding name to the number. Please try again." = "Something went wrong while adding name to the number. Please try again.";
+"Your phone number is ready to use." = "Your phone number is ready to use.";
+"Your number has been added." = "Your number has been added.";
+"Add Another Number" = "Add Another Number";
+"Not Now" = "Not Now";
+
+// MARK: - Cellular Setup Screen
+"Do you want to enable VPN while on cellular?" = "Do you want to enable VPN while on cellular?";
+"VPN on." = "VPN on.";
+"Heads up - can slow or limit your connection to some websites and apps.\n\nGlacier recommends leaving VPN off while on cellular for most situations. You can still enable later in settings.\n\nEnable anyway." = "Heads up - can slow or limit your connection to some websites and apps.\n\nGlacier recommends leaving VPN off while on cellular for most situations. You can still enable later in settings.\n\nEnable anyway.";
+
+// MARK: - Wifi Setup Screen
+"VPN is ideal for public Wi-Fi and untrusted networks." = "VPN is ideal for public Wi-Fi and untrusted networks.";
+"Add current Wi-Fi to trusted network list." = "Add current Wi-Fi to trusted network list.";
+
+/***************************
+ Floating Tab Bar
+ ***************************/
+
+"Home" = "Home";
+"Phone" = "Phone";
+"Contacts" = "Contacts";
+"History" = "History";
+
+
+/***************************
+ Home
+ ***************************/
+
+// MARK: - Security Issues Overview
+
+"All clear. \nNo issues found." = "All clear. \nNo issues found.";
+"Your system may be at risk." = "Your system may be at risk.";
+"Connect to DNS to block malicious sites and trackers." = "Connect to DNS to block malicious sites and trackers.";
+"Your system shows signs of being jailbroken." = "Your system shows signs of being jailbroken.";
+"This app appears to be running in a modified or analyzed environment." = "This app appears to be running in a modified or analyzed environment.";
+"Unusual network activity or modification tools have been identified." = "Unusual network activity or modification tools have been identified.";
+"The app is currently running in a development or debugging environment." = "The app is currently running in a development or debugging environment.";
+"The app appears to be running in a simulated environment." = "The app appears to be running in a simulated environment.";
+"Today" = "Today";
+"%@ web trackers blocked" = "%@ web trackers blocked";
+
+// MARK: - Secured Connection Status
+
+"Connected" = "Connected";
+"Disconnected from DNS" = "Disconnected from DNS";
+"Connect" = "Connect";
+"Disconnect" = "Disconnect";
+"Something went wrong while connecting to Glacier DNS.\n\nPlease check that Glacier DNS is selected in:\n\nSettings →\nGeneral →\nVPN & Device Management →\nDNS" = "Something went wrong while connecting to Glacier DNS.\n\nPlease check that Glacier DNS is selected in:\n\nSettings →\nGeneral →\nVPN & Device Management →\nDNS";
+"Are you sure?" = "Are you sure?";
+"Something went wrong while connecting to Glacier DNS. Please try again." = "Something went wrong while connecting to Glacier DNS. Please try again.";
+
+// MARK: - Secured Connection Type
+
+"Choose protection" = "Choose protection";
+"Standard" = "Standard";
+"For everyday use. Faster connection, no ads, and best for most situations." = "For everyday use. Faster connection, no ads, and best for most situations.";
+"Extra Protection" = "Extra Protection";
+"Ideal for public Wi-Fi, travel, and other untrusted networks. Can limit browsing or slow connection." = "Ideal for public Wi-Fi, travel, and other untrusted networks. Can limit browsing or slow connection.";
+
+// MARK: - Device Security Status
+
+"Device security settings" = "Device security settings";
+"Screen Lock" = "Screen Lock";
+"Biometrics" = "Biometrics";
+"Glacier & iOS Version" = "Glacier & iOS Version";
+"Enable" = "Enable";
+"Update" = "Update";
+"Enable Screen Lock" = "Enable Screen Lock";
+"Open Settings \n→ Display & Brightness \n→ Auto-Lock" = "Open Settings \n→ Display & Brightness \n→ Auto-Lock";
+"Enable Biometrics" = "Enable Biometrics";
+"Open Settings \n→ Select Face ID & Passcode" = "Open Settings \n→ Select Face ID & Passcode";
+"Update Glacier iOS" = "Update Glacier iOS";
+"Open the App Store \n→ Go to Account \n→ Scroll down to see “Updates” \n→ Find Glacier \n→ Tap “Update”" = "Open the App Store \n→ Go to Account \n→ Scroll down to see “Updates” \n→ Find Glacier \n→ Tap “Update”";
+
+
+/***************************
+ Phone
+ ***************************/
+
+"Paste" = "Paste";
+"Start call?" = "Start call?";
+"Call" = "Call";
+"Ringing..." = "Ringing...";
+"Connected" = "Connected";
+"Ended" = "Ended";
+"Speaker" = "Speaker";
+"Microphone" = "Microphone";
+"Bluetooth" = "Bluetooth";
+"End" = "End";
+"Mute" = "Mute";
+"Unmute" = "Unmute";
+
+
+/***************************
+ Phone Number Menu Popup
+ ***************************/
+
+"Upgrade to add phone lines" = "Upgrade to add phone lines";
+"Manage numbers" = "Manage numbers";
+
+
+/***************************
+ Manage Phone Number
+ ***************************/
+
+"Manage numbers" = "Manage numbers";
+"Edit name" = "Edit name";
+"Burn number" = "Burn number";
+"Burn this number" = "Burn this number";
+"%@ will be removed and can’t be added again." = "%@ will be removed and can’t be added again.";
+"Something went wrong while updating name for the number. Please try again." = "Something went wrong while updating name for the number. Please try again.";
+"Something went wrong while burning number. Please try again." = "Something went wrong while burning number. Please try again.";
+
+
+/***************************
+ Contacts
+ ***************************/
+
+"Add contacts by allowing Glacier access" = "Add contacts by allowing Glacier access";
+"No contacts" = "No contacts";
+"Search contacts" = "Search contacts";
+"No Results" = "No Results";
+"There were no results for '%@'. Try a new search." = "There were no results for '%@'. Try a new search.";
+"To help you easily connect with people, please allow access to your contacts by going to, \n\n→ Settings \n→ Apps \n→ Glacier \n→ Contacts" = "To help you easily connect with people, please allow access to your contacts by going to, \n\n→ Settings \n→ Apps \n→ Glacier \n→ Contacts";
+"Looks like you haven’t added a phone number yet. Add one to start making calls." = "Looks like you haven’t added a phone number yet. Add one to start making calls.";
+
+
+/***************************
+ Call History
+ ***************************/
+
+"Call history" = "Call history";
+"No call history" = "No call history";
+"Yesterday" = "Yesterday";
+"Unknown Number" = "Unknown Number";
+
+
+/***************************
+ Voicemail
+ ***************************/
+
+"Voicemail" = "Voicemail";
+"No voicemails" = "No voicemails";
+"New voicemail" = "New voicemail";
+"Delete this voicemail?" = "Delete this voicemail?";
+"You won’t be able to recover it after deleting." = "You won’t be able to recover it after deleting.";
+"Delete" = "Delete";
+
+
+/***************************
+ Settings
+ ***************************/
+
+// MARK: - Settings Home Screen
+
+"Settings" = "Settings";
+"Account" = "Account";
+"VPN Settings" = "VPN Settings";
+"Appearance" = "Appearance";
+"Dark Mode" = "Dark Mode";
+"Support & FAQ" = "Support & FAQ";
+"Reset Password" = "Reset Password";
+"Sign Out" = "Sign Out";
+"Are you sure?" = "Are you sure?";
+"Yes, Sign Out" = "Yes, Sign Out";
+
+// MARK: - Appearance Settings Screen
+
+"Device Settings" = "Device Settings";
+"Use your device’s default mode." = "Use your device’s default mode.";
+"Light" = "Light";
+"Always use light mode." = "Always use light mode.";
+"Dark" = "Dark";
+"Always use dark mode." = "Always use dark mode.";
+
+// MARK: - VPN Settings Screen
+
+"VPN" = "VPN";
+"VPN Connection" = "VPN Connection";
+"An extra layer of encryption. Ideal for public Wi-Fi, travel, or untrusted networks. Learn more." = "An extra layer of encryption. Ideal for public Wi-Fi, travel, or untrusted networks. Learn more.";
+"Status" = "Status";
+"Not in Use" = "Not in Use";
+"In Progress" = "In Progress";
+"In Use" = "In Use";
+"Restarting" = "Restarting";
+"Transition in Progress" = "Transition in Progress";
+"Your VPN is currently activated." = "Your VPN is currently activated.";
+"Not active — you’re on cellular data" = "Not active — you’re on cellular data";
+"Not active — you’re on Wi-Fi" = "Not active — you’re on Wi-Fi";
+"Not active — you’re on trusted network: %@" = "Not active — you’re on trusted network: %@";
+"Locations" = "Locations";
+"VPN Activation" = "VPN Activation";
+"Cellular" = "Cellular";
+"Automatically turn on when using cellular data." = "Automatically turn on when using cellular data.";
+"Wi-Fi" = "Wi-Fi";
+"Automatically turn on for Wi-Fi connections." = "Automatically turn on for Wi-Fi connections.";
+"Wi-Fi Networks" = "Wi-Fi Networks";
+"Active on all networks." = "Active on all networks.";
+"Disabled on %@ trusted network(s)" = "Disabled on %@ trusted network(s)";
+
+// MARK: - Wifi Settings Screen
+
+"Wi-Fi Networks" = "Wi-Fi Networks";
+"Active on all networks" = "Active on all networks";
+"VPN stays on, no matter which Wi-Fi you join." = "VPN stays on, no matter which Wi-Fi you join.";
+"Off on trusted networks" = "Off on trusted networks";
+"VPN turns off when you're connected to a network you trust." = "VPN turns off when you're connected to a network you trust.";
+"This will remove all trusted networks. You can add them again any time." = "This will remove all trusted networks. You can add them again any time.";
+"Switch & Remove" = "Switch & Remove";
+"Trusted Networks" = "Trusted Networks";
+"Remove" = "Remove";
+"Add trusted network" = "Add trusted network";
+"Trust this network?" = "Trust this network?";
+"VPN turns off on this network and back on when you disconnect." = "VPN turns off on this network and back on when you disconnect.";
+"Trust Network" = "Trust Network";
+"'%@' is already added as a trusted network." = "'%@' is already added as a trusted network.";
+"Something went wrong while removing '%@' as a trusted network. Please try again." = "Something went wrong while removing '%@' as a trusted network. Please try again.";
+
+// MARK: - Widget Settings Screen
+
+"Widget" = "Widget";
+"Check your security status and VPN connection at a glance from your Home Screen." = "Check your security status and VPN connection at a glance from your Home Screen.";
+"How to add the Glacier widget" = "How to add the Glacier widget";
+"Press and hold anywhere on your Home Screen" = "Press and hold anywhere on your Home Screen";
+"Press the " = "Press the ";
+"Edit" = "Edit";
+" button, then select " = " button, then select ";
+"Add Widget" = "Add Widget";
+"Select or search for " = "Select or search for ";
+"Glacier" = "Glacier";
+"Choose your preferred widget, then press " = "Choose your preferred widget, then press ";
+" to confirm" = " to confirm";

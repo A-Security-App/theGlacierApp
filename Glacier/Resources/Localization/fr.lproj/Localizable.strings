@@ -1,0 +1,413 @@
+/*
+  Localizable.strings
+  Glacier
+
+  French (fr) Localization
+  Copyright © 2026 Glacier. All rights reserved.
+*/
+
+/***************************
+ Common
+ ***************************/
+
+"Glacier" = "Glacier";
+"Add" = "Ajouter";
+"Continue" = "Continuer";
+"Skip" = "Passer";
+"Ok" = "OK";
+"or" = "ou";
+"Terms of Use" = "Conditions d'utilisation";
+"Privacy Policy" = "Politique de confidentialité";
+"Resend" = "Renvoyer";
+"Error" = "Erreur";
+"Success" = "Succès";
+"Cancel" = "Annuler";
+"Please try again." = "Veuillez réessayer.";
+"No Wi-Fi Connection" = "Pas de connexion Wi-Fi";
+
+
+/***************************
+ Root Screen
+ ***************************/
+
+"Your session has expired. Please sign in again to continue." = "Votre session a expiré. Veuillez vous reconnecter pour continuer.";
+
+
+/***************************
+ Sliding Cards
+ ***************************/
+"Browse privately, ad-free." = "Naviguez en privé, sans publicités.";
+"VPN and DNS protection for safer browsing—from anywhere." = "Protection VPN et DNS pour une navigation plus sûre — de partout.";
+"Standard" = "Standard";
+"Know you're protected." = "Sachez que vous êtes protégé.";
+"Get alerts and recommendations to ensure your device is secure." = "Recevez des alertes et recommandations pour garantir la sécurité de votre appareil.";
+"Make calls anonymously." = "Passez des appels anonymement.";
+"Conversations will never point back to you." = "Les conversations ne pourront jamais être retracées jusqu'à vous.";
+"Ringing..." = "Sonnerie...";
+
+
+/***************************
+ User Authentication Module
+ ***************************/
+
+// MARK: - User Authentication Home Screen
+
+"Security that sets you free" = "La sécurité qui vous libère";
+"Military-level protection through a beautifully simple experience." = "Une protection de niveau militaire à travers une expérience magnifiquement simple.";
+"Sign Up" = "S'inscrire";
+"Log In" = "Se connecter";
+
+// MARK: - User Registration Screen
+
+"Create your account" = "Créez votre compte";
+"You'll use this email to log in." = "Vous utiliserez cet e-mail pour vous connecter.";
+"Set your Password" = "Définissez votre mot de passe";
+"Email" = "E-mail";
+"Password" = "Mot de passe";
+"Continue with Google" = "Continuer avec Google";
+"Continue with Apple" = "Continuer avec Apple";
+"Something went wrong while creating your account. Please try again." = "Une erreur s'est produite lors de la création de votre compte. Veuillez réessayer.";
+"Something went wrong while confirming your account. Please try again." = "Une erreur s'est produite lors de la confirmation de votre compte. Veuillez réessayer.";
+"An account with this email is already registered. Please log in or reset your password." = "Un compte avec cet e-mail est déjà enregistré. Veuillez vous connecter ou réinitialiser votre mot de passe.";
+"Something went wrong while sending account confirmation email. Please try again." = "Une erreur s'est produite lors de l'envoi de l'e-mail de confirmation. Veuillez réessayer.";
+
+// MARK: - User Registration Confirmation Screen
+
+"Check your email" = "Vérifiez votre e-mail";
+"We sent you an email to verify you're you." = "Nous vous avons envoyé un e-mail pour vérifier votre identité.";
+"We sent you email for account confirmation." = "Nous vous avons envoyé un e-mail pour confirmer votre compte.";
+"Something went wrong while resending the confirmation email. Please try again." = "Une erreur s'est produite lors du renvoi de l'e-mail de confirmation. Veuillez réessayer.";
+"This confirmation email has expired. Please request a new one." = "Cet e-mail de confirmation a expiré. Veuillez en demander un nouveau.";
+
+// MARK: - User Login Screen
+
+"Log in" = "Se connecter";
+"Enter your email." = "Saisissez votre e-mail.";
+"Enter your password." = "Saisissez votre mot de passe.";
+"Forgot password?" = "Mot de passe oublié ?";
+"Something went wrong while logging you in. Please try again." = "Une erreur s'est produite lors de la connexion. Veuillez réessayer.";
+"Something went wrong while emailing password reset link. Please try again." = "Une erreur s'est produite lors de l'envoi du lien de réinitialisation. Veuillez réessayer.";
+"There's no account associated with this email. Please verify the email or create a new account." = "Aucun compte n'est associé à cet e-mail. Vérifiez l'adresse ou créez un nouveau compte.";
+
+// MARK: - Password Reset Screen
+
+"Reset your password" = "Réinitialisez votre mot de passe";
+"We'll send you a link to reset your password if this email is associated with an account." = "Nous vous enverrons un lien pour réinitialiser votre mot de passe si cet e-mail est associé à un compte.";
+"Send Link" = "Envoyer le lien";
+
+"Enter Code" = "Saisir le code";
+"Enter the 4-digit code sent to you at %@" = "Saisissez le code à 4 chiffres envoyé à %@";
+"Tip: Make sure to check your inbox and spam folders" = "Conseil : Pensez à vérifier votre boîte de réception et vos spams";
+"Resend" = "Renvoyer";
+"Resent!" = "Renvoyé !";
+"Wrong code. Try again." = "Code incorrect. Réessayez.";
+"Update Password" = "Mettre à jour le mot de passe";
+"Enter your new password" = "Saisissez votre nouveau mot de passe";
+"• At least 8 characters\n" = "• Au moins 8 caractères\n";
+"• At least one uppercase letter\n" = "• Au moins une lettre majuscule\n";
+"• At least one lowercase letter\n" = "• Au moins une lettre minuscule\n";
+"• At least one number\n" = "• Au moins un chiffre\n";
+"• At least one special character (!@#$%^&*)" = "• Au moins un caractère spécial (!@#$%^&*)";
+"Re-enter password" = "Confirmez le mot de passe";
+"Passwords don't match" = "Les mots de passe ne correspondent pas";
+"Something went wrong while sending the password reset link. Please try again." = "Une erreur s'est produite lors de l'envoi du lien de réinitialisation. Veuillez réessayer.";
+"Something went wrong while updating your password. Please try again." = "Une erreur s'est produite lors de la mise à jour de votre mot de passe. Veuillez réessayer.";
+"Your password has been updated successfully. Please log in with your new password." = "Votre mot de passe a été mis à jour avec succès. Connectez-vous avec votre nouveau mot de passe.";
+
+
+/***************************
+ User Onboarding
+ ***************************/
+
+// MARK: - Common
+"Skip for Now" = "Passer pour l'instant";
+"Open Settings" = "Ouvrir les réglages";
+
+// MARK: - User Onboarding Home Screen
+
+"Welcome to Glacier" = "Bienvenue sur Glacier";
+"Welcome." = "Bienvenue.";
+"Browse, call, and work with confidence." = "Naviguez, appelez et travaillez en toute confiance.";
+"Get Started" = "Commencer";
+
+// MARK: - Glacier Plan Purchase Screen
+"Restore purchase" = "Restaurer l'achat";
+"Select your plan" = "Choisissez votre forfait";
+"Instant privacy. Safe browsing." = "Confidentialité instantanée. Navigation sécurisée.";
+"Get Glacier" = "Obtenir Glacier";
+"Subscriptions renew automatically unless canceled at least 24 hours before the end of the current period. Manage or cancel anytime in Settings." = "Les abonnements se renouvellent automatiquement sauf annulation au moins 24 heures avant la fin de la période en cours. Gérez ou annulez à tout moment dans Réglages.";
+"Your purchase could not be completed" = "Votre achat n'a pas pu être finalisé";
+"Please try again." = "Veuillez réessayer.";
+
+// MARK: - DNS Setup Screen
+"You're in." = "Vous êtes connecté.";
+"Setup DNS." = "Configurer le DNS.";
+"Hides which sites you're visiting.\n\nFaster connection, no ads, and enough privacy for everyday use." = "Masque les sites que vous visitez.\n\nConnexion plus rapide, sans publicités et une confidentialité suffisante pour un usage quotidien.";
+"Enable Glacier DNS in Settings" = "Activer Glacier DNS dans Réglages";
+"In Settings page, navigate to:\n\nGeneral →\nVPN & Device Management →\nDNS →\nGlacier." = "Dans la page Réglages, accédez à :\n\nGénéral →\nVPN et gestion de l'appareil →\nDNS →\nGlacier.";
+"Something went wrong while adding DNS configuration. Please try again." = "Une erreur s'est produite lors de l'ajout de la configuration DNS. Veuillez réessayer.";
+
+// MARK: - VPN Setup Screen
+"DNS is setup." = "Le DNS est configuré.";
+"Setup your VPN." = "Configurez votre VPN.";
+"Hides where you're going and everything you do along the way.\n\nIdeal for public Wi-Fi, travel, or untrusted networks.\n\nHeads up — can sometimes slow your connection or limit browsing." = "Masque votre destination et tout ce que vous faites en chemin.\n\nIdéal pour le Wi-Fi public, les voyages ou les réseaux non fiables.\n\nAttention : peut parfois ralentir votre connexion ou limiter la navigation.";
+"Something went wrong while adding VPN configuration. Please try again." = "Une erreur s'est produite lors de l'ajout de la configuration VPN. Veuillez réessayer.";
+
+// MARK: - Trusted Network Setup Screen
+"VPN is ready." = "Le VPN est prêt.";
+"Trust current wi-fi,\n'%@'" = "Faire confiance au Wi-Fi actuel,\n'%@'";
+"Add wi-fi to trusted network list." = "Ajouter le Wi-Fi à la liste des réseaux de confiance.";
+"VPN will automatically turn off on this network. \nUpdate anytime." = "Le VPN se désactivera automatiquement sur ce réseau. \nModifiez à tout moment.";
+"You are not currently using Wi-Fi and can try again later when connected to your Wi-Fi network." = "Vous n'utilisez pas le Wi-Fi pour l'instant. Réessayez lorsque vous serez connecté à votre réseau Wi-Fi.";
+"VPN turns off on '%@' network and back on when you disconnect." = "Le VPN se désactive sur le réseau '%@' et se réactive lorsque vous vous déconnectez.";
+"No, Don't Trust" = "Non, ne pas faire confiance";
+"Something went wrong while fetching your network details. Please try again." = "Une erreur s'est produite lors de la récupération des informations réseau. Veuillez réessayer.";
+"Something went wrong while adding '%@' as a trusted network. Please try again." = "Une erreur s'est produite lors de l'ajout de '%@' comme réseau de confiance. Veuillez réessayer.";
+
+// MARK: - Phone Number Purchase Screen
+"Purchase external phone lines." = "Acheter des lignes téléphoniques externes.";
+"For conversations that never point back to you." = "Pour des conversations qui ne pourront jamais être retracées jusqu'à vous.";
+"Select your monthly plan" = "Choisissez votre forfait mensuel";
+"Completely private phone calls." = "Appels téléphoniques entièrement privés.";
+"Restore" = "Restaurer";
+"Subscribe" = "S'abonner";
+"You're all set" = "Tout est prêt";
+"Your purchase was successful." = "Votre achat a été effectué avec succès.";
+
+// MARK: - User Permissions Screen
+"Enable permissions." = "Autoriser les permissions.";
+"Notifications help you receive calls in real time.\n\nContact access is only used to help identify or start calls. Your contacts never leave your phone." = "Les notifications vous permettent de recevoir des appels en temps réel.\n\nL'accès aux contacts est uniquement utilisé pour identifier ou lancer des appels. Vos contacts ne quittent jamais votre téléphone.";
+
+// MARK: - Phone Number Selection Screen
+"You're all set." = "Tout est prêt.";
+"You have %@ phone lines ready to use." = "Vous avez %@ lignes téléphoniques prêtes à l'emploi.";
+"Choose your number." = "Choisissez votre numéro.";
+"Add number" = "Ajouter un numéro";
+"Search area code or number" = "Rechercher un indicatif ou un numéro";
+"No results" = "Aucun résultat";
+"There were no results for '%@'. Try a new search." = "Aucun résultat pour '%@'. Essayez une nouvelle recherche.";
+"Confirm new number" = "Confirmer le nouveau numéro";
+"Are you sure you want to add %@?" = "Êtes-vous sûr de vouloir ajouter %@ ?";
+"Your number wasn't added" = "Votre numéro n'a pas été ajouté";
+"Your current subscription allows up to %@ phone numbers. You may upgrade your plan later to purchase more." = "Votre abonnement actuel permet jusqu'à %@ numéros de téléphone. Vous pouvez mettre à niveau votre forfait ultérieurement pour en acheter davantage.";
+"Add display name" = "Ajouter un nom d'affichage";
+"This name is just for you and won't be saved after logout." = "Ce nom est uniquement pour vous et ne sera pas sauvegardé après déconnexion.";
+"Display name" = "Nom d'affichage";
+"Add Name" = "Ajouter un nom";
+"Something went wrong while adding name to the number. Please try again." = "Une erreur s'est produite lors de l'ajout du nom au numéro. Veuillez réessayer.";
+"Your phone number is ready to use." = "Votre numéro de téléphone est prêt à l'emploi.";
+"Your number has been added." = "Votre numéro a été ajouté.";
+"Add Another Number" = "Ajouter un autre numéro";
+"Not Now" = "Pas maintenant";
+
+// MARK: - Cellular Setup Screen
+"Do you want to enable VPN while on cellular?" = "Voulez-vous activer le VPN en données mobiles ?";
+"VPN on." = "VPN activé.";
+"Heads up - can slow or limit your connection to some websites and apps.\n\nGlacier recommends leaving VPN off while on cellular for most situations. You can still enable later in settings.\n\nEnable anyway." = "Attention : peut ralentir ou limiter votre connexion à certains sites et applications.\n\nGlacier recommande de laisser le VPN désactivé en données mobiles dans la plupart des situations. Vous pouvez toujours l'activer plus tard dans les réglages.\n\nActiver quand même.";
+
+// MARK: - Wifi Setup Screen
+"VPN is ideal for public Wi-Fi and untrusted networks." = "Le VPN est idéal pour le Wi-Fi public et les réseaux non fiables.";
+"Add current Wi-Fi to trusted network list." = "Ajouter le Wi-Fi actuel à la liste des réseaux de confiance.";
+
+/***************************
+ Floating Tab Bar
+ ***************************/
+
+"Home" = "Accueil";
+"Phone" = "Téléphone";
+"Contacts" = "Contacts";
+"History" = "Historique";
+
+
+/***************************
+ Home
+ ***************************/
+
+// MARK: - Security Issues Overview
+
+"All clear. \nNo issues found." = "Tout va bien. \nAucun problème détecté.";
+"Your system may be at risk." = "Votre système pourrait être en danger.";
+"Connect to DNS to block malicious sites and trackers." = "Connectez-vous au DNS pour bloquer les sites malveillants et les traceurs.";
+"Your system shows signs of being jailbroken." = "Votre système présente des signes de jailbreak.";
+"This app appears to be running in a modified or analyzed environment." = "Cette application semble fonctionner dans un environnement modifié ou analysé.";
+"Unusual network activity or modification tools have been identified." = "Une activité réseau inhabituelle ou des outils de modification ont été détectés.";
+"The app is currently running in a development or debugging environment." = "L'application fonctionne actuellement dans un environnement de développement ou de débogage.";
+"The app appears to be running in a simulated environment." = "L'application semble fonctionner dans un environnement simulé.";
+"Today" = "Aujourd'hui";
+"%@ web trackers blocked" = "%@ traceurs web bloqués";
+
+// MARK: - Secured Connection Status
+
+"Connected" = "Connecté";
+"Disconnected from DNS" = "Déconnecté du DNS";
+"Connect" = "Connecter";
+"Disconnect" = "Déconnecter";
+"Something went wrong while connecting to Glacier DNS.\n\nPlease check that Glacier DNS is selected in:\n\nSettings →\nGeneral →\nVPN & Device Management →\nDNS" = "Une erreur s'est produite lors de la connexion à Glacier DNS.\n\nVérifiez que Glacier DNS est sélectionné dans :\n\nRéglages →\nGénéral →\nVPN et gestion de l'appareil →\nDNS";
+"Are you sure?" = "Êtes-vous sûr ?";
+"Something went wrong while connecting to Glacier DNS. Please try again." = "Une erreur s'est produite lors de la connexion à Glacier DNS. Veuillez réessayer.";
+
+// MARK: - Secured Connection Type
+
+"Choose protection" = "Choisissez la protection";
+"Standard" = "Standard";
+"For everyday use. Faster connection, no ads, and best for most situations." = "Pour un usage quotidien. Connexion plus rapide, sans publicités et idéale pour la plupart des situations.";
+"Extra Protection" = "Protection renforcée";
+"Ideal for public Wi-Fi, travel, and other untrusted networks. Can limit browsing or slow connection." = "Idéal pour le Wi-Fi public, les voyages et les réseaux non fiables. Peut limiter la navigation ou ralentir la connexion.";
+
+// MARK: - Device Security Status
+
+"Device security settings" = "Paramètres de sécurité de l'appareil";
+"Screen Lock" = "Verrouillage de l'écran";
+"Biometrics" = "Biométrie";
+"Glacier & iOS Version" = "Version Glacier et iOS";
+"Enable" = "Activer";
+"Update" = "Mettre à jour";
+"Enable Screen Lock" = "Activer le verrouillage de l'écran";
+"Open Settings \n→ Display & Brightness \n→ Auto-Lock" = "Ouvrez Réglages \n→ Luminosité et affichage \n→ Verrouillage auto";
+"Enable Biometrics" = "Activer la biométrie";
+"Open Settings \n→ Select Face ID & Passcode" = "Ouvrez Réglages \n→ Face ID et code";
+"Update Glacier iOS" = "Mettre à jour Glacier iOS";
+"Open the App Store \n→ Go to Account \n→ Scroll down to see “Updates” \n→ Find Glacier \n→ Tap “Update”" = "Ouvrez l'App Store \n→ Accédez à Compte \n→ Faites défiler vers le bas pour voir « Mises à jour » \n→ Trouvez Glacier \n→ Appuyez sur « Mettre à jour »";
+
+
+/***************************
+ Phone
+ ***************************/
+
+"Paste" = "Coller";
+"Start call?" = "Démarrer l'appel ?";
+"Call" = "Appeler";
+"Ringing..." = "Sonnerie...";
+"Connected" = "Connecté";
+"Ended" = "Terminé";
+"Speaker" = "Haut-parleur";
+"Microphone" = "Microphone";
+"Bluetooth" = "Bluetooth";
+"End" = "Terminer";
+"Mute" = "Muet";
+"Unmute" = "Réactiver le son";
+
+
+/***************************
+ Phone Number Menu Popup
+ ***************************/
+
+"Upgrade to add phone lines" = "Mettez à niveau pour ajouter des lignes";
+"Manage numbers" = "Gérer les numéros";
+
+
+/***************************
+ Manage Phone Number
+ ***************************/
+
+"Manage numbers" = "Gérer les numéros";
+"Edit name" = "Modifier le nom";
+"Burn number" = "Supprimer le numéro";
+"Burn this number" = "Supprimer ce numéro";
+"%@ will be removed and can't be added again." = "%@ sera supprimé et ne pourra pas être ajouté à nouveau.";
+"Something went wrong while updating name for the number. Please try again." = "Une erreur s'est produite lors de la mise à jour du nom. Veuillez réessayer.";
+"Something went wrong while burning number. Please try again." = "Une erreur s'est produite lors de la suppression du numéro. Veuillez réessayer.";
+
+
+/***************************
+ Contacts
+ ***************************/
+
+"Add contacts by allowing Glacier access" = "Ajoutez des contacts en autorisant l'accès à Glacier";
+"No contacts" = "Aucun contact";
+"Search contacts" = "Rechercher des contacts";
+"No Results" = "Aucun résultat";
+"There were no results for '%@'. Try a new search." = "Aucun résultat pour '%@'. Essayez une nouvelle recherche.";
+"To help you easily connect with people, please allow access to your contacts by going to, \n\n→ Settings \n→ Apps \n→ Glacier \n→ Contacts" = "Pour vous aider à contacter facilement des personnes, autorisez l'accès à vos contacts en allant dans, \n\n→ Réglages \n→ Apps \n→ Glacier \n→ Contacts";
+"Looks like you haven't added a phone number yet. Add one to start making calls." = "Il semble que vous n'ayez pas encore ajouté de numéro de téléphone. Ajoutez-en un pour commencer à appeler.";
+
+
+/***************************
+ Call History
+ ***************************/
+
+"Call history" = "Historique des appels";
+"No call history" = "Aucun historique d'appels";
+"Yesterday" = "Hier";
+"Unknown Number" = "Numéro inconnu";
+
+
+/***************************
+ Voicemail
+ ***************************/
+
+"Voicemail" = "Messagerie vocale";
+"No voicemails" = "Aucun message vocal";
+"New voicemail" = "Nouveau message vocal";
+"Delete this voicemail?" = "Supprimer ce message vocal ?";
+"You won't be able to recover it after deleting." = "Vous ne pourrez pas le récupérer après la suppression.";
+"Delete" = "Supprimer";
+
+
+/***************************
+ Settings
+ ***************************/
+
+// MARK: - Settings Home Screen
+
+"Settings" = "Réglages";
+"Account" = "Compte";
+"VPN Settings" = "Réglages VPN";
+"Appearance" = "Apparence";
+"Dark Mode" = "Mode sombre";
+"Reset Password" = "Réinitialiser le mot de passe";
+"Sign Out" = "Se déconnecter";
+"Are you sure?" = "Êtes-vous sûr ?";
+"Yes, Sign Out" = "Oui, se déconnecter";
+
+// MARK: - Appearance Settings Screen
+
+"Device Settings" = "Réglages de l'appareil";
+"Use your device's default mode." = "Utiliser le mode par défaut de l'appareil.";
+"Light" = "Clair";
+"Always use light mode." = "Toujours utiliser le mode clair.";
+"Dark" = "Sombre";
+"Always use dark mode." = "Toujours utiliser le mode sombre.";
+
+// MARK: - VPN Settings Screen
+
+"VPN" = "VPN";
+"VPN Connection" = "Connexion VPN";
+"An extra layer of encryption. Ideal for public Wi-Fi, travel, or untrusted networks. Learn more." = "Une couche supplémentaire de chiffrement. Idéal pour le Wi-Fi public, les voyages ou les réseaux non fiables. En savoir plus.";
+"Status" = "Statut";
+"Not in Use" = "Non utilisé";
+"In Progress" = "En cours";
+"In Use" = "En cours d'utilisation";
+"Restarting" = "Redémarrage";
+"Transition in Progress" = "Transition en cours";
+"Your VPN is currently activated." = "Votre VPN est actuellement activé.";
+"Not active — you're on cellular data" = "Inactif — vous utilisez les données mobiles";
+"Not active — you're on Wi-Fi" = "Inactif — vous êtes connecté au Wi-Fi";
+"Not active — you're on trusted network: %@" = "Inactif — vous êtes sur le réseau de confiance : %@";
+"Locations" = "Emplacements";
+"VPN Activation" = "Activation du VPN";
+"Cellular" = "Données mobiles";
+"Automatically turn on when using cellular data." = "Activer automatiquement lors de l'utilisation des données mobiles.";
+"Wi-Fi" = "Wi-Fi";
+"Automatically turn on for Wi-Fi connections." = "Activer automatiquement pour les connexions Wi-Fi.";
+"Wi-Fi Networks" = "Réseaux Wi-Fi";
+"Active on all networks." = "Actif sur tous les réseaux.";
+"Disabled on %@ trusted network(s)" = "Désactivé sur %@ réseau(x) de confiance";
+
+// MARK: - Wifi Settings Screen
+
+"Wi-Fi Networks" = "Réseaux Wi-Fi";
+"Active on all networks" = "Actif sur tous les réseaux";
+"VPN stays on, no matter which Wi-Fi you join." = "Le VPN reste actif quel que soit le Wi-Fi auquel vous vous connectez.";
+"Off on trusted networks" = "Désactivé sur les réseaux de confiance";
+"VPN turns off when you're connected to a network you trust." = "Le VPN se désactive lorsque vous êtes connecté à un réseau de confiance.";
+"This will remove all trusted networks. You can add them again any time." = "Cela supprimera tous les réseaux de confiance. Vous pouvez les rajouter à tout moment.";
+"Switch & Remove" = "Changer et supprimer";
+"Trusted Networks" = "Réseaux de confiance";
+"Remove" = "Supprimer";
+"Add trusted network" = "Ajouter un réseau de confiance";
+"Trust this network?" = "Faire confiance à ce réseau ?";
+"VPN turns off on this network and back on when you disconnect." = "Le VPN se désactive sur ce réseau et se réactive lorsque vous vous déconnectez.";
+"Trust Network" = "Faire confiance au réseau";
+"'%@' is already added as a trusted network." = "'%@' est déjà ajouté comme réseau de confiance.";
+"Something went wrong while removing '%@' as a trusted network. Please try again." = "Une erreur s'est produite lors de la suppression de '%@' comme réseau de confiance. Veuillez réessayer.";

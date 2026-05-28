@@ -1,0 +1,72 @@
+PODS:
+  - Alamofire (5.9.1)
+  - BBlock (1.2.1):
+    - BBlock/AppKit (= 1.2.1)
+    - BBlock/Foundation (= 1.2.1)
+    - BBlock/StoreKit (= 1.2.1)
+    - BBlock/UIKit (= 1.2.1)
+  - BBlock/Foundation (1.2.1)
+  - BBlock/StoreKit (1.2.1)
+  - BBlock/UIKit (1.2.1)
+  - GRDB.swift/SQLCipher (6.24.1):
+    - SQLCipher (>= 3.4.2)
+  - IOSSecuritySuite (2.2.0)
+  - JWTDecode (3.3.0)
+  - Kingfisher (7.12.0)
+  - MBProgressHUD (1.2.0)
+  - SAMKeychain (1.5.4)
+  - SQLCipher (4.10.0):
+    - SQLCipher/standard (= 4.10.0)
+  - SQLCipher/common (4.10.0)
+  - SQLCipher/standard (4.10.0):
+    - SQLCipher/common
+  - TwilioVoice (6.12.1)
+
+DEPENDENCIES:
+  - Alamofire (~> 5.9.1)
+  - BBlock (~> 1.2.1)
+  - GRDB.swift/SQLCipher
+  - IOSSecuritySuite (~> 2.2.0)
+  - JWTDecode (~> 3.3)
+  - Kingfisher (~> 7.12.0)
+  - MBProgressHUD (~> 1.2)
+  - SAMKeychain (from `https://github.com/afriedmanGlacier/SAMKeychain.git`)
+  - SQLCipher (~> 4.10.0)
+  - TwilioVoice (~> 6.12.0)
+
+SPEC REPOS:
+  https://github.com/CocoaPods/Specs.git:
+    - Alamofire
+    - BBlock
+    - GRDB.swift
+    - IOSSecuritySuite
+    - JWTDecode
+    - Kingfisher
+    - MBProgressHUD
+    - SQLCipher
+    - TwilioVoice
+
+EXTERNAL SOURCES:
+  SAMKeychain:
+    :git: https://github.com/afriedmanGlacier/SAMKeychain.git
+
+CHECKOUT OPTIONS:
+  SAMKeychain:
+    :commit: 1b1d837ae6775837700a14242fedc5167f35b46d
+    :git: https://github.com/afriedmanGlacier/SAMKeychain.git
+
+SPEC CHECKSUMS:
+  Alamofire: f36a35757af4587d8e4f4bfa223ad10be2422b8c
+  BBlock: c56d7f72597ffe1634fcdc73836c5c0fed3271be
+  GRDB.swift: 136dcb5d8dddca50aae3ba7d77475f79e7232cd8
+  IOSSecuritySuite: ba76f34cb367b9230934ac37904e26a40d033e3d
+  JWTDecode: 1ca6f765844457d0dd8690436860fecee788f631
+  Kingfisher: 53a10ea35051a436b5fb626ca2dd8f3144d755e9
+  MBProgressHUD: 3ee5efcc380f6a79a7cc9b363dd669c5e1ae7406
+  SAMKeychain: fa4ca0d13151a6b056c7327e331bbc37ccd181a5
+  SQLCipher: eb79c64049cb002b4e9fcb30edb7979bf4706dfc
+  TwilioVoice: fdf3e90f84023b42d64c204ffbd03c490c86e0cf
+
+PODFILE CHECKSUM: 21af8271a9480f949208f27f6c154a98949524ca
+
+COCOAPODS: 1.16.2

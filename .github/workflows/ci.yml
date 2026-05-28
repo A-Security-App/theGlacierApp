@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Build & Test
+    runs-on: macos-15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Print toolchain versions
+        run: |
+          xcodebuild -version
+          ruby --version
+          pod --version
+
+      - name: Cache CocoaPods
+        uses: actions/cache@v4
+        with:
+          path: Pods
+          key: pods-${{ hashFiles('Podfile.lock') }}
+          restore-keys: pods-
+
+      - name: Install pods
+        env:
+          LANG: en_US.UTF-8
+          LC_ALL: en_US.UTF-8
+        run: pod install
+
+      - name: Provide placeholder Secrets.plist files
+        run: |
+          cp Glacier/Resources/Properties/Secrets-template.plist \
+             Glacier/Resources/Properties/Secrets.plist
+          cp WireGuardNetworkExtension/Secrets-template.plist \
+             WireGuardNetworkExtension/Secrets.plist
+
+      - name: Run unit tests
+        run: |
+          set -o pipefail
+          xcodebuild test \
+            -workspace Glacier.xcworkspace \
+            -scheme GlacierTests \
+            -destination 'platform=iOS Simulator,name=iPhone 16,OS=latest' \
+            CODE_SIGNING_ALLOWED=NO

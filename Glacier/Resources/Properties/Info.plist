@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
+	<array>
+		<string>com.glacier.Glacier.task.vpnHealth</string>
+	</array>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>en</string>
+	<key>CFBundleDisplayName</key>
+	<string>Glacier</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>$(PRODUCT_NAME)</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>$(MARKETING_VERSION)</string>
+	<key>CFBundleSignature</key>
+	<string>????</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.glacier.Glacier</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>glacierapp</string>
+			</array>
+		</dict>
+	</array>
+	<key>CFBundleVersion</key>
+	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
+	<key>ITSEncryptionExportComplianceCode</key>
+	<string>51d17d3e-5e07-49ad-a308-9625d81e411f</string>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>cydia</string>
+		<string>undecimus</string>
+		<string>sileo</string>
+		<string>zbra</string>
+		<string>filza</string>
+		<string>activator</string>
+	</array>
+	<key>LSRequiresIPhoneOS</key>
+	<true/>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+		<key>NSExceptionDomains</key>
+		<dict>
+			<key>localhost</key>
+			<dict>
+				<key>NSTemporaryExceptionAllowsInsecureHTTPLoads</key>
+				<true/>
+			</dict>
+		</dict>
+		<key>NSPinnedDomains</key>
+		<dict>
+			<key>cognito-idp.us-west-2.amazonaws.com</key>
+			<dict>
+				<key>NSPinnedCAIdentities</key>
+				<array>
+					<dict><key>SPKI-SHA256-BASE64</key><string>DxH4tt40L+eduF6szpY6TONlxhZhBd+pJ9wbHlQ2fuw=</string></dict>
+					<dict><key>SPKI-SHA256-BASE64</key><string>G9LNNAql897egYsabashkzUCTEJkWBzgoEtk8X/678c=</string></dict>
+					<dict><key>SPKI-SHA256-BASE64</key><string>++MBgDH5WGvL9Bcn5Be30cRcL0f5O+NyoXuWtQdX1aI=</string></dict>
+				</array>
+			</dict>
+			<key>auth2.theglacierapp.com</key>
+			<dict>
+				<key>NSPinnedCAIdentities</key>
+				<array>
+					<dict><key>SPKI-SHA256-BASE64</key><string>DxH4tt40L+eduF6szpY6TONlxhZhBd+pJ9wbHlQ2fuw=</string></dict>
+					<dict><key>SPKI-SHA256-BASE64</key><string>G9LNNAql897egYsabashkzUCTEJkWBzgoEtk8X/678c=</string></dict>
+					<dict><key>SPKI-SHA256-BASE64</key><string>++MBgDH5WGvL9Bcn5Be30cRcL0f5O+NyoXuWtQdX1aI=</string></dict>
+				</array>
+			</dict>
+		</dict>
+	</dict>
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>Allows bluetooth usage with calls</string>
+	<key>NSBluetoothPeripheralUsageDescription</key>
+	<string>Allows bluetooth usage with calls</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Allows user to make video calls as well as take and send photos.</string>
+	<key>NSContactsUsageDescription</key>
+	<string>Allows users to initiate phone calls with existing contacts through Glacier.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Allows user to make calls with Glacier.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Access to the photo library is required for option to save incoming photos.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Access to the photo library is required to send your existing photos.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Access to Wi-Fi network information is required to display the connected network.</string>
+	<key>PrivacyPolicyURL</key>
+	<string>https://theglacierapp.com/privacy</string>
+	<key>TermsOfUseURL</key>
+	<string>https://theglacierapp.com/tos</string>
+	<key>UIAppFonts</key>
+	<array>
+		<string>HaasGrotTextApp-55Roman.ttf</string>
+		<string>HaasGrotTextApp-65Medium.ttf</string>
+	</array>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>audio</string>
+		<string>fetch</string>
+		<string>remote-notification</string>
+		<string>voip</string>
+	</array>
+	<key>UILaunchStoryboardName</key>
+	<string>SplashScreen</string>
+	<key>UIRequiredDeviceCapabilities</key>
+	<array>
+		<string>armv7</string>
+	</array>
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+	</array>
+	<key>UISupportedInterfaceOrientations~ipad</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationPortraitUpsideDown</string>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
+	<key>UIViewControllerBasedStatusBarAppearance</key>
+	<false/>
+</dict>
+</plist>

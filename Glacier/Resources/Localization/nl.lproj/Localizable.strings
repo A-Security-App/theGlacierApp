@@ -1,0 +1,429 @@
+/*
+  Localizable.strings
+  Glacier
+
+  Dutch (nl) Localization
+  Copyright © 2026 Glacier. All rights reserved.
+*/
+
+/***************************
+ Common
+ ***************************/
+
+"Glacier" = "Glacier";
+"Add" = "Toevoegen";
+"Continue" = "Doorgaan";
+"Skip" = "Overslaan";
+"Ok" = "OK";
+"or" = "of";
+"Terms of Use" = "Gebruiksvoorwaarden";
+"Privacy Policy" = "Privacybeleid";
+"Resend" = "Opnieuw verzenden";
+"Error" = "Fout";
+"Success" = "Gelukt";
+"Cancel" = "Annuleren";
+"Please try again." = "Probeer het opnieuw.";
+"No Wi-Fi Connection" = "Geen Wi-Fi-verbinding";
+
+
+/***************************
+ Root Screen
+ ***************************/
+
+"Your session has expired. Please sign in again to continue." = "Je sessie is verlopen. Meld je opnieuw aan om door te gaan.";
+
+
+/***************************
+ Sliding Cards
+ ***************************/
+"Browse privately, ad-free." = "Surf privé, zonder advertenties.";
+"VPN and DNS protection for safer browsing—from anywhere." = "VPN- en DNS-beveiliging voor veiliger browsen – vanaf elke locatie.";
+"Standard" = "Standaard";
+"Know you're protected." = "Weet dat je beschermd bent.";
+"Get alerts and recommendations to ensure your device is secure." = "Ontvang meldingen en aanbevelingen om je apparaat veilig te houden.";
+"Make calls anonymously." = "Bel anoniem.";
+"Conversations will never point back to you." = "Gesprekken zijn nooit naar jou te herleiden.";
+"Ringing..." = "Gaat over...";
+
+
+/***************************
+ User Authentication Module
+ ***************************/
+
+// MARK: - User Authentication Home Screen
+
+"Security that sets you free" = "Beveiliging die je vrijheid geeft";
+"Military-level protection through a beautifully simple experience." = "Bescherming op militair niveau via een prachtig eenvoudige ervaring.";
+"Sign Up" = "Registreren";
+"Log In" = "Inloggen";
+
+// MARK: - User Registration Screen
+
+"Create your account" = "Maak je account aan";
+"You'll use this email to log in." = "Je gebruikt dit e-mailadres om in te loggen.";
+"Set your Password" = "Stel je wachtwoord in";
+"Email" = "E-mail";
+"Password" = "Wachtwoord";
+"Continue with Google" = "Doorgaan met Google";
+"Continue with Apple" = "Doorgaan met Apple";
+"Something went wrong while creating your account. Please try again." = "Er is iets misgegaan bij het aanmaken van je account. Probeer het opnieuw.";
+"Something went wrong while confirming your account. Please try again." = "Er is iets misgegaan bij het bevestigen van je account. Probeer het opnieuw.";
+"An account with this email is already registered. Please log in or reset your password." = "Er is al een account geregistreerd met dit e-mailadres. Log in of stel je wachtwoord opnieuw in.";
+"Something went wrong while sending account confirmation email. Please try again." = "Er is iets misgegaan bij het verzenden van de bevestigingsmail. Probeer het opnieuw.";
+
+// MARK: - User Registration Confirmation Screen
+
+"Check your email" = "Controleer je e-mail";
+"We sent you an email to verify you're you." = "We hebben je een e-mail gestuurd om je identiteit te verifiëren.";
+"We sent you email for account confirmation." = "We hebben je een e-mail gestuurd voor accountbevestiging.";
+"Something went wrong while resending the confirmation email. Please try again." = "Er is iets misgegaan bij het opnieuw verzenden van de bevestigingsmail. Probeer het opnieuw.";
+"This confirmation email has expired. Please request a new one." = "Deze bevestigingsmail is verlopen. Vraag een nieuwe aan.";
+
+// MARK: - User Login Screen
+
+"Log in" = "Inloggen";
+"Enter your email." = "Voer je e-mailadres in.";
+"Enter your password." = "Voer je wachtwoord in.";
+"Forgot password?" = "Wachtwoord vergeten?";
+"Something went wrong while logging you in. Please try again." = "Er is iets misgegaan bij het inloggen. Probeer het opnieuw.";
+"Something went wrong while emailing password reset link. Please try again." = "Er is iets misgegaan bij het verzenden van de link voor wachtwoordherstel. Probeer het opnieuw.";
+"There's no account associated with this email. Please verify the email or create a new account." = "Er is geen account gekoppeld aan dit e-mailadres. Controleer het e-mailadres of maak een nieuw account aan.";
+
+// MARK: - Password Reset Screen
+
+"Reset your password" = "Stel je wachtwoord opnieuw in";
+"We'll send you a link to reset your password if this email is associated with an account." = "We sturen je een link om je wachtwoord opnieuw in te stellen als dit e-mailadres aan een account is gekoppeld.";
+"Send Link" = "Link versturen";
+
+"Enter Code" = "Code invoeren";
+"Enter the 4-digit code sent to you at %@" = "Voer de 4-cijferige code in die naar %@ is verzonden";
+"Tip: Make sure to check your inbox and spam folders" = "Tip: Vergeet niet je inbox en spammap te controleren";
+"Resend" = "Opnieuw verzenden";
+"Resent!" = "Opnieuw verzonden!";
+"Wrong code. Try again." = "Verkeerde code. Probeer opnieuw.";
+"Update Password" = "Wachtwoord bijwerken";
+"Enter your new password" = "Voer je nieuwe wachtwoord in";
+"• At least 8 characters\n" = "• Minimaal 8 tekens\n";
+"• At least one uppercase letter\n" = "• Minimaal één hoofdletter\n";
+"• At least one lowercase letter\n" = "• Minimaal één kleine letter\n";
+"• At least one number\n" = "• Minimaal één cijfer\n";
+"• At least one special character (!@#$%^&*)" = "• Minimaal één speciaal teken (!@#$%^&*)";
+"Re-enter password" = "Herhaal wachtwoord";
+"Passwords don't match" = "Wachtwoorden komen niet overeen";
+"Something went wrong while sending the password reset link. Please try again." = "Er is iets misgegaan bij het verzenden van de link voor wachtwoordherstel. Probeer het opnieuw.";
+"Something went wrong while updating your password. Please try again." = "Er is iets misgegaan bij het bijwerken van je wachtwoord. Probeer het opnieuw.";
+"Your password has been updated successfully. Please log in with your new password." = "Je wachtwoord is succesvol bijgewerkt. Log in met je nieuwe wachtwoord.";
+
+
+/***************************
+ User Onboarding
+ ***************************/
+
+// MARK: - Common
+"Skip for Now" = "Nu overslaan";
+"Open Settings" = "Instellingen openen";
+
+// MARK: - User Onboarding Home Screen
+
+"Welcome to Glacier" = "Welkom bij Glacier";
+"Welcome." = "Welkom.";
+"Browse, call, and work with confidence." = "Surf, bel en werk met vertrouwen.";
+"Get Started" = "Aan de slag";
+
+// MARK: - Glacier Plan Purchase Screen
+"Restore purchase" = "Aankoop herstellen";
+"Select your plan" = "Selecteer je abonnement";
+"Instant privacy. Safe browsing." = "Directe privacy. Veilig browsen.";
+"Get Glacier" = "Glacier halen";
+"Subscriptions renew automatically unless canceled at least 24 hours before the end of the current period. Manage or cancel anytime in Settings." = "Abonnementen worden automatisch verlengd tenzij ze minimaal 24 uur voor het einde van de huidige periode worden opgezegd. Beheer of annuleer op elk moment in Instellingen.";
+"Your purchase could not be completed" = "Je aankoop kon niet worden voltooid";
+"Please try again." = "Probeer het opnieuw.";
+
+// MARK: - DNS Setup Screen
+"You're in." = "Je bent er.";
+"Setup DNS." = "DNS instellen.";
+"Hides which sites you're visiting.\n\nFaster connection, no ads, and enough privacy for everyday use." = "Verbergt welke sites je bezoekt.\n\nSnellere verbinding, geen advertenties en voldoende privacy voor dagelijks gebruik.";
+"Enable Glacier DNS in Settings" = "Activeer Glacier DNS in Instellingen";
+"In Settings page, navigate to:\n\nGeneral →\nVPN & Device Management →\nDNS →\nGlacier." = "Ga op de pagina Instellingen naar:\n\nAlgemeen →\nVPN en apparaatbeheer →\nDNS →\nGlacier.";
+"Something went wrong while adding DNS configuration. Please try again." = "Er is iets misgegaan bij het toevoegen van de DNS-configuratie. Probeer het opnieuw.";
+
+// MARK: - VPN Setup Screen
+"DNS is setup." = "DNS is ingesteld.";
+"Setup your VPN." = "Stel je VPN in.";
+"Hides where you're going and everything you do along the way.\n\nIdeal for public Wi-Fi, travel, or untrusted networks.\n\nHeads up — can sometimes slow your connection or limit browsing." = "Verbergt waar je naartoe gaat en alles wat je onderweg doet.\n\nIdeaal voor openbare Wi-Fi, reizen of niet-vertrouwde netwerken.\n\nLet op: kan soms je verbinding vertragen of browsen beperken.";
+"Something went wrong while adding VPN configuration. Please try again." = "Er is iets misgegaan bij het toevoegen van de VPN-configuratie. Probeer het opnieuw.";
+
+// MARK: - Trusted Network Setup Screen
+"VPN is ready." = "VPN is gereed.";
+"Trust current wi-fi,\n'%@'" = "Huidig Wi-Fi vertrouwen,\n'%@'";
+"Add wi-fi to trusted network list." = "Wi-Fi toevoegen aan lijst met vertrouwde netwerken.";
+"VPN will automatically turn off on this network. \nUpdate anytime." = "VPN schakelt automatisch uit op dit netwerk. \nBij elk moment bijwerken.";
+"You are not currently using Wi-Fi and can try again later when connected to your Wi-Fi network." = "Je gebruikt momenteel geen Wi-Fi. Je kunt het later opnieuw proberen wanneer je verbonden bent met je Wi-Fi-netwerk.";
+"VPN turns off on '%@' network and back on when you disconnect." = "VPN schakelt uit op netwerk '%@' en schakelt weer in wanneer je de verbinding verbreekt.";
+"No, Don't Trust" = "Nee, niet vertrouwen";
+"Something went wrong while fetching your network details. Please try again." = "Er is iets misgegaan bij het ophalen van je netwerkgegevens. Probeer het opnieuw.";
+"Something went wrong while adding '%@' as a trusted network. Please try again." = "Er is iets misgegaan bij het toevoegen van '%@' als vertrouwd netwerk. Probeer het opnieuw.";
+
+// MARK: - Phone Number Purchase Screen
+"Purchase external phone lines." = "Externe telefoonlijnen aanschaffen.";
+"For conversations that never point back to you." = "Voor gesprekken die nooit naar jou te herleiden zijn.";
+"Select your monthly plan" = "Selecteer je maandelijks abonnement";
+"Completely private phone calls." = "Volledig privé telefoongesprekken.";
+"Restore" = "Herstellen";
+"Subscribe" = "Abonneren";
+"You're all set" = "Alles is klaar";
+"Your purchase was successful." = "Je aankoop was succesvol.";
+
+// MARK: - User Permissions Screen
+"Enable permissions." = "Machtigingen inschakelen.";
+"Notifications help you receive calls in real time.\n\nContact access is only used to help identify or start calls. Your contacts never leave your phone." = "Meldingen helpen je om oproepen in realtime te ontvangen.\n\nToegang tot contacten wordt alleen gebruikt om oproepen te identificeren of starten. Je contacten verlaten nooit je telefoon.";
+
+// MARK: - Phone Number Selection Screen
+"You're all set." = "Alles is klaar.";
+"You have %@ phone lines ready to use." = "Je hebt %@ telefoonlijnen klaar voor gebruik.";
+"Choose your number." = "Kies je nummer.";
+"Add number" = "Nummer toevoegen";
+"Search area code or number" = "Zoek naar netnummer of nummer";
+"No results" = "Geen resultaten";
+"There were no results for '%@'. Try a new search." = "Geen resultaten voor '%@'. Probeer een nieuwe zoekopdracht.";
+"Confirm new number" = "Nieuw nummer bevestigen";
+"Are you sure you want to add %@?" = "Weet je zeker dat je %@ wilt toevoegen?";
+"Your number wasn't added" = "Je nummer is niet toegevoegd";
+"Your current subscription allows up to %@ phone numbers. You may upgrade your plan later to purchase more." = "Je huidige abonnement staat tot %@ telefoonnummers toe. Je kunt je abonnement later upgraden om er meer aan te schaffen.";
+"Add display name" = "Weergavenaam toevoegen";
+"This name is just for you and won't be saved after logout." = "Deze naam is alleen voor jou en wordt niet opgeslagen na uitloggen.";
+"Display name" = "Weergavenaam";
+"Add Name" = "Naam toevoegen";
+"Something went wrong while adding name to the number. Please try again." = "Er is iets misgegaan bij het toevoegen van een naam aan het nummer. Probeer het opnieuw.";
+"Your phone number is ready to use." = "Je telefoonnummer is klaar voor gebruik.";
+"Your number has been added." = "Je nummer is toegevoegd.";
+"Add Another Number" = "Nog een nummer toevoegen";
+"Not Now" = "Niet nu";
+
+// MARK: - Cellular Setup Screen
+"Do you want to enable VPN while on cellular?" = "Wil je VPN inschakelen tijdens mobiel internet?";
+"VPN on." = "VPN aan.";
+"Heads up - can slow or limit your connection to some websites and apps.\n\nGlacier recommends leaving VPN off while on cellular for most situations. You can still enable later in settings.\n\nEnable anyway." = "Let op: kan je verbinding met sommige websites en apps vertragen of beperken.\n\nGlacier raadt aan VPN uit te laten staan bij mobiel internet voor de meeste situaties. Je kunt het later nog inschakelen in instellingen.\n\nToch inschakelen.";
+
+// MARK: - Wifi Setup Screen
+"VPN is ideal for public Wi-Fi and untrusted networks." = "VPN is ideaal voor openbare Wi-Fi en niet-vertrouwde netwerken.";
+"Add current Wi-Fi to trusted network list." = "Huidig Wi-Fi toevoegen aan lijst met vertrouwde netwerken.";
+
+/***************************
+ Floating Tab Bar
+ ***************************/
+
+"Home" = "Start";
+"Phone" = "Telefoon";
+"Contacts" = "Contacten";
+"History" = "Geschiedenis";
+
+
+/***************************
+ Home
+ ***************************/
+
+// MARK: - Security Issues Overview
+
+"All clear. \nNo issues found." = "Alles in orde. \nGeen problemen gevonden.";
+"Your system may be at risk." = "Je systeem kan kwetsbaar zijn.";
+"Connect to DNS to block malicious sites and trackers." = "Verbind met DNS om schadelijke sites en trackers te blokkeren.";
+"Your system shows signs of being jailbroken." = "Je systeem vertoont tekenen van jailbreak.";
+"This app appears to be running in a modified or analyzed environment." = "Deze app lijkt te worden uitgevoerd in een gewijzigde of geanalyseerde omgeving.";
+"Unusual network activity or modification tools have been identified." = "Ongewone netwerkactiviteit of aanpassingstools zijn gedetecteerd.";
+"The app is currently running in a development or debugging environment." = "De app wordt momenteel uitgevoerd in een ontwikkel- of foutopsporingsomgeving.";
+"The app appears to be running in a simulated environment." = "De app lijkt te worden uitgevoerd in een gesimuleerde omgeving.";
+"Today" = "Vandaag";
+"%@ web trackers blocked" = "%@ webtrackers geblokkeerd";
+
+// MARK: - Secured Connection Status
+
+"Connected" = "Verbonden";
+"Disconnected from DNS" = "Verbinding met DNS verbroken";
+"Connect" = "Verbinden";
+"Disconnect" = "Verbinding verbreken";
+"Something went wrong while connecting to Glacier DNS.\n\nPlease check that Glacier DNS is selected in:\n\nSettings →\nGeneral →\nVPN & Device Management →\nDNS" = "Er is iets misgegaan bij het verbinden met Glacier DNS.\n\nControleer of Glacier DNS is geselecteerd in:\n\nInstellingen →\nAlgemeen →\nVPN en apparaatbeheer →\nDNS";
+"Are you sure?" = "Weet je het zeker?";
+"Something went wrong while connecting to Glacier DNS. Please try again." = "Er is iets misgegaan bij het verbinden met Glacier DNS. Probeer het opnieuw.";
+
+// MARK: - Secured Connection Type
+
+"Choose protection" = "Kies bescherming";
+"Standard" = "Standaard";
+"For everyday use. Faster connection, no ads, and best for most situations." = "Voor dagelijks gebruik. Snellere verbinding, geen advertenties en het beste voor de meeste situaties.";
+"Extra Protection" = "Extra beveiliging";
+"Ideal for public Wi-Fi, travel, and other untrusted networks. Can limit browsing or slow connection." = "Ideaal voor openbare Wi-Fi, reizen en andere niet-vertrouwde netwerken. Kan browsen beperken of verbinding vertragen.";
+
+// MARK: - Device Security Status
+
+"Device security settings" = "Beveiligingsinstellingen apparaat";
+"Screen Lock" = "Schermvergrendeling";
+"Biometrics" = "Biometrie";
+"Glacier & iOS Version" = "Glacier en iOS-versie";
+"Enable" = "Inschakelen";
+"Update" = "Bijwerken";
+"Enable Screen Lock" = "Schermvergrendeling inschakelen";
+"Open Settings \n→ Display & Brightness \n→ Auto-Lock" = "Open Instellingen \n→ Scherm en helderheid \n→ Automatische vergrendeling";
+"Enable Biometrics" = "Biometrie inschakelen";
+"Open Settings \n→ Select Face ID & Passcode" = "Open Instellingen \n→ Selecteer Face ID en toegangscode";
+"Update Glacier iOS" = "Glacier iOS bijwerken";
+"Open the App Store \n→ Go to Account \n→ Scroll down to see “Updates” \n→ Find Glacier \n→ Tap “Update”" = "Open de App Store \n→ Ga naar Account \n→ Scroll omlaag naar «Updates» \n→ Zoek Glacier \n→ Tik op «Bijwerken»";
+
+
+/***************************
+ Phone
+ ***************************/
+
+"Paste" = "Plakken";
+"Start call?" = "Gesprek starten?";
+"Call" = "Bellen";
+"Ringing..." = "Gaat over...";
+"Connected" = "Verbonden";
+"Ended" = "Beëindigd";
+"Speaker" = "Luidspreker";
+"Microphone" = "Microfoon";
+"Bluetooth" = "Bluetooth";
+"End" = "Beëindigen";
+"Mute" = "Dempen";
+"Unmute" = "Dempen opheffen";
+
+
+/***************************
+ Phone Number Menu Popup
+ ***************************/
+
+"Upgrade to add phone lines" = "Upgrade om telefoonlijnen toe te voegen";
+"Manage numbers" = "Nummers beheren";
+
+
+/***************************
+ Manage Phone Number
+ ***************************/
+
+"Manage numbers" = "Nummers beheren";
+"Edit name" = "Naam bewerken";
+"Burn number" = "Nummer verwijderen";
+"Burn this number" = "Dit nummer verwijderen";
+"%@ will be removed and can't be added again." = "%@ wordt verwijderd en kan niet opnieuw worden toegevoegd.";
+"Something went wrong while updating name for the number. Please try again." = "Er is iets misgegaan bij het bijwerken van de naam voor het nummer. Probeer het opnieuw.";
+"Something went wrong while burning number. Please try again." = "Er is iets misgegaan bij het verwijderen van het nummer. Probeer het opnieuw.";
+
+
+/***************************
+ Contacts
+ ***************************/
+
+"Add contacts by allowing Glacier access" = "Voeg contacten toe door Glacier toegang te geven";
+"No contacts" = "Geen contacten";
+"Search contacts" = "Contacten zoeken";
+"No Results" = "Geen resultaten";
+"There were no results for '%@'. Try a new search." = "Geen resultaten voor '%@'. Probeer een nieuwe zoekopdracht.";
+"To help you easily connect with people, please allow access to your contacts by going to, \n\n→ Settings \n→ Apps \n→ Glacier \n→ Contacts" = "Om je te helpen gemakkelijk contact te maken met mensen, sta toegang tot je contacten toe door naar het volgende te gaan, \n\n→ Instellingen \n→ Apps \n→ Glacier \n→ Contacten";
+"Looks like you haven't added a phone number yet. Add one to start making calls." = "Het lijkt erop dat je nog geen telefoonnummer hebt toegevoegd. Voeg er een toe om te beginnen met bellen.";
+
+
+/***************************
+ Call History
+ ***************************/
+
+"Call history" = "Belgeschiedenis";
+"No call history" = "Geen belgeschiedenis";
+"Yesterday" = "Gisteren";
+"Unknown Number" = "Onbekend nummer";
+
+
+/***************************
+ Voicemail
+ ***************************/
+
+"Voicemail" = "Voicemail";
+"No voicemails" = "Geen voicemails";
+"New voicemail" = "Nieuwe voicemail";
+"Delete this voicemail?" = "Deze voicemail verwijderen?";
+"You won't be able to recover it after deleting." = "Je kunt het niet meer herstellen na verwijdering.";
+"Delete" = "Verwijderen";
+
+
+/***************************
+ Settings
+ ***************************/
+
+// MARK: - Settings Home Screen
+
+"Settings" = "Instellingen";
+"Account" = "Account";
+"VPN Settings" = "VPN-instellingen";
+"Appearance" = "Weergave";
+"Dark Mode" = "Donkere modus";
+"Support & FAQ" = "Support en FAQ";
+"Reset Password" = "Wachtwoord opnieuw instellen";
+"Sign Out" = "Uitloggen";
+"Are you sure?" = "Weet je het zeker?";
+"Yes, Sign Out" = "Ja, uitloggen";
+
+// MARK: - Appearance Settings Screen
+
+"Device Settings" = "Apparaatinstellingen";
+"Use your device's default mode." = "Gebruik de standaardmodus van je apparaat.";
+"Light" = "Licht";
+"Always use light mode." = "Altijd lichte modus gebruiken.";
+"Dark" = "Donker";
+"Always use dark mode." = "Altijd donkere modus gebruiken.";
+
+// MARK: - VPN Settings Screen
+
+"VPN" = "VPN";
+"VPN Connection" = "VPN-verbinding";
+"An extra layer of encryption. Ideal for public Wi-Fi, travel, or untrusted networks. Learn more." = "Een extra beveiligingslaag. Ideaal voor openbare Wi-Fi, reizen of niet-vertrouwde netwerken. Meer informatie.";
+"Status" = "Status";
+"Not in Use" = "Niet in gebruik";
+"In Progress" = "Bezig";
+"In Use" = "In gebruik";
+"Restarting" = "Opnieuw opstarten";
+"Transition in Progress" = "Overgang bezig";
+"Your VPN is currently activated." = "Je VPN is momenteel geactiveerd.";
+"Not active — you're on cellular data" = "Niet actief — je gebruikt mobiel internet";
+"Not active — you're on Wi-Fi" = "Niet actief — je bent verbonden met Wi-Fi";
+"Not active — you're on trusted network: %@" = "Niet actief — je bent op vertrouwd netwerk: %@";
+"Locations" = "Locaties";
+"VPN Activation" = "VPN-activering";
+"Cellular" = "Mobiel internet";
+"Automatically turn on when using cellular data." = "Automatisch inschakelen bij gebruik van mobiel internet.";
+"Wi-Fi" = "Wi-Fi";
+"Automatically turn on for Wi-Fi connections." = "Automatisch inschakelen voor Wi-Fi-verbindingen.";
+"Wi-Fi Networks" = "Wi-Fi-netwerken";
+"Active on all networks." = "Actief op alle netwerken.";
+"Disabled on %@ trusted network(s)" = "Uitgeschakeld op %@ vertrouwd(e) netwerk(en)";
+
+// MARK: - Wifi Settings Screen
+
+"Wi-Fi Networks" = "Wi-Fi-netwerken";
+"Active on all networks" = "Actief op alle netwerken";
+"VPN stays on, no matter which Wi-Fi you join." = "VPN blijft actief, ongeacht met welk Wi-Fi je verbindt.";
+"Off on trusted networks" = "Uit op vertrouwde netwerken";
+"VPN turns off when you're connected to a network you trust." = "VPN schakelt uit wanneer je verbonden bent met een netwerk dat je vertrouwt.";
+"This will remove all trusted networks. You can add them again any time." = "Dit verwijdert alle vertrouwde netwerken. Je kunt ze op elk moment opnieuw toevoegen.";
+"Switch & Remove" = "Wisselen en verwijderen";
+"Trusted Networks" = "Vertrouwde netwerken";
+"Remove" = "Verwijderen";
+"Add trusted network" = "Vertrouwd netwerk toevoegen";
+"Trust this network?" = "Dit netwerk vertrouwen?";
+"VPN turns off on this network and back on when you disconnect." = "VPN schakelt uit op dit netwerk en schakelt weer in wanneer je de verbinding verbreekt.";
+"Trust Network" = "Netwerk vertrouwen";
+"'%@' is already added as a trusted network." = "'%@' is al toegevoegd als vertrouwd netwerk.";
+"Something went wrong while removing '%@' as a trusted network. Please try again." = "Er is iets misgegaan bij het verwijderen van '%@' als vertrouwd netwerk. Probeer het opnieuw.";
+
+// MARK: - Widget Settings Screen
+
+"Widget" = "Widget";
+"Check your security status and VPN connection at a glance from your Home Screen." = "Bekijk je beveiligingsstatus en VPN-verbinding in één oogopslag vanaf je beginscherm.";
+"How to add the Glacier widget" = "De Glacier-widget toevoegen";
+"Press and hold anywhere on your Home Screen" = "Druk lang op een willekeurige plek op je beginscherm";
+"Press the " = "Tik op de ";
+"Edit" = "Bewerken";
+" button, then select " = "-knop en selecteer vervolgens ";
+"Add Widget" = "Widget toevoegen";
+"Select or search for " = "Selecteer of zoek naar ";
+"Glacier" = "Glacier";
+"Choose your preferred widget, then press " = "Kies je gewenste widget en tik vervolgens op ";
+" to confirm" = " om te bevestigen";

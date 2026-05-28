@@ -1,0 +1,35 @@
+Copyright (c) 2026 Security App, LLC. All rights reserved.
+
+Source Available License
+
+This software and associated documentation files (the "Software") are made
+available for public review and transparency purposes only.
+
+Permission is granted to:
+  - View and read the source code
+  - Fork the repository for personal, non-commercial review or security research
+
+Permission is NOT granted to:
+  - Use, copy, modify, merge, publish, or distribute the Software or any
+    derivative works for any commercial purpose
+  - Use the Software or any portion of it in any product or service, whether
+    commercial or not, without prior written permission from Security App, LLC.
+  - Sublicense or sell copies of the Software
+  - Remove or alter this license notice or any copyright attributions
+
+Security Research Exception:
+Researchers who discover vulnerabilities are encouraged to report them
+responsibly via security@glaciersecurity.com. Reproduction of code solely
+for the purpose of demonstrating a reported vulnerability is permitted,
+provided it is not publicly disclosed prior to coordinated disclosure.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT. IN NO EVENT SHALL
+SECURITY APP, LLC. BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY,
+WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF,
+OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+For licensing inquiries or commercial use permissions, contact:
+  legal@theglacierapp.com
