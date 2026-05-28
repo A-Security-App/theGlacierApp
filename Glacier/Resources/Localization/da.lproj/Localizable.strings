@@ -1,0 +1,429 @@
+/*
+  Localizable.strings
+  Glacier
+
+  Danish (da) Localization
+  Copyright © 2026 Glacier. All rights reserved.
+*/
+
+/***************************
+ Common
+ ***************************/
+
+"Glacier" = "Glacier";
+"Add" = "Tilføj";
+"Continue" = "Fortsæt";
+"Skip" = "Spring over";
+"Ok" = "OK";
+"or" = "eller";
+"Terms of Use" = "Brugervilkår";
+"Privacy Policy" = "Privatlivspolitik";
+"Resend" = "Send igen";
+"Error" = "Fejl";
+"Success" = "Gennemført";
+"Cancel" = "Annuller";
+"Please try again." = "Prøv venligst igen.";
+"No Wi-Fi Connection" = "Ingen Wi-Fi-forbindelse";
+
+
+/***************************
+ Root Screen
+ ***************************/
+
+"Your session has expired. Please sign in again to continue." = "Din session er udløbet. Log ind igen for at fortsætte.";
+
+
+/***************************
+ Sliding Cards
+ ***************************/
+"Browse privately, ad-free." = "Surf privat, uden reklamer.";
+"VPN and DNS protection for safer browsing—from anywhere." = "VPN- og DNS-beskyttelse til sikrere browsing – fra hvor som helst.";
+"Standard" = "Standard";
+"Know you're protected." = "Vid at du er beskyttet.";
+"Get alerts and recommendations to ensure your device is secure." = "Modtag advarsler og anbefalinger for at sikre, at din enhed er sikker.";
+"Make calls anonymously." = "Ring anonymt.";
+"Conversations will never point back to you." = "Samtaler kan aldrig spores tilbage til dig.";
+"Ringing..." = "Ringer...";
+
+
+/***************************
+ User Authentication Module
+ ***************************/
+
+// MARK: - User Authentication Home Screen
+
+"Security that sets you free" = "Sikkerhed der giver dig frihed";
+"Military-level protection through a beautifully simple experience." = "Militærniveau beskyttelse gennem en smukt enkel oplevelse.";
+"Sign Up" = "Opret konto";
+"Log In" = "Log ind";
+
+// MARK: - User Registration Screen
+
+"Create your account" = "Opret din konto";
+"You'll use this email to log in." = "Du bruger denne e-mailadresse til at logge ind.";
+"Set your Password" = "Angiv din adgangskode";
+"Email" = "E-mail";
+"Password" = "Adgangskode";
+"Continue with Google" = "Fortsæt med Google";
+"Continue with Apple" = "Fortsæt med Apple";
+"Something went wrong while creating your account. Please try again." = "Noget gik galt under oprettelsen af din konto. Prøv venligst igen.";
+"Something went wrong while confirming your account. Please try again." = "Noget gik galt under bekræftelsen af din konto. Prøv venligst igen.";
+"An account with this email is already registered. Please log in or reset your password." = "En konto med denne e-mailadresse er allerede registreret. Log ind eller nulstil din adgangskode.";
+"Something went wrong while sending account confirmation email. Please try again." = "Noget gik galt under afsendelsen af bekræftelses-e-mailen. Prøv venligst igen.";
+
+// MARK: - User Registration Confirmation Screen
+
+"Check your email" = "Tjek din e-mail";
+"We sent you an email to verify you're you." = "Vi sendte dig en e-mail for at bekræfte din identitet.";
+"We sent you email for account confirmation." = "Vi sendte dig en e-mail til kontobekræftelse.";
+"Something went wrong while resending the confirmation email. Please try again." = "Noget gik galt under genafsendelse af bekræftelses-e-mailen. Prøv venligst igen.";
+"This confirmation email has expired. Please request a new one." = "Denne bekræftelses-e-mail er udløbet. Anmod venligst om en ny.";
+
+// MARK: - User Login Screen
+
+"Log in" = "Log ind";
+"Enter your email." = "Indtast din e-mailadresse.";
+"Enter your password." = "Indtast din adgangskode.";
+"Forgot password?" = "Glemt adgangskode?";
+"Something went wrong while logging you in. Please try again." = "Noget gik galt under login. Prøv venligst igen.";
+"Something went wrong while emailing password reset link. Please try again." = "Noget gik galt under afsendelse af link til nulstilling af adgangskode. Prøv venligst igen.";
+"There's no account associated with this email. Please verify the email or create a new account." = "Der er ingen konto tilknyttet denne e-mailadresse. Bekræft e-mailadressen eller opret en ny konto.";
+
+// MARK: - Password Reset Screen
+
+"Reset your password" = "Nulstil din adgangskode";
+"We'll send you a link to reset your password if this email is associated with an account." = "Vi sender dig et link til at nulstille din adgangskode, hvis denne e-mailadresse er tilknyttet en konto.";
+"Send Link" = "Send link";
+
+"Enter Code" = "Indtast kode";
+"Enter the 4-digit code sent to you at %@" = "Indtast den 4-cifrede kode sendt til %@";
+"Tip: Make sure to check your inbox and spam folders" = "Tip: Husk at tjekke din indbakke og spammapper";
+"Resend" = "Send igen";
+"Resent!" = "Sendt igen!";
+"Wrong code. Try again." = "Forkert kode. Prøv igen.";
+"Update Password" = "Opdater adgangskode";
+"Enter your new password" = "Indtast din nye adgangskode";
+"• At least 8 characters\n" = "• Mindst 8 tegn\n";
+"• At least one uppercase letter\n" = "• Mindst ét stort bogstav\n";
+"• At least one lowercase letter\n" = "• Mindst ét lille bogstav\n";
+"• At least one number\n" = "• Mindst ét tal\n";
+"• At least one special character (!@#$%^&*)" = "• Mindst ét specialtegn (!@#$%^&*)";
+"Re-enter password" = "Gentag adgangskode";
+"Passwords don't match" = "Adgangskoderne stemmer ikke overens";
+"Something went wrong while sending the password reset link. Please try again." = "Noget gik galt under afsendelsen af linket til nulstilling af adgangskoden. Prøv venligst igen.";
+"Something went wrong while updating your password. Please try again." = "Noget gik galt under opdateringen af din adgangskode. Prøv venligst igen.";
+"Your password has been updated successfully. Please log in with your new password." = "Din adgangskode er blevet opdateret. Log ind med din nye adgangskode.";
+
+
+/***************************
+ User Onboarding
+ ***************************/
+
+// MARK: - Common
+"Skip for Now" = "Spring over for nu";
+"Open Settings" = "Åbn indstillinger";
+
+// MARK: - User Onboarding Home Screen
+
+"Welcome to Glacier" = "Velkommen til Glacier";
+"Welcome." = "Velkommen.";
+"Browse, call, and work with confidence." = "Surf, ring og arbejd med tryghed.";
+"Get Started" = "Kom i gang";
+
+// MARK: - Glacier Plan Purchase Screen
+"Restore purchase" = "Gendan køb";
+"Select your plan" = "Vælg abonnement";
+"Instant privacy. Safe browsing." = "Øjeblikkelig privathed. Sikker browsing.";
+"Get Glacier" = "Hent Glacier";
+"Subscriptions renew automatically unless canceled at least 24 hours before the end of the current period. Manage or cancel anytime in Settings." = "Abonnementer fornyes automatisk, medmindre de opsiges mindst 24 timer før udgangen af den aktuelle periode. Administrer eller opsig når som helst i Indstillinger.";
+"Your purchase could not be completed" = "Dit køb kunne ikke gennemføres";
+"Please try again." = "Prøv venligst igen.";
+
+// MARK: - DNS Setup Screen
+"You're in." = "Du er med.";
+"Setup DNS." = "Konfigurer DNS.";
+"Hides which sites you're visiting.\n\nFaster connection, no ads, and enough privacy for everyday use." = "Skjuler hvilke websteder du besøger.\n\nHurtigere forbindelse, ingen reklamer og tilstrækkelig privathed til daglig brug.";
+"Enable Glacier DNS in Settings" = "Aktiver Glacier DNS i Indstillinger";
+"In Settings page, navigate to:\n\nGeneral →\nVPN & Device Management →\nDNS →\nGlacier." = "På siden Indstillinger, naviger til:\n\nGenerelt →\nVPN og enhedsstyring →\nDNS →\nGlacier.";
+"Something went wrong while adding DNS configuration. Please try again." = "Noget gik galt under tilføjelse af DNS-konfigurationen. Prøv venligst igen.";
+
+// MARK: - VPN Setup Screen
+"DNS is setup." = "DNS er konfigureret.";
+"Setup your VPN." = "Konfigurer din VPN.";
+"Hides where you're going and everything you do along the way.\n\nIdeal for public Wi-Fi, travel, or untrusted networks.\n\nHeads up — can sometimes slow your connection or limit browsing." = "Skjuler hvor du går hen og alt hvad du gør undervejs.\n\nIdeal til offentlig Wi-Fi, rejser eller ikke-betroede netværk.\n\nBemærk: Kan nogle gange reducere din forbindelsesstyrke eller begrænse browsing.";
+"Something went wrong while adding VPN configuration. Please try again." = "Noget gik galt under tilføjelse af VPN-konfigurationen. Prøv venligst igen.";
+
+// MARK: - Trusted Network Setup Screen
+"VPN is ready." = "VPN er klar.";
+"Trust current wi-fi,\n'%@'" = "Stol på nuværende Wi-Fi,\n'%@'";
+"Add wi-fi to trusted network list." = "Tilføj Wi-Fi til listen over betroede netværk.";
+"VPN will automatically turn off on this network. \nUpdate anytime." = "VPN slukkes automatisk på dette netværk. \nOpdater når som helst.";
+"You are not currently using Wi-Fi and can try again later when connected to your Wi-Fi network." = "Du bruger ikke Wi-Fi i øjeblikket. Du kan prøve igen, når du er tilsluttet dit Wi-Fi-netværk.";
+"VPN turns off on '%@' network and back on when you disconnect." = "VPN slukkes på netværket '%@' og tændes igen, når du afbryder forbindelsen.";
+"No, Don't Trust" = "Nej, stol ikke på";
+"Something went wrong while fetching your network details. Please try again." = "Noget gik galt under hentning af dine netværksoplysninger. Prøv venligst igen.";
+"Something went wrong while adding '%@' as a trusted network. Please try again." = "Noget gik galt under tilføjelse af '%@' som betroet netværk. Prøv venligst igen.";
+
+// MARK: - Phone Number Purchase Screen
+"Purchase external phone lines." = "Køb eksterne telefonlinjer.";
+"For conversations that never point back to you." = "Til samtaler der aldrig kan spores tilbage til dig.";
+"Select your monthly plan" = "Vælg månedligt abonnement";
+"Completely private phone calls." = "Fuldstændigt private telefonopkald.";
+"Restore" = "Gendan";
+"Subscribe" = "Abonner";
+"You're all set" = "Alt er klar";
+"Your purchase was successful." = "Dit køb var vellykket.";
+
+// MARK: - User Permissions Screen
+"Enable permissions." = "Aktiver tilladelser.";
+"Notifications help you receive calls in real time.\n\nContact access is only used to help identify or start calls. Your contacts never leave your phone." = "Notifikationer hjælper dig med at modtage opkald i realtid.\n\nAdgang til kontakter bruges kun til at identificere eller starte opkald. Dine kontakter forlader aldrig din telefon.";
+
+// MARK: - Phone Number Selection Screen
+"You're all set." = "Alt er klar.";
+"You have %@ phone lines ready to use." = "Du har %@ telefonlinjer klar til brug.";
+"Choose your number." = "Vælg dit nummer.";
+"Add number" = "Tilføj nummer";
+"Search area code or number" = "Søg efter retningsnummer eller nummer";
+"No results" = "Ingen resultater";
+"There were no results for '%@'. Try a new search." = "Ingen resultater for '%@'. Prøv en ny søgning.";
+"Confirm new number" = "Bekræft nyt nummer";
+"Are you sure you want to add %@?" = "Er du sikker på, at du vil tilføje %@?";
+"Your number wasn't added" = "Dit nummer blev ikke tilføjet";
+"Your current subscription allows up to %@ phone numbers. You may upgrade your plan later to purchase more." = "Dit nuværende abonnement tillader op til %@ telefonnumre. Du kan opgradere dit abonnement senere for at købe flere.";
+"Add display name" = "Tilføj vist navn";
+"This name is just for you and won't be saved after logout." = "Dette navn er kun for dig og gemmes ikke efter logout.";
+"Display name" = "Vist navn";
+"Add Name" = "Tilføj navn";
+"Something went wrong while adding name to the number. Please try again." = "Noget gik galt under tilføjelse af navn til nummeret. Prøv venligst igen.";
+"Your phone number is ready to use." = "Dit telefonnummer er klar til brug.";
+"Your number has been added." = "Dit nummer er blevet tilføjet.";
+"Add Another Number" = "Tilføj endnu et nummer";
+"Not Now" = "Ikke nu";
+
+// MARK: - Cellular Setup Screen
+"Do you want to enable VPN while on cellular?" = "Vil du aktivere VPN, mens du bruger mobildata?";
+"VPN on." = "VPN til.";
+"Heads up - can slow or limit your connection to some websites and apps.\n\nGlacier recommends leaving VPN off while on cellular for most situations. You can still enable later in settings.\n\nEnable anyway." = "Bemærk: Kan reducere eller begrænse din forbindelse til nogle websteder og apps.\n\nGlacier anbefaler at lade VPN være slukket ved mobildata i de fleste situationer. Du kan stadig aktivere det senere i indstillinger.\n\nAktiver alligevel.";
+
+// MARK: - Wifi Setup Screen
+"VPN is ideal for public Wi-Fi and untrusted networks." = "VPN er ideelt til offentlig Wi-Fi og ikke-betroede netværk.";
+"Add current Wi-Fi to trusted network list." = "Tilføj nuværende Wi-Fi til listen over betroede netværk.";
+
+/***************************
+ Floating Tab Bar
+ ***************************/
+
+"Home" = "Hjem";
+"Phone" = "Telefon";
+"Contacts" = "Kontakter";
+"History" = "Historik";
+
+
+/***************************
+ Home
+ ***************************/
+
+// MARK: - Security Issues Overview
+
+"All clear. \nNo issues found." = "Alt klart. \nIngen problemer fundet.";
+"Your system may be at risk." = "Dit system kan være i fare.";
+"Connect to DNS to block malicious sites and trackers." = "Opret forbindelse til DNS for at blokere skadelige websteder og sporere.";
+"Your system shows signs of being jailbroken." = "Dit system viser tegn på at være jailbreaket.";
+"This app appears to be running in a modified or analyzed environment." = "Denne app ser ud til at køre i et modificeret eller analyseret miljø.";
+"Unusual network activity or modification tools have been identified." = "Usædvanlig netværksaktivitet eller modifikationsværktøjer er blevet opdaget.";
+"The app is currently running in a development or debugging environment." = "Appen kører i øjeblikket i et udviklings- eller fejlfindingsmiljø.";
+"The app appears to be running in a simulated environment." = "Appen ser ud til at køre i et simuleret miljø.";
+"Today" = "I dag";
+"%@ web trackers blocked" = "%@ websporer blokeret";
+
+// MARK: - Secured Connection Status
+
+"Connected" = "Tilsluttet";
+"Disconnected from DNS" = "Afbrudt fra DNS";
+"Connect" = "Opret forbindelse";
+"Disconnect" = "Afbryd forbindelse";
+"Something went wrong while connecting to Glacier DNS.\n\nPlease check that Glacier DNS is selected in:\n\nSettings →\nGeneral →\nVPN & Device Management →\nDNS" = "Noget gik galt under tilslutning til Glacier DNS.\n\nKontroller at Glacier DNS er valgt i:\n\nIndstillinger →\nGenerelt →\nVPN og enhedsstyring →\nDNS";
+"Are you sure?" = "Er du sikker?";
+"Something went wrong while connecting to Glacier DNS. Please try again." = "Noget gik galt under tilslutning til Glacier DNS. Prøv venligst igen.";
+
+// MARK: - Secured Connection Type
+
+"Choose protection" = "Vælg beskyttelse";
+"Standard" = "Standard";
+"For everyday use. Faster connection, no ads, and best for most situations." = "Til daglig brug. Hurtigere forbindelse, ingen reklamer og bedst til de fleste situationer.";
+"Extra Protection" = "Ekstra beskyttelse";
+"Ideal for public Wi-Fi, travel, and other untrusted networks. Can limit browsing or slow connection." = "Ideelt til offentlig Wi-Fi, rejser og andre ikke-betroede netværk. Kan begrænse browsing eller reducere forbindelsen.";
+
+// MARK: - Device Security Status
+
+"Device security settings" = "Sikkerhedsindstillinger for enheden";
+"Screen Lock" = "Skærmlås";
+"Biometrics" = "Biometri";
+"Glacier & iOS Version" = "Glacier og iOS-version";
+"Enable" = "Aktiver";
+"Update" = "Opdater";
+"Enable Screen Lock" = "Aktiver skærmlås";
+"Open Settings \n→ Display & Brightness \n→ Auto-Lock" = "Åbn Indstillinger \n→ Skærm og lysstyrke \n→ Automatisk lås";
+"Enable Biometrics" = "Aktiver biometri";
+"Open Settings \n→ Select Face ID & Passcode" = "Åbn Indstillinger \n→ Vælg Face ID og adgangskode";
+"Update Glacier iOS" = "Opdater Glacier iOS";
+"Open the App Store \n→ Go to Account \n→ Scroll down to see “Updates” \n→ Find Glacier \n→ Tap “Update”" = "Åbn App Store \n→ Gå til Konto \n→ Rul ned for at se «Opdateringer» \n→ Find Glacier \n→ Tryk «Opdater»";
+
+
+/***************************
+ Phone
+ ***************************/
+
+"Paste" = "Indsæt";
+"Start call?" = "Start opkald?";
+"Call" = "Ring op";
+"Ringing..." = "Ringer...";
+"Connected" = "Tilsluttet";
+"Ended" = "Afsluttet";
+"Speaker" = "Højtaler";
+"Microphone" = "Mikrofon";
+"Bluetooth" = "Bluetooth";
+"End" = "Afslut";
+"Mute" = "Slå lyden fra";
+"Unmute" = "Slå lyden til";
+
+
+/***************************
+ Phone Number Menu Popup
+ ***************************/
+
+"Upgrade to add phone lines" = "Opgrader for at tilføje telefonlinjer";
+"Manage numbers" = "Administrer numre";
+
+
+/***************************
+ Manage Phone Number
+ ***************************/
+
+"Manage numbers" = "Administrer numre";
+"Edit name" = "Rediger navn";
+"Burn number" = "Slet nummer";
+"Burn this number" = "Slet dette nummer";
+"%@ will be removed and can't be added again." = "%@ vil blive fjernet og kan ikke tilføjes igen.";
+"Something went wrong while updating name for the number. Please try again." = "Noget gik galt under opdatering af navnet for nummeret. Prøv venligst igen.";
+"Something went wrong while burning number. Please try again." = "Noget gik galt under sletning af nummeret. Prøv venligst igen.";
+
+
+/***************************
+ Contacts
+ ***************************/
+
+"Add contacts by allowing Glacier access" = "Tilføj kontakter ved at give Glacier adgang";
+"No contacts" = "Ingen kontakter";
+"Search contacts" = "Søg i kontakter";
+"No Results" = "Ingen resultater";
+"There were no results for '%@'. Try a new search." = "Ingen resultater for '%@'. Prøv en ny søgning.";
+"To help you easily connect with people, please allow access to your contacts by going to, \n\n→ Settings \n→ Apps \n→ Glacier \n→ Contacts" = "For at hjælpe dig med nemt at komme i kontakt med folk, giv adgang til dine kontakter ved at gå til, \n\n→ Indstillinger \n→ Apps \n→ Glacier \n→ Kontakter";
+"Looks like you haven't added a phone number yet. Add one to start making calls." = "Det ser ud til, at du endnu ikke har tilføjet et telefonnummer. Tilføj ét for at begynde at ringe.";
+
+
+/***************************
+ Call History
+ ***************************/
+
+"Call history" = "Opkaldshistorik";
+"No call history" = "Ingen opkaldshistorik";
+"Yesterday" = "I går";
+"Unknown Number" = "Ukendt nummer";
+
+
+/***************************
+ Voicemail
+ ***************************/
+
+"Voicemail" = "Telefonsvarer";
+"No voicemails" = "Ingen talebeskeder";
+"New voicemail" = "Ny talebesked";
+"Delete this voicemail?" = "Slet denne talebesked?";
+"You won't be able to recover it after deleting." = "Du vil ikke kunne gendanne den efter sletning.";
+"Delete" = "Slet";
+
+
+/***************************
+ Settings
+ ***************************/
+
+// MARK: - Settings Home Screen
+
+"Settings" = "Indstillinger";
+"Account" = "Konto";
+"VPN Settings" = "VPN-indstillinger";
+"Appearance" = "Udseende";
+"Dark Mode" = "Mørk tilstand";
+"Support & FAQ" = "Support og FAQ";
+"Reset Password" = "Nulstil adgangskode";
+"Sign Out" = "Log ud";
+"Are you sure?" = "Er du sikker?";
+"Yes, Sign Out" = "Ja, log ud";
+
+// MARK: - Appearance Settings Screen
+
+"Device Settings" = "Enhedsindstillinger";
+"Use your device's default mode." = "Brug enhedens standardtilstand.";
+"Light" = "Lys";
+"Always use light mode." = "Brug altid lys tilstand.";
+"Dark" = "Mørk";
+"Always use dark mode." = "Brug altid mørk tilstand.";
+
+// MARK: - VPN Settings Screen
+
+"VPN" = "VPN";
+"VPN Connection" = "VPN-forbindelse";
+"An extra layer of encryption. Ideal for public Wi-Fi, travel, or untrusted networks. Learn more." = "Et ekstra lag kryptering. Ideelt til offentlig Wi-Fi, rejser eller ikke-betroede netværk. Læs mere.";
+"Status" = "Status";
+"Not in Use" = "Ikke i brug";
+"In Progress" = "I gang";
+"In Use" = "I brug";
+"Restarting" = "Genstarter";
+"Transition in Progress" = "Overgang i gang";
+"Your VPN is currently activated." = "Din VPN er i øjeblikket aktiveret.";
+"Not active — you're on cellular data" = "Ikke aktiv — du bruger mobildata";
+"Not active — you're on Wi-Fi" = "Ikke aktiv — du er tilsluttet Wi-Fi";
+"Not active — you're on trusted network: %@" = "Ikke aktiv — du er på betroet netværk: %@";
+"Locations" = "Steder";
+"VPN Activation" = "VPN-aktivering";
+"Cellular" = "Mobildata";
+"Automatically turn on when using cellular data." = "Tænd automatisk ved brug af mobildata.";
+"Wi-Fi" = "Wi-Fi";
+"Automatically turn on for Wi-Fi connections." = "Tænd automatisk til Wi-Fi-forbindelser.";
+"Wi-Fi Networks" = "Wi-Fi-netværk";
+"Active on all networks." = "Aktiv på alle netværk.";
+"Disabled on %@ trusted network(s)" = "Deaktiveret på %@ betroet(e) netværk";
+
+// MARK: - Wifi Settings Screen
+
+"Wi-Fi Networks" = "Wi-Fi-netværk";
+"Active on all networks" = "Aktiv på alle netværk";
+"VPN stays on, no matter which Wi-Fi you join." = "VPN forbliver aktiv uanset hvilket Wi-Fi du tilslutter dig.";
+"Off on trusted networks" = "Fra på betroede netværk";
+"VPN turns off when you're connected to a network you trust." = "VPN slukkes, når du er tilsluttet et netværk, du stoler på.";
+"This will remove all trusted networks. You can add them again any time." = "Dette vil fjerne alle betroede netværk. Du kan tilføje dem igen når som helst.";
+"Switch & Remove" = "Skift og fjern";
+"Trusted Networks" = "Betroede netværk";
+"Remove" = "Fjern";
+"Add trusted network" = "Tilføj betroet netværk";
+"Trust this network?" = "Stol på dette netværk?";
+"VPN turns off on this network and back on when you disconnect." = "VPN slukkes på dette netværk og tændes igen, når du afbryder forbindelsen.";
+"Trust Network" = "Stol på netværk";
+"'%@' is already added as a trusted network." = "'%@' er allerede tilføjet som betroet netværk.";
+"Something went wrong while removing '%@' as a trusted network. Please try again." = "Noget gik galt under fjernelse af '%@' som betroet netværk. Prøv venligst igen.";
+
+// MARK: - Widget Settings Screen
+
+"Widget" = "Widget";
+"Check your security status and VPN connection at a glance from your Home Screen." = "Se din sikkerhedsstatus og VPN-forbindelse med ét blik fra din startskærm.";
+"How to add the Glacier widget" = "Sådan tilføjer du Glacier-widget";
+"Press and hold anywhere on your Home Screen" = "Tryk og hold et sted på din startskærm";
+"Press the " = "Tryk på ";
+"Edit" = "Rediger";
+" button, then select " = "-knappen, og vælg derefter ";
+"Add Widget" = "Tilføj widget";
+"Select or search for " = "Vælg eller søg efter ";
+"Glacier" = "Glacier";
+"Choose your preferred widget, then press " = "Vælg din foretrukne widget, og tryk derefter ";
+" to confirm" = " for at bekræfte";
