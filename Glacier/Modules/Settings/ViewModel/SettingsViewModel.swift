@@ -14,6 +14,7 @@ import Foundation
 protocol SettingsViewModel: GlacierViewModelWithRootCoordinator {
     var userEmail: String? { get }
     var isDarkModeEnabled: Bool { get set }
+    var isRebootReminderEnabled: Bool { get set }
     var shouldShowVPNSettingsOption: Bool { get }
     var shouldShowResetPasswordOption: Bool { get }
     
@@ -38,15 +39,30 @@ final class SettingsVM: SettingsViewModel, ObservableObject {
     @Published var isDarkModeEnabled: Bool = false
     @Published var shouldShowVPNSettingsOption: Bool = false
     @Published var shouldShowResetPasswordOption: Bool = false
-    
+
+    /// Backs the Reboot Reminder toggle. Persisted and reflected to the scheduled
+    /// notification. The initial value is set in `init` (which does not trigger
+    /// `didSet`), so toggling in the UI is the only path that re-schedules.
+    @Published var isRebootReminderEnabled: Bool = true {
+        didSet {
+            UserDefaultsService.shared.set(isRebootReminderEnabled, for: \.isRebootReminderEnabled)
+            if isRebootReminderEnabled {
+                GlacierApplicationDelegate.appDelegate.scheduleWeeklyRebootReminder()
+            } else {
+                GlacierApplicationDelegate.appDelegate.cancelWeeklyRebootReminder()
+            }
+        }
+    }
+
     // MARK: - Private properties
-    
+
     var rootCoordinator: any GlacierRootCoordinator
-    
+
     // MARK: - Initializer
-    
+
     init(rootCoordinator: any GlacierRootCoordinator) {
         self.rootCoordinator = rootCoordinator
+        self.isRebootReminderEnabled = UserDefaultsService.shared.get(for: \.isRebootReminderEnabled) ?? true
         getUserDetails()
     }
     

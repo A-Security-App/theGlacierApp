@@ -99,6 +99,8 @@ public class GlacierApplicationDelegate: UIResponder, UIApplicationDelegate {
         UNUserNotificationCenter.current().delegate = self
         registerVoIPNotifications()
 
+        scheduleWeeklyRebootReminder()
+
         return true
     }
 
@@ -225,12 +227,10 @@ public class GlacierApplicationDelegate: UIResponder, UIApplicationDelegate {
         // UserDefaults reads would return nil regardless of what's on disk.
         // Acting on a poisoned read here would: (a) interpret a stale
         // kActiveConnectionTypeKey=nil as "user deliberately disconnected" and
-        // suppress the VPN reconnect attempt below, (b) clear
+        // suppress the VPN reconnect attempt below, and (b) clear
         // kActiveConnectionTypeKey from the widget when wasVPNConnected
-        // resolves to false, and (c) re-fire the weekly reboot reminder every
-        // BG task cycle because the glacier.lastRebootReminderDate read
-        // returns nil. The reschedule above ensures the next attempt runs ~15
-        // min later in a fresh process (post-first-unlock cfprefsd cache).
+        // resolves to false. The reschedule above ensures the next attempt runs
+        // ~15 min later in a fresh process (post-first-unlock cfprefsd cache).
         // NOTE: deliberately do *not* gate on `isProtectedDataAvailable` here.
         // That API tracks NSFileProtectionComplete-class availability, which
         // is false whenever the device is currently locked — but UserDefaults
@@ -311,16 +311,6 @@ public class GlacierApplicationDelegate: UIResponder, UIApplicationDelegate {
                 issueText = ""
             }
             sharedDefaults?.set(issueText, forKey: kWidgetSecurityIssueKey)
-
-            // Weekly reboot reminder — fires from this task instead of the old
-            // dedicated task.reboot BGTask (BGAppRefreshTask allows only one per app).
-            let lastReminderKey = "glacier.lastRebootReminderDate"
-            let lastReminder = UserDefaults.standard.object(forKey: lastReminderKey) as? Date
-            let sevenDaysAgo = Date(timeIntervalSinceNow: -7 * 24 * 3600)
-            if lastReminder == nil || lastReminder! < sevenDaysAgo {
-                self?.showRebootNotification()
-                UserDefaults.standard.set(Date(), forKey: lastReminderKey)
-            }
 
             WidgetCenter.shared.reloadAllTimelines()
 
@@ -432,22 +422,67 @@ public extension GlacierApplicationDelegate {
         }
     }
 
-    func showRebootNotification() {
-        DispatchQueue.main.async {
-            let localNotification = UNMutableNotificationContent()
-            localNotification.title = "Reminder to reboot"
-            localNotification.body = "Rebooting your device helps maintain iOS security and protects against potential threats."
+    /// Registers a repeating weekly "time to reboot" reminder with the system.
+    ///
+    /// Uses a `UNCalendarNotificationTrigger` rather than firing from the
+    /// `vpnHealth` BGAppRefreshTask: the OS owns delivery, so the reminder fires
+    /// even when Background App Refresh is disabled, the task is throttled, or the
+    /// user rarely opens the app — the cohort most likely to need the nudge and
+    /// the one the background-task path failed for.
+    ///
+    /// Idempotent: a fixed identifier means re-scheduling on every launch replaces
+    /// the pending request instead of stacking duplicates. Safe to call whenever.
+    func scheduleWeeklyRebootReminder() {
+        // Respect the user's Settings toggle; default on when the key is absent.
+        let enabled = UserDefaultsService.shared.get(for: \.isRebootReminderEnabled) ?? true
+        guard enabled else {
+            cancelWeeklyRebootReminder()
+            return
+        }
 
-            let request = UNNotificationRequest(identifier: UUID().uuidString, content: localNotification, trigger: nil) // Schedule the notification.
-            let center = UNUserNotificationCenter.current()
-            center.add(request, withCompletionHandler: { (error: Error?) in
+        let center = UNUserNotificationCenter.current()
+        center.getNotificationSettings { settings in
+            switch settings.authorizationStatus {
+            case .authorized, .provisional, .ephemeral:
+                break
+            default:
+                // Not authorized — nothing to schedule. Re-scheduled on a future
+                // launch once permission is granted.
+                return
+            }
+
+            let content = UNMutableNotificationContent()
+            content.title = "Reminder to reboot"
+            content.body = "Rebooting your device helps maintain iOS security and protects against potential threats."
+
+            // Weekday-only DateComponents repeats weekly. Sunday 21:00 local time.
+            // (Gregorian weekday: Sunday = 1.)
+            var dateComponents = DateComponents()
+            dateComponents.weekday = 1
+            dateComponents.hour = 21
+            dateComponents.minute = 0
+            let trigger = UNCalendarNotificationTrigger(dateMatching: dateComponents, repeats: true)
+
+            let request = UNNotificationRequest(
+                identifier: kRebootReminderNotificationId,
+                content: content,
+                trigger: trigger
+            )
+            center.add(request) { error in
                 if let error = error as NSError? {
-                    Log.general.error("Error scheduling notification: \(error)")
+                    Log.general.error("Error scheduling weekly reboot reminder: \(error)")
                 }
-            })
+            }
         }
     }
-    
+
+    /// Removes the pending weekly reboot reminder. Called when the user turns the
+    /// reminder off in Settings.
+    func cancelWeeklyRebootReminder() {
+        UNUserNotificationCenter.current()
+            .removePendingNotificationRequests(withIdentifiers: [kRebootReminderNotificationId])
+    }
+
 }
 
 extension GlacierApplicationDelegate: SecurityUpdateDel {

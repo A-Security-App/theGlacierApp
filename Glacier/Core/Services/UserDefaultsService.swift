@@ -72,6 +72,8 @@ final class UserDefaultsService: LocalStorageService {
         var userSelectedColorScheme: String { "userSelectedColorScheme" }
         var trustedNetworks: String { "trustedNetworks" }
         var vpnActivationOverWiFiPolicy: String { "vpnActivationOverWiFiPolicy" }
+        /// Whether the weekly "time to reboot" reminder is enabled. Absent = on by default.
+        var isRebootReminderEnabled: String { "isRebootReminderEnabled" }
         
         // User permissions
         var pushNotificationsPermission: String { "pushNotificationsPermission" }

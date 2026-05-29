@@ -34,6 +34,7 @@ let kLinkPreviewKey                 = "kLinkPreviewKey"
 let kRebootReminderKey              = "kRebootReminderKey"
 let kBgTaskId                       = "com.glacier.Glacier.task.refresh"
 let kBgRebootTaskId                 = "com.glacier.Glacier.task.reboot"
+let kRebootReminderNotificationId   = "glacier.weeklyRebootReminder"
 let kAppVersionKey                  = "kAppVersionKey"
 let kOTRErrorDomain                 = "com.glaciersecurity"
 

@@ -104,6 +104,7 @@ struct MainScreen<ViewModel: MainViewModel & ObservableObject>: View {
         .ignoresSafeArea()
         .onFirstAppear {
             self.viewModel.phoneCallVM = phoneCallVM
+            self.viewModel.requestNotificationPermissionIfNeeded()
         }
         .onReceive(NotificationCenter.default.publisher(for: .hidePhoneNumberMenuView)) { _ in
             viewModel.setPhoneNumbersMenuVisibility(false)

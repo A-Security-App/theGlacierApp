@@ -33,6 +33,7 @@ protocol MainViewModel: GlacierViewModelWithRootCoordinator {
     func presentPhoneNumberPlanPurchaseView()
     func presentManagePhoneNumbersView()
     func presentSettingsScreen()
+    func requestNotificationPermissionIfNeeded()
 }
 
 /**
@@ -64,8 +65,12 @@ final class MainVM: MainViewModel, ObservableObject {
     
     @Published var shouldShowPhoneNumberMenu: Bool = false
     var phoneCallVM: PhoneCallVM?
-    
+
     let rootCoordinator: any GlacierRootCoordinator
+
+    // MARK: - Private properties
+
+    private let userPermissionManager = UserPermissionManager()
     
     // MARK: - Initializer
     
@@ -163,7 +168,19 @@ final class MainVM: MainViewModel, ObservableObject {
     func presentSettingsScreen() {
         presentScreen(.settings)
     }
-    
+
+    /// Requests notification permission once the user reaches the main screen.
+    ///
+    /// The onboarding notification prompt only fires inside the phone-setup flow
+    /// (`UserPermissionsViewModel.presentContactsAccessPrompt`), which subscribers
+    /// with an existing backend subscription skip entirely. Without this, such
+    /// users are never asked and the weekly reboot reminder can never schedule.
+    /// `requestPushNotificationPermission` only prompts when the status is
+    /// `.notDetermined`; it is a harmless no-op once the user has already decided.
+    func requestNotificationPermissionIfNeeded() {
+        userPermissionManager.requestPushNotificationPermission { _ in }
+    }
+
     // MARK: - Private methods
     
     private func registerForNotifications() {
