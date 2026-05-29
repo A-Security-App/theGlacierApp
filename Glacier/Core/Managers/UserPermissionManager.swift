@@ -138,6 +138,10 @@ final class UserPermissionManager: NSObject, UserPermissionManaging {
                     let state: UserPermissionState = granted ? .granted : .denied
                     self.update(state, for: .notifications)
 
+                    if granted {
+                        GlacierApplicationDelegate.appDelegate.scheduleWeeklyRebootReminder()
+                    }
+
                     DispatchQueue.main.async {
                         completion(granted)
                     }

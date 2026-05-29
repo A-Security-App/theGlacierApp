@@ -276,19 +276,19 @@
 			remoteGlobalIDString = AC10000000000000000000AA;
 			remoteInfo = GlacierWidget;
 		};
-		F52932642C7CC09C003EAE92 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 6396AF921A169D54009F3E6C /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = F529324C2C7CBDE3003EAE92;
-			remoteInfo = WireGuardGoBridge;
-		};
 		D00000000000000000000002 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 6396AF921A169D54009F3E6C /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = F5AE284024993496009056F2;
 			remoteInfo = Glacier;
+		};
+		F52932642C7CC09C003EAE92 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 6396AF921A169D54009F3E6C /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = F529324C2C7CBDE3003EAE92;
+			remoteInfo = WireGuardGoBridge;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -590,8 +590,6 @@
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		C195663D2F42E56B009D6013 /* Managers */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-			);
 			path = Managers;
 			sourceTree = "<group>";
 		};
@@ -1856,9 +1854,13 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-GlacierPods-Glacier/Pods-GlacierPods-Glacier-frameworks-${CONFIGURATION}-input-files.xcfilelist",
 			);
+			inputPaths = (
+			);
 			name = "[CP] Embed Pods Frameworks";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-GlacierPods-Glacier/Pods-GlacierPods-Glacier-frameworks-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -2213,15 +2215,15 @@
 			target = AC10000000000000000000AA /* GlacierWidget */;
 			targetProxy = AC10000000000000000000B4 /* PBXContainerItemProxy */;
 		};
-		F52932652C7CC09C003EAE92 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = F529324C2C7CBDE3003EAE92 /* WireGuardGoBridge */;
-			targetProxy = F52932642C7CC09C003EAE92 /* PBXContainerItemProxy */;
-		};
 		D00000000000000000000001 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = F5AE284024993496009056F2 /* Glacier */;
 			targetProxy = D00000000000000000000002 /* PBXContainerItemProxy */;
+		};
+		F52932652C7CC09C003EAE92 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = F529324C2C7CBDE3003EAE92 /* WireGuardGoBridge */;
+			targetProxy = F52932642C7CC09C003EAE92 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -2258,7 +2260,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 161;
+				CURRENT_PROJECT_VERSION = 163;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 5MXM7J8H38;
 				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
@@ -2866,7 +2868,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 161;
+				CURRENT_PROJECT_VERSION = 163;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 5MXM7J8H38;
 				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
@@ -2930,7 +2932,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 161;
+				CURRENT_PROJECT_VERSION = 163;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 5MXM7J8H38;
 				FRAMEWORK_SEARCH_PATHS = "$(inherited)";

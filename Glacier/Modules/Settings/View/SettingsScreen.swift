@@ -37,8 +37,9 @@ struct SettingsScreen<ViewModel: SettingsViewModel & ObservableObject>: View {
             
             VStack(alignment: .leading) {
                 GlacierLineSeparator(lineThickness: 1)
-                
-                VStack(spacing: 16) {
+
+                ScrollView {
+                    VStack(spacing: 16) {
                     GlacierViewContainer {
                         HStack(alignment: .center) {
                             GlacierLabel(
@@ -132,6 +133,22 @@ struct SettingsScreen<ViewModel: SettingsViewModel & ObservableObject>: View {
                     GlacierViewContainer {
                         HStack(alignment: .center) {
                             GlacierLabel(
+                                text: NSLocalizedString("Reboot Reminder", comment: "Settings screen reboot reminder title"),
+                                font: .bodyThick,
+                                textAlignment: .leading
+                            )
+
+                            Spacer()
+
+                            Toggle(isOn: $viewModel.isRebootReminderEnabled, label: { Text("") })
+                                .toggleStyle(SwitchToggleStyle(tint: .green50))
+                        }
+                        .padding(.vertical, 6)
+                    }
+
+                    GlacierViewContainer {
+                        HStack(alignment: .center) {
+                            GlacierLabel(
                                 text: NSLocalizedString("Support & FAQ", comment: "Settings screen FAQ"),
                                 font: .bodyThick,
                                 textAlignment: .leading
@@ -195,10 +212,9 @@ struct SettingsScreen<ViewModel: SettingsViewModel & ObservableObject>: View {
                             Spacer()
                         }
                     }
-                    
-                    Spacer()
+                    }
+                    .padding(.horizontal, 16)
                 }
-                .padding(.horizontal, 16)
             }
             .padding(.horizontal, 0)
             .padding(.top, 8)
