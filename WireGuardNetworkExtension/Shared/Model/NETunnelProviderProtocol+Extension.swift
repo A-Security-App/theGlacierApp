@@ -5,7 +5,7 @@ import NetworkExtension
 import os
 import WireGuardKit
 
-private let log = Logger(subsystem: "com.glacier.Glacier", category: "tunnel-protocol")
+private let log = Logger(subsystem: "com.theglacierapp.Glacier", category: "tunnel-protocol")
 
 enum PacketTunnelProviderError: String, Error {
     case savedProtocolConfigurationIsInvalid

@@ -7,22 +7,22 @@ import Foundation
 
 // MARK: - Keychain / Service Names
 
-let kServiceName                    = "com.glaciersec.Glacier"
-let kCertificateServiceName         = "com.glaciersec.Certificate"
-let kGlacierServiceName             = "com.glaciersec.Chat"
-let kGlacierGroup                   = "group.com.glaciersec.GlacierApp"
-let kGlacierAcct                    = "com.glaciersec.Acct"
-let kGlacierKeyGroup                = "5MXM7J8H38.group.com.glaciersec.gappaccess"
-let kCognitoAcct                    = "com.glaciersec.Cognito"
-let kGlacierVpn                     = "com.glaciersec.Vpn"
+let kServiceName                    = "com.theglacierapp.Glacier"
+let kCertificateServiceName         = "com.theglacierapp.Certificate"
+let kGlacierServiceName             = "com.theglacierapp.Chat"
+let kGlacierGroup                   = "group.com.theglacierapp.GlacierApp"
+let kGlacierAcct                    = "com.theglacierapp.Acct"
+let kGlacierKeyGroup                = "UG8VC96NZF.group.com.theglacierapp.gappaccess"
+let kCognitoAcct                    = "com.theglacierapp.Cognito"
+let kGlacierVpn                     = "com.theglacierapp.Vpn"
 
 // MARK: - Encryption Keys
 
-let kGlacierSalt                    = "com.glaciersec.Salt"
-let kGlacierKeySpec                 = "com.glaciersec.KeySpec"
-let kGlacierMediaSalt               = "com.glaciersec.MediaSalt"
-let kGlacierMediaKeySpec            = "com.glaciersec.MediaKeySpec"
-let kGlacierBackup                  = "com.glaciersec.Backup"
+let kGlacierSalt                    = "com.theglacierapp.Salt"
+let kGlacierKeySpec                 = "com.theglacierapp.KeySpec"
+let kGlacierMediaSalt               = "com.theglacierapp.MediaSalt"
+let kGlacierMediaKeySpec            = "com.theglacierapp.MediaKeySpec"
+let kGlacierBackup                  = "com.theglacierapp.Backup"
 
 // MARK: - Misc Keys
 
@@ -32,11 +32,11 @@ let kGlacierCoreConnection          = "kGlacierCoreConnection"
 let kThreatDetectionKey             = "kThreatDetectionKey"
 let kLinkPreviewKey                 = "kLinkPreviewKey"
 let kRebootReminderKey              = "kRebootReminderKey"
-let kBgTaskId                       = "com.glacier.Glacier.task.refresh"
-let kBgRebootTaskId                 = "com.glacier.Glacier.task.reboot"
+let kBgTaskId                       = "com.theglacierapp.Glacier.task.refresh"
+let kBgRebootTaskId                 = "com.theglacierapp.Glacier.task.reboot"
 let kRebootReminderNotificationId   = "glacier.weeklyRebootReminder"
 let kAppVersionKey                  = "kAppVersionKey"
-let kOTRErrorDomain                 = "com.glaciersecurity"
+let kOTRErrorDomain                 = "com.theglacierapp"
 
 // MARK: - Database
 
@@ -71,7 +71,7 @@ let kWidgetSecurityIssueKey         = "glacier.securityIssueText"
 /// Set to true by the widget AppIntent to request a toggle; cleared by the main app after acting.
 let kWidgetPendingToggleKey         = "glacier.widgetPendingToggle"
 /// Darwin notification name used by the widget to wake the main app process.
-let kWidgetDarwinNotification       = "com.glaciersec.widgetToggle"
+let kWidgetDarwinNotification       = "com.theglacierapp.widgetToggle"
 /// Explicit action the widget requested: "disconnect" or "connect". Read and cleared by the main app.
 let kWidgetRequestedActionKey       = "glacier.widgetRequestedAction"
 /// Today's blocked-tracker count from DNS analytics; written on each successful queryForDNSAnalytics response.

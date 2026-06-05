@@ -4,7 +4,7 @@
 <dict>
 	<key>BGTaskSchedulerPermittedIdentifiers</key>
 	<array>
-		<string>com.glacier.Glacier.task.vpnHealth</string>
+		<string>com.theglacierapp.Glacier.task.vpnHealth</string>
 	</array>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
@@ -28,7 +28,7 @@
 	<array>
 		<dict>
 			<key>CFBundleURLName</key>
-			<string>com.glacier.Glacier</string>
+			<string>com.theglacierapp.Glacier</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>glacierapp</string>
@@ -66,22 +66,40 @@
 		</dict>
 		<key>NSPinnedDomains</key>
 		<dict>
-			<key>cognito-idp.us-west-2.amazonaws.com</key>
-			<dict>
-				<key>NSPinnedCAIdentities</key>
-				<array>
-					<dict><key>SPKI-SHA256-BASE64</key><string>DxH4tt40L+eduF6szpY6TONlxhZhBd+pJ9wbHlQ2fuw=</string></dict>
-					<dict><key>SPKI-SHA256-BASE64</key><string>G9LNNAql897egYsabashkzUCTEJkWBzgoEtk8X/678c=</string></dict>
-					<dict><key>SPKI-SHA256-BASE64</key><string>++MBgDH5WGvL9Bcn5Be30cRcL0f5O+NyoXuWtQdX1aI=</string></dict>
-				</array>
-			</dict>
 			<key>auth2.theglacierapp.com</key>
 			<dict>
 				<key>NSPinnedCAIdentities</key>
 				<array>
-					<dict><key>SPKI-SHA256-BASE64</key><string>DxH4tt40L+eduF6szpY6TONlxhZhBd+pJ9wbHlQ2fuw=</string></dict>
-					<dict><key>SPKI-SHA256-BASE64</key><string>G9LNNAql897egYsabashkzUCTEJkWBzgoEtk8X/678c=</string></dict>
-					<dict><key>SPKI-SHA256-BASE64</key><string>++MBgDH5WGvL9Bcn5Be30cRcL0f5O+NyoXuWtQdX1aI=</string></dict>
+					<dict>
+						<key>SPKI-SHA256-BASE64</key>
+						<string>DxH4tt40L+eduF6szpY6TONlxhZhBd+pJ9wbHlQ2fuw=</string>
+					</dict>
+					<dict>
+						<key>SPKI-SHA256-BASE64</key>
+						<string>G9LNNAql897egYsabashkzUCTEJkWBzgoEtk8X/678c=</string>
+					</dict>
+					<dict>
+						<key>SPKI-SHA256-BASE64</key>
+						<string>++MBgDH5WGvL9Bcn5Be30cRcL0f5O+NyoXuWtQdX1aI=</string>
+					</dict>
+				</array>
+			</dict>
+			<key>cognito-idp.us-west-2.amazonaws.com</key>
+			<dict>
+				<key>NSPinnedCAIdentities</key>
+				<array>
+					<dict>
+						<key>SPKI-SHA256-BASE64</key>
+						<string>DxH4tt40L+eduF6szpY6TONlxhZhBd+pJ9wbHlQ2fuw=</string>
+					</dict>
+					<dict>
+						<key>SPKI-SHA256-BASE64</key>
+						<string>G9LNNAql897egYsabashkzUCTEJkWBzgoEtk8X/678c=</string>
+					</dict>
+					<dict>
+						<key>SPKI-SHA256-BASE64</key>
+						<string>++MBgDH5WGvL9Bcn5Be30cRcL0f5O+NyoXuWtQdX1aI=</string>
+					</dict>
 				</array>
 			</dict>
 		</dict>
@@ -94,14 +112,14 @@
 	<string>Allows user to make video calls as well as take and send photos.</string>
 	<key>NSContactsUsageDescription</key>
 	<string>Allows users to initiate phone calls with existing contacts through Glacier.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Access to Wi-Fi network information is required to display the connected network.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Allows user to make calls with Glacier.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>Access to the photo library is required for option to save incoming photos.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Access to the photo library is required to send your existing photos.</string>
-	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Access to Wi-Fi network information is required to display the connected network.</string>
 	<key>PrivacyPolicyURL</key>
 	<string>https://theglacierapp.com/privacy</string>
 	<key>TermsOfUseURL</key>

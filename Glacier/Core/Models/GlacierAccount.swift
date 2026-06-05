@@ -105,10 +105,10 @@ extension GlacierAccountModel {
             self.grdbRecord?.vpnEnabled = newValue
         }
     }
-    private static let subscriptionStateKeyPrefix = "com.glacier.subscription.state."
-    private static let phoneSubscriptionStateKeyPrefix = "com.glacier.subscription.phone.state."
-    private static let backendSubscribedKeyPrefix = "com.glacier.subscription.backend.subscribed."
-    private static let backendPhoneNumbersKeyPrefix = "com.glacier.subscription.backend.phoneNumbers."
+    private static let subscriptionStateKeyPrefix = "com.theglacierapp.subscription.state."
+    private static let phoneSubscriptionStateKeyPrefix = "com.theglacierapp.subscription.phone.state."
+    private static let backendSubscribedKeyPrefix = "com.theglacierapp.subscription.backend.subscribed."
+    private static let backendPhoneNumbersKeyPrefix = "com.theglacierapp.subscription.backend.phoneNumbers."
     public var hasActiveSubscription: Bool {
         get {
             let key = GlacierAccountModel.subscriptionStateKeyPrefix + uniqueId
@@ -132,7 +132,7 @@ extension GlacierAccountModel {
         }
     }
     // MARK: - Phone number slot tracking
-    private static let phoneNumbersEverAddedKeyPrefix = "com.glacier.phoneNumbers.everAdded."
+    private static let phoneNumbersEverAddedKeyPrefix = "com.theglacierapp.phoneNumbers.everAdded."
     /// Running total of phone numbers ever successfully added by this account.
     /// Incremented each time `TwilioBackendManager.purchaseNumber` succeeds.
     /// Never decremented — burning a number does not restore a free slot.
@@ -141,7 +141,7 @@ extension GlacierAccountModel {
         set { UserDefaults.standard.set(newValue, forKey: GlacierAccountModel.phoneNumbersEverAddedKeyPrefix + uniqueId) }
     }
 
-    private static let phoneNumbersAddedMonthlyKeyPrefix = "com.glacier.phoneNumbers.monthlyAdded."
+    private static let phoneNumbersAddedMonthlyKeyPrefix = "com.theglacierapp.phoneNumbers.monthlyAdded."
     /// Number of free adds the user has made in the current calendar month.
     /// Keyed by year+month so it resets automatically each new month.
     public var phoneNumbersAddedThisCalendarMonth: Int {

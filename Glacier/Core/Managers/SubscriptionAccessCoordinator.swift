@@ -52,9 +52,9 @@ final class PhoneSubscriptionLifecycleHandler: NSObject {
         let allowedNumbers: Int
         var hasShownWarning: Bool
     }
-    private let pendingChangeKey = "com.glacier.phoneSubscription.pendingChange"
-    private let lastAllowedNumbersKey = "com.glacier.phoneSubscription.lastAllowedNumbers"
-    private let lastExpirationDateKey = "com.glacier.phoneSubscription.lastExpirationDate"
+    private let pendingChangeKey = "com.theglacierapp.phoneSubscription.pendingChange"
+    private let lastAllowedNumbersKey = "com.theglacierapp.phoneSubscription.lastAllowedNumbers"
+    private let lastExpirationDateKey = "com.theglacierapp.phoneSubscription.lastExpirationDate"
     private override init() { }
     func handleSubscriptionStatusChange(isSubscribed: Bool,
                                         allowedNumbers: Int,

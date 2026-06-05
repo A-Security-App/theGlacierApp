@@ -92,7 +92,7 @@ public class GlacierApplicationDelegate: UIResponder, UIApplicationDelegate {
         UIDevice.current.isBatteryMonitoringEnabled = true
         batteryStateDidChange(nil)
 
-        BGTaskScheduler.shared.register(forTaskWithIdentifier: "com.glacier.Glacier.task.vpnHealth", using: nil) { [weak self] task in
+        BGTaskScheduler.shared.register(forTaskWithIdentifier: "com.theglacierapp.Glacier.task.vpnHealth", using: nil) { [weak self] task in
             self?.beginVPNHealthCheck(task)
         }
 
@@ -202,7 +202,7 @@ public class GlacierApplicationDelegate: UIResponder, UIApplicationDelegate {
     // MARK: - VPN health check background task
 
     private func scheduleVPNHealthCheck() {
-        let request = BGAppRefreshTaskRequest(identifier: "com.glacier.Glacier.task.vpnHealth")
+        let request = BGAppRefreshTaskRequest(identifier: "com.theglacierapp.Glacier.task.vpnHealth")
         // Earliest begin date is a lower bound only — iOS decides the actual fire time.
         request.earliestBeginDate = Date(timeIntervalSinceNow: 15 * 60)
         do {

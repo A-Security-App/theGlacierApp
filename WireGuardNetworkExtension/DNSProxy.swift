@@ -22,9 +22,9 @@ final class DNSProxy {
 
     private let configuration: Configuration
     private let listener: NWListener
-    private let queue = DispatchQueue(label: "com.glacier.PacketTunnel.dns-proxy")
+    private let queue = DispatchQueue(label: "com.theglacierapp.PacketTunnel.dns-proxy")
     private var inboundConnections: [ObjectIdentifier: NWConnection] = [:]
-    private let logger = Logger(subsystem: "com.glacier.Glacier", category: "dns-proxy")
+    private let logger = Logger(subsystem: "com.theglacierapp.Glacier", category: "dns-proxy")
     private let resolver: DoTResolver
     private let failureHandler: ((String) -> Void)?
 
@@ -321,7 +321,7 @@ private final class UpstreamConnection {
     // creating new connections; while active, ensureConnectionReady() queues
     // readiness callbacks and schedules a reconnect timed to the cooldown's
     // expiry, so DNS queries are served as soon as the kernel reclaims flows.
-    private static let globalENOMEMStateQueue = DispatchQueue(label: "com.glacier.PacketTunnel.enomem-state")
+    private static let globalENOMEMStateQueue = DispatchQueue(label: "com.theglacierapp.PacketTunnel.enomem-state")
     private static var _globalENOMEMCooldownUntil: Date = .distantPast
     // 300 s is sized for kernel NECP-flow reclaim under sustained pressure, which
     // empirically takes minutes — not seconds — once the table is saturated.  A
@@ -358,7 +358,7 @@ private final class UpstreamConnection {
         self.serverName = serverName
         self.callbackQueue = callbackQueue
         self.logger = logger
-        queue = DispatchQueue(label: "com.glacier.PacketTunnel.dot-upstream.\(address)")
+        queue = DispatchQueue(label: "com.theglacierapp.PacketTunnel.dot-upstream.\(address)")
     }
 
     func warmUp() {

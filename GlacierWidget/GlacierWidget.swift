@@ -10,7 +10,7 @@ import SwiftUI
 
 // MARK: - Shared defaults keys (mirrors GlacierConstants.swift)
 
-private let kGlacierGroup            = "group.com.glaciersec.GlacierApp"
+private let kGlacierGroup            = "group.com.theglacierapp.GlacierApp"
 private let kActiveConnectionTypeKey = "glacier.activeConnectionType"
 private let kWidgetSecurityIssueKey  = "glacier.securityIssueText"
 

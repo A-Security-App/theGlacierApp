@@ -15,7 +15,7 @@ final class DNSTester {
     private let workerQueue: DispatchQueue
     private let callbackQueue: DispatchQueue
 
-    init(workerQueue: DispatchQueue = DispatchQueue(label: "com.glacier.dnsTester", qos: .utility),
+    init(workerQueue: DispatchQueue = DispatchQueue(label: "com.theglacierapp.dnsTester", qos: .utility),
          callbackQueue: DispatchQueue = .main) {
         self.workerQueue = workerQueue
         self.callbackQueue = callbackQueue

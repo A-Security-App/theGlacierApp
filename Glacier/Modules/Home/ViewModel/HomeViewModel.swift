@@ -665,8 +665,25 @@ extension HomeVM {
     }
     
     private func applyDNSConfig(_ configuration: DnsOverTlsConfiguration) {
-        dnsController.apply(configuration: configuration) { [weak self] _ in
-            self?.securityCenter.doDNSCheck()
+        dnsController.apply(configuration: configuration) { [weak self] result in
+            guard let self else { return }
+            if case .failure(let error) = result {
+                let ns = error as NSError
+                Log.vpn.error("Failed to apply DNS config (isEnabled=\(configuration.isEnabled, privacy: .public)): domain=\(ns.domain, privacy: .public) code=\(ns.code, privacy: .public) desc=\(error.localizedDescription, privacy: .public)")
+            }
+            // Recompute the displayed status from the now-persisted configuration rather than
+            // relying solely on doDNSCheck's delegate callback, which can hang or skip on a
+            // bad/blocked resolver. This guarantees the UI reflects the change immediately.
+            self.checkSecuredConnectionStatus()
+            // The DoT verification lookup (CFHost) only carries information when enabling: it
+            // confirms the profile is actually selected in iOS Settings and routing through
+            // Glacier, and drives the "select the profile in Settings" prompt. On disable, the
+            // persisted isEnabled=false already determines isConnectedToDNS, so there's no reason
+            // to hit the resolver — avoiding a pointless round-trip and any false negative from a
+            // flaky network.
+            if configuration.isEnabled {
+                self.securityCenter.doDNSCheck()
+            }
         }
     }
     
@@ -841,8 +858,13 @@ extension HomeVM {
             guard let tunnel = tunnelsManager.tunnelInOperation()
                     ?? tunnelsManager.tunnel(named: currentInstalledRegion) else { return }
             // Disable on-demand first so iOS cannot auto-reconnect after deactivation.
-            tunnelsManager.setOnDemandEnabled(false, on: tunnel, completionHandler: { _ in
+            tunnelsManager.setOnDemandEnabled(false, on: tunnel, completionHandler: { [weak self] _ in
                 tunnelsManager.startDeactivation(of: tunnel)
+                // A tunnel suppressed by on-demand is already .inactive, so startDeactivation
+                // is a no-op and the tunnelDeactivating delegate never fires. Recompute the
+                // status explicitly so isConnectedToVPN reflects that on-demand is now off
+                // instead of staying stuck on "connected".
+                self?.checkSecuredConnectionStatus()
             })
         }
     }

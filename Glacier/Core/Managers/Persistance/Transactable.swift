@@ -12,7 +12,7 @@ import GRDB
 // A base class for DatabaseStorage and AnyDatabaseQueue.
 @objc
 public class Transactable: NSObject {
-    fileprivate let asyncWriteQueue = DispatchQueue(label: "com.glacier.asyncWrite")
+    fileprivate let asyncWriteQueue = DispatchQueue(label: "com.theglacierapp.asyncWrite")
 
     public func read(file: String = #file,
                      function: String = #function,

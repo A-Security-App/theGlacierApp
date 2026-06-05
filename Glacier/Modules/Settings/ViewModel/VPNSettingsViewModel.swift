@@ -628,6 +628,11 @@ extension VPNSettingsVM {
             // Disable on-demand first so iOS cannot auto-reconnect after deactivation.
             tunnelsManager.setOnDemandEnabled(false, on: tunnel, completionHandler: { [weak self] _ in
                 tunnelsManager.startDeactivation(of: tunnel)
+                // A tunnel suppressed by on-demand is already .inactive, so startDeactivation is
+                // a no-op and no NEVPNStatusDidChange / tunnelDeactivating follows. Recompute the
+                // toggle state explicitly so isConnectedToVPN reflects that on-demand is now off
+                // instead of snapping back ON.
+                self?.refreshNetworkActivationState()
                 self?.dismissVPNOperationIfQuiescent()
             })
         }
