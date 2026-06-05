@@ -5,7 +5,7 @@ import Foundation
 import os.log
 
 extension FileManager {
-    static var appGroupId = "group.com.glaciersec.GlacierApp"
+    static var appGroupId = "group.com.theglacierapp.GlacierApp"
         
     private static var sharedFolderURL: URL? {
         guard let sharedFolderURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: FileManager.appGroupId) else {

@@ -46,7 +46,7 @@ class PacketTunnelProvider: NEPacketTunnelProvider {
         }
     }()
 
-    static let log = Logger(subsystem: "com.glacier.Glacier", category: "packet-tunnel")
+    static let log = Logger(subsystem: "com.theglacierapp.Glacier", category: "packet-tunnel")
 
     private let dnsConfigurator = PacketTunnelDNSConfigurator()
     private var dnsProxyConfiguration: PacketTunnelDNSConfigurator.ProxyConfiguration?
@@ -55,7 +55,7 @@ class PacketTunnelProvider: NEPacketTunnelProvider {
     private var pathMonitor: NWPathMonitor?
     private var lastObservedPathDescription: String?
     private var lastObservedPathStatus: Network.NWPath.Status?
-    private let pathMonitorQueue = DispatchQueue(label: "com.glacier.PacketTunnel.path-monitor")
+    private let pathMonitorQueue = DispatchQueue(label: "com.theglacierapp.PacketTunnel.path-monitor")
     private var pendingSatisfiedUpdate: DispatchWorkItem?
     private var pendingUnsatisfiedTeardown: DispatchWorkItem?
     private var lastAppliedNetworkSettings: NETunnelNetworkSettings?

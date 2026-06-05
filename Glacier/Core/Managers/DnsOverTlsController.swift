@@ -47,7 +47,7 @@ final class DnsOverTlsController {
 
     private let preferences: DnsOverTlsPreferences
     private let dnsManager: NEDNSSettingsManager
-    private let workQueue = DispatchQueue(label: "com.glacier.dnsOverTls.controller")
+    private let workQueue = DispatchQueue(label: "com.theglacierapp.dnsOverTls.controller")
     private let bogusDomain = "kljh345jkl.com"
     private var resolvedHosts: [String]
     private let resolveServerAddress: (String) throws -> [String]
@@ -82,6 +82,8 @@ final class DnsOverTlsController {
         workQueue.async {
             self.dnsManager.loadFromPreferences { loadError in
                 if let loadError = loadError {
+                    let ns = loadError as NSError
+                    Log.vpn.error("DoT apply(isEnabled=\(sanitized.isEnabled, privacy: .public)): loadFromPreferences failed domain=\(ns.domain, privacy: .public) code=\(ns.code, privacy: .public)")
                     DispatchQueue.main.async {
                         completion(.failure(loadError))
                     }
@@ -127,27 +129,63 @@ final class DnsOverTlsController {
 
                 let serverName = host
                 let resolvedHostsAr: [String]
-                do {
-                    if let cachedResolvedServers = self.cachedResolvedServers,
-                       self.cachedResolvedHost == host {
-                        resolvedHostsAr = cachedResolvedServers
-                    } else {
-                        resolvedHostsAr = try self.resolveServerAddress(host)
-                        self.cachedResolvedServers = resolvedHostsAr
-                        self.cachedResolvedHost = host
-                    }
-                } catch {
-                    let resolutionError: Error
-                    if let dotError = error as? DnsOverTlsControllerError {
-                        resolutionError = dotError
-                    } else {
-                        resolutionError = DnsOverTlsControllerError.hostResolutionFailed(host)
-                    }
+                if sanitized.isEnabled {
+                    do {
+                        if let cachedResolvedServers = self.cachedResolvedServers,
+                           self.cachedResolvedHost == host {
+                            resolvedHostsAr = cachedResolvedServers
+                        } else {
+                            resolvedHostsAr = try self.resolveServerAddress(host)
+                            self.cachedResolvedServers = resolvedHostsAr
+                            self.cachedResolvedHost = host
+                        }
+                    } catch {
+                        let resolutionError: Error
+                        if let dotError = error as? DnsOverTlsControllerError {
+                            resolutionError = dotError
+                        } else {
+                            resolutionError = DnsOverTlsControllerError.hostResolutionFailed(host)
+                        }
 
-                    DispatchQueue.main.async {
-                        completion(.failure(resolutionError))
+                        DispatchQueue.main.async {
+                            completion(.failure(resolutionError))
+                        }
+                        return
                     }
-                    return
+                } else {
+                    // Disabling DoT must never depend on a system DNS lookup *when an active
+                    // Glacier DoT profile already exists*: the system resolver may be pinned to the
+                    // very profile we're turning off, so a lookup could hang/fail and strand the
+                    // user. So prefer the server IPs already in the loaded configuration (valid IPs
+                    // from when DoT was enabled; they persist across launches), then the in-memory
+                    // cache. We must NOT fabricate a server from the hostname: NEDNSOverTLSSettings
+                    // requires IP addresses, so a hostname makes saveToPreferences fail with
+                    // NEConfigurationErrorDomain Code=2 ("Invalid DNS server").
+                    if let existing = self.dnsManager.dnsSettings as? NEDNSOverTLSSettings,
+                       !existing.servers.isEmpty {
+                        resolvedHostsAr = existing.servers
+                    } else if let cached = (self.cachedResolvedHost == host ? self.cachedResolvedServers : nil),
+                              !cached.isEmpty {
+                        resolvedHostsAr = cached
+                    } else {
+                        // No servers to reuse means no active DoT profile is pinning the resolver,
+                        // so this is a first-time profile *creation* in the disabled state (e.g.
+                        // onboarding's storeNewConfiguration + apply(isEnabled: false)), not the
+                        // disconnect of an active profile. Resolving is safe here and is required
+                        // to write a valid profile, which needs IP addresses rather than a hostname.
+                        do {
+                            resolvedHostsAr = try self.resolveServerAddress(host)
+                            self.cachedResolvedServers = resolvedHostsAr
+                            self.cachedResolvedHost = host
+                        } catch {
+                            let resolutionError = (error as? DnsOverTlsControllerError)
+                                ?? DnsOverTlsControllerError.hostResolutionFailed(host)
+                            DispatchQueue.main.async {
+                                completion(.failure(resolutionError))
+                            }
+                            return
+                        }
+                    }
                 }
 
                 let servers = resolvedHostsAr.isEmpty ? [host] : resolvedHostsAr
@@ -289,6 +327,8 @@ final class DnsOverTlsController {
         self.dnsManager.saveToPreferences { saveError in
             DispatchQueue.main.async {
                 if let saveError = saveError {
+                    let ns = saveError as NSError
+                    Log.vpn.error("DoT apply(isEnabled=\(configuration.isEnabled, privacy: .public)): saveToPreferences failed domain=\(ns.domain, privacy: .public) code=\(ns.code, privacy: .public)")
                     completion(.failure(saveError))
                 } else {
                     self.preferences.save(configuration: configuration)

@@ -66,7 +66,7 @@ open class SecurityCenter: NSObject {
     private var dnsCheckWorkItem: DispatchWorkItem?
     private var reachabilityManager: NetworkReachabilityManager?
     private var lastDnsAnalyticsQueryDate: Date?
-    private let dnsAnalyticsQueryLock = DispatchQueue(label: "com.glacier.securitycenter.dnsAnalyticsQueryLock")
+    private let dnsAnalyticsQueryLock = DispatchQueue(label: "com.theglacierapp.securitycenter.dnsAnalyticsQueryLock")
     private static let dnsAnalyticsThrottleInterval: TimeInterval = 5
     private var needVersions = false
     

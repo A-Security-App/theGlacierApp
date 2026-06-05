@@ -31,7 +31,7 @@ final class DnsOverTlsPreferences {
     private enum Keys {
         static let url = "dnsOverTls.global.url"
         static let enabled = "dnsOverTls.global.enabled"
-        static let appGroupIdentifier = "group.com.glaciersec.GlacierApp"
+        static let appGroupIdentifier = "group.com.theglacierapp.GlacierApp"
     }
 
     private let userDefaults: UserDefaults

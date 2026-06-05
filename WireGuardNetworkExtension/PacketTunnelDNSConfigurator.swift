@@ -17,7 +17,7 @@ import UIKit
 import Darwin
 #endif
 
-private let log = Logger(subsystem: "com.glacier.Glacier", category: "dns-configurator")
+private let log = Logger(subsystem: "com.theglacierapp.Glacier", category: "dns-configurator")
 
 /// Mirrors the DNS-over-TLS configuration stored in the shared app group and
 /// applies it to the packet tunnel's DNS settings.
@@ -290,7 +290,7 @@ private final class PacketTunnelDnsPreferences {
         static let url = "dnsOverTls.global.url"
         static let enabled = "dnsOverTls.global.enabled"
         static let resolvedServers = "dnsOverTls.global.resolvedServers"
-        static let appGroupIdentifier = "group.com.glaciersec.GlacierApp"
+        static let appGroupIdentifier = "group.com.theglacierapp.GlacierApp"
     }
 
     private let userDefaults: UserDefaults

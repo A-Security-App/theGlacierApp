@@ -15,7 +15,7 @@ struct VPNDNSToggleIntent: AppIntent {
 
     // MARK: - Shared keys (mirrors GlacierConstants.swift)
 
-    private static let kGroup                = "group.com.glaciersec.GlacierApp"
+    private static let kGroup                = "group.com.theglacierapp.GlacierApp"
     private static let kActiveConnectionType = "glacier.activeConnectionType"
     private static let kLastConnectionType   = "glacier.lastConnectionType"
     private static let kPendingToggle        = "glacier.widgetPendingToggle"
@@ -58,7 +58,7 @@ struct VPNDNSToggleIntent: AppIntent {
     private func sendDarwinNotification() {
         CFNotificationCenterPostNotification(
             CFNotificationCenterGetDarwinNotifyCenter(),
-            CFNotificationName("com.glaciersec.widgetToggle" as CFString),
+            CFNotificationName("com.theglacierapp.widgetToggle" as CFString),
             nil, nil, true
         )
     }

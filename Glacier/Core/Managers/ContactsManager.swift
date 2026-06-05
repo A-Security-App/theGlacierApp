@@ -23,7 +23,7 @@ final class ContactsManager {
     
     // MARK: - Private properties
     
-    private let queue = DispatchQueue(label: "com.glacier.contactmatcher")
+    private let queue = DispatchQueue(label: "com.theglacierapp.contactmatcher")
     private var phoneIndex: [String: [PhoneContact]] = [:]
     private let matchingDigits = 10
     

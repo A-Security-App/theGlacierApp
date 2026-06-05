@@ -410,6 +410,11 @@ class TunnelsManager {
                     completionHandler(nil)
                 }
             } else {
+                // Disabling on-demand: mirror the persisted state into the in-memory flag.
+                // Without this, tunnelInOperation()/isTunnelEnabled() keep reporting the tunnel
+                // as in-operation (they treat isActivateOnDemandEnabled == true as "on"), so the
+                // UI stays "connected" after the user turns the VPN off on a suppressed tunnel.
+                tunnel.isActivateOnDemandEnabled = tunnelProviderManager.isOnDemandEnabled
                 completionHandler(nil)
             }
         }
