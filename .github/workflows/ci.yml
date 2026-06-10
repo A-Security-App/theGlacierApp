@@ -43,6 +43,60 @@ jobs:
           cp WireGuardNetworkExtension/Secrets-template.plist \
              WireGuardNetworkExtension/Secrets.plist
 
+      - name: Provide placeholder amplifyconfiguration.json
+        # The real file is gitignored. Write a minimal valid config so that
+        # the resource-copy phase succeeds and Amplify.configure() parses
+        # without throwing. The values are deliberately bogus — tests do
+        # not perform any network calls against Cognito.
+        run: |
+          mkdir -p Glacier/Application/Configuration
+          cat > Glacier/Application/Configuration/amplifyconfiguration.json <<'JSON'
+          {
+            "UserAgent": "aws-amplify-cli/2.0",
+            "Version": "1.0",
+            "auth": {
+              "plugins": {
+                "awsCognitoAuthPlugin": {
+                  "UserAgent": "aws-amplify-cli/2.0",
+                  "Version": "1.0",
+                  "CredentialsProvider": {
+                    "CognitoIdentity": {
+                      "Default": {
+                        "PoolId": "us-east-1:00000000-0000-0000-0000-000000000000",
+                        "Region": "us-east-1"
+                      }
+                    }
+                  },
+                  "CognitoUserPool": {
+                    "Default": {
+                      "PoolId": "us-east-1_xxxxxxxxx",
+                      "AppClientId": "xxxxxxxxxxxxxxxxxxxxxxxxxx",
+                      "Region": "us-east-1"
+                    }
+                  },
+                  "Auth": {
+                    "Default": {
+                      "OAuth": {
+                        "WebDomain": "ci-placeholder.auth.us-east-1.amazoncognito.com",
+                        "AppClientId": "xxxxxxxxxxxxxxxxxxxxxxxxxx",
+                        "SignInRedirectURI": "glacierapp://",
+                        "SignOutRedirectURI": "glacierapp://",
+                        "Scopes": ["openid", "email", "profile"],
+                        "ResponseType": "code"
+                      },
+                      "mfaConfiguration": "OFF",
+                      "passwordProtectionSettings": {
+                        "passwordPolicyMinLength": 8,
+                        "passwordPolicyCharacters": []
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+          JSON
+
       - name: Run unit tests
         run: |
           set -o pipefail
