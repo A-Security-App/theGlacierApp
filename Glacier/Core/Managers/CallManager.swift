@@ -137,6 +137,7 @@ public class CallManager : NSObject {
         
         self.audioSession = AVAudioSession.sharedInstance()
         
+        //TwilioVoiceSDK.logLevel = .debug
         TwilioVoiceSDK.audioDevice = self.tvoaudioDevice
         self.tvoaudioDevice.block()
     }
@@ -523,6 +524,7 @@ extension CallManager {
     }
     
     func performMakeVoiceCall(uuid: UUID, contact: PhoneContact, completionHandler: @escaping (Bool) -> Void) {
+        //Log.calls.notice("Placing call to=\(self.currentCall?.receiver ?? "nil") from=\(self.currentCall?.caller ?? "EMPTY")")
         guard let accessToken = self.callToken else {
             completionHandler(false)
             return
@@ -1052,7 +1054,8 @@ extension CallManager: CallDelegate {
     }
 
     public func callDidFailToConnect(call: Call, error: Error) {
-        Log.calls.error("CallManager callDidFailToConnect: \(error.localizedDescription)")
+        let ns = error as NSError
+        Log.calls.error("CallManager callDidFailToConnect: \(error.localizedDescription) code=\(ns.code) domain=\(ns.domain)")
         callKitCompletionCallback?(false)
         callKitCompletionCallback = nil
         if let uuid = call.uuid {
