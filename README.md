@@ -150,7 +150,7 @@ build for a device or for TestFlight, update the team for each target:
    `GlacierTests`), open **Signing & Capabilities** and replace **Team** with
    your own Apple Developer team.
 4. You may also need to change the bundle identifiers (e.g.
-   `com.glacier.Glacier`) so they are unique to your account.
+   `com.theglacierapp.Glacier`) so they are unique to your account.
 
 ### 6. Build
 
