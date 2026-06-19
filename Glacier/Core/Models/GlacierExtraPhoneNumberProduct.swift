@@ -11,12 +11,12 @@ import Foundation
 /// Namespace for the consumable $2.99 "extra phone number" in-app purchase.
 ///
 /// This product must be configured in App Store Connect as a **Consumable** IAP:
-/// - Product ID:   `com.glacier.app.addon.extranumber`
+/// - Product ID:   `com.glacier.secapp.addon.extranumber`
 /// - Display Name: `Additional Phone Number`
 /// - Price:        $2.99 (Tier 3)
 enum GlacierExtraPhoneNumberProduct {
     /// The App Store product identifier for the consumable extra-number purchase.
-    static let productIdentifier = "com.glacier.app.addon.extranumber"
+    static let productIdentifier = "com.glacier.secapp.addon.extranumber"
 
     /// Formatted price string shown in paywall UI.
     static let displayPrice = "$2.99"

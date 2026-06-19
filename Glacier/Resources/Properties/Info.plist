@@ -123,7 +123,7 @@
 	<key>PrivacyPolicyURL</key>
 	<string>https://theglacierapp.com/privacy</string>
 	<key>TermsOfUseURL</key>
-	<string>https://theglacierapp.com/tos</string>
+	<string>https://www.theglacierapp.com/terms</string>
 	<key>UIAppFonts</key>
 	<array>
 		<string>HaasGrotTextApp-55Roman.ttf</string>
@@ -131,7 +131,6 @@
 	</array>
 	<key>UIBackgroundModes</key>
 	<array>
-		<string>audio</string>
 		<string>fetch</string>
 		<string>remote-notification</string>
 		<string>voip</string>

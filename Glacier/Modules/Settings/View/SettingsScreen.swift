@@ -208,7 +208,24 @@ struct SettingsScreen<ViewModel: SettingsViewModel & ObservableObject>: View {
                                     viewModel.signOut()
                                 }
                             )
-                            
+
+                            Spacer()
+                        }
+                    }
+
+                    GlacierViewContainer {
+                        HStack(alignment: .center) {
+                            GlacierLabelButton(
+                                text: NSLocalizedString("Delete Account", comment: "Settings screen delete account button title"),
+                                font: .bodyThick,
+                                alignment: .leading,
+                                height: 30,
+                                customTextColor: .constant(.ember),
+                                action: {
+                                    viewModel.deleteAccount()
+                                }
+                            )
+
                             Spacer()
                         }
                     }

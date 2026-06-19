@@ -17,6 +17,17 @@ import CryptoKit
 public protocol DNSStatusDelegate:AnyObject {
     func dnsStatusUpdated(_ enabled: Bool)
     func dnsAnalyticsUpdated(_ analytics: Int)
+    /// Called once per retrying verification chain, as soon as enough probes have come
+    /// back negative to be confident DoT isn't the live resolver — but while retries are
+    /// still pending. Lets the UI surface the "select the profile in iOS Settings" prompt
+    /// immediately instead of waiting for the full retry budget (~13s) to drain. The
+    /// remaining retries keep running, so if the profile does become live, a later
+    /// `dnsStatusUpdated(true)` fires and the UI can dismiss the prompt.
+    func dnsVerificationProbeFailedEarly()
+}
+
+public extension DNSStatusDelegate {
+    func dnsVerificationProbeFailedEarly() {}
 }
 
 open class SecurityCenter: NSObject {
@@ -64,6 +75,27 @@ open class SecurityCenter: NSObject {
     }
 
     private var dnsCheckWorkItem: DispatchWorkItem?
+
+    /// A freshly-activated DoT profile (e.g. enabled at the end of onboarding) can take a
+    /// few seconds to become the live system resolver. A single probe that runs before
+    /// then would report "disconnected" and that stale verdict would stick until the next
+    /// app foreground. Retry the probe a few times before concluding DoT is not active.
+    /// The budget also has to absorb a transient `.inactive` window during the
+    /// onboarding→main transition, when the probe can't run at all — so allow enough
+    /// attempts to outlast both the transition and the profile's activation latency.
+    private static let dnsCheckMaxAttempts = 5
+    private static let dnsCheckRetryDelay: TimeInterval = 2.0
+    /// Settle delay before each probe, giving a just-saved/just-activated DoT configuration
+    /// a moment to take effect. Combined with `dnsCheckRetryDelay` and `dnsCheckMaxAttempts`
+    /// this sets the total retry wall-clock the onboarding auto-connect relies on.
+    private static let dnsCheckInitialDelay: TimeInterval = 1.0
+    /// Number of negative probes after which we tell the delegate to surface the
+    /// "select the profile in Settings" prompt early, without waiting for the remaining
+    /// retries. 2 gives a genuinely-lagging-but-valid profile a chance to come live
+    /// (it usually does within the first retry) before the prompt appears.
+    private static let dnsEarlyPromptFailureThreshold = 2
+    /// Guards `dnsVerificationProbeFailedEarly()` to fire at most once per chain.
+    private var didFireEarlyDNSPrompt = false
     private var reachabilityManager: NetworkReachabilityManager?
     private var lastDnsAnalyticsQueryDate: Date?
     private let dnsAnalyticsQueryLock = DispatchQueue(label: "com.theglacierapp.securitycenter.dnsAnalyticsQueryLock")
@@ -366,11 +398,24 @@ open class SecurityCenter: NSObject {
         }
     }
     
-    public func doDNSCheck(completion: ((Bool) -> Void)? = nil) {
+    /// - Parameter retryUntilVerified: When true, a negative probe is retried a few times
+    ///   before reporting disconnected. Pass this only right after DoT was freshly enabled
+    ///   (onboarding auto-connect / manual connect), where the profile can take a few seconds
+    ///   to become the live system resolver. The default (single probe) is correct for the
+    ///   routine checks on foreground / appear / VPN status change.
+    public func doDNSCheck(retryUntilVerified: Bool = false, completion: ((Bool) -> Void)? = nil) {
+        let attempts = retryUntilVerified ? SecurityCenter.dnsCheckMaxAttempts : 1
+        performDNSCheck(attemptsRemaining: attempts, completion: completion)
+    }
+
+    private func performDNSCheck(attemptsRemaining: Int, isInitialAttempt: Bool = true, completion: ((Bool) -> Void)? = nil) {
+        if isInitialAttempt {
+            didFireEarlyDNSPrompt = false
+        }
         if self.dnsTester == nil {
             self.dnsTester = DNSTester()
         }
-        
+
         // Skip the network DNS test only when the tunnel is actually carrying traffic.
         // If on-demand is configured but the tunnel has been suppressed by a trusted-network
         // rule, the tunnel is inactive and we must verify DoT is still routing DNS.
@@ -382,10 +427,6 @@ open class SecurityCenter: NSObject {
 
         let host = "\(UUID().uuidString.prefix(8)).\(SecurityCenter.DNS_CHECK_ENDPOINT)"
         cancelPendingDNSCheck()
-        
-        //fetchApplicationActive { [weak self] isActive in
-        //    guard let self = self else { return }
-        //    guard isActive, self.isCurrentlyReachable else { return }
 
             let workItem = DispatchWorkItem { [weak self] in
                 guard let self = self else {
@@ -397,10 +438,21 @@ open class SecurityCenter: NSObject {
                     guard let self = self else { return }
                     guard stillActive, self.isCurrentlyReachable else {
                         self.cancelPendingDNSCheck()
-                        completion?(false)
+                        // We couldn't probe right now — the app is briefly inactive (e.g. the
+                        // onboarding→main transition) or offline. This is transient and gives us
+                        // NO information about DoT, so don't report a verdict. In retry mode, try
+                        // again shortly instead of abandoning the chain; otherwise the foreground
+                        // handler will re-check when the app becomes active again.
+                        if attemptsRemaining > 1 {
+                            DispatchQueue.main.asyncAfter(deadline: .now() + SecurityCenter.dnsCheckRetryDelay) { [weak self] in
+                                self?.performDNSCheck(attemptsRemaining: attemptsRemaining - 1, isInitialAttempt: false, completion: completion)
+                            }
+                        } else {
+                            completion?(false)
+                        }
                         return
                     }
-                    
+
                     guard let currentWorkItem = self.dnsCheckWorkItem, !currentWorkItem.isCancelled else {
                         completion?(false)
                         return
@@ -416,32 +468,58 @@ open class SecurityCenter: NSObject {
                             completion?(false)
                             return
                         }
+                        self.dnsCheckWorkItem = nil
 
-                        switch result {
-                        case .success(let ips):
-                            if ips.contains(SecurityCenter.DNS_CHECK_IP) {
-                                Log.general.debug("Using DoT resolver")
-                                self.isDoTVerifiedActive = true
-                                self.dnsStatusDelegate?.dnsStatusUpdated(true)
-                                self.dnsCheckWorkItem = nil
-                                completion?(true)
-                                return
-                            }
-                        case .failure(let error):
+                        if case .success(let ips) = result, ips.contains(SecurityCenter.DNS_CHECK_IP) {
+                            Log.general.debug("Using DoT resolver")
+                            self.isDoTVerifiedActive = true
+                            self.dnsStatusDelegate?.dnsStatusUpdated(true)
+                            completion?(true)
+                            return
+                        }
+
+                        if case .failure(let error) = result {
                             Log.general.debug("DNS verification lookup failed: \(error.localizedDescription)")
-                            completion?(false)
+                        }
+
+                        // Negative result. The DoT profile may not be the live resolver yet
+                        // (e.g. just activated at the end of onboarding), so retry a few times
+                        // before reporting disconnected — otherwise one early probe loses the
+                        // race and the stale verdict sticks until the next app foreground.
+                        if attemptsRemaining > 1 {
+                            // Surface the "select the profile in Settings" prompt as soon as a
+                            // couple of probes have failed, instead of making the user wait out
+                            // the full retry budget. The retries below keep running, so a profile
+                            // that does come live will still flip the status (and dismiss the
+                            // prompt) via dnsStatusUpdated(true).
+                            let failuresSoFar = SecurityCenter.dnsCheckMaxAttempts - attemptsRemaining + 1
+                            if !self.didFireEarlyDNSPrompt,
+                               failuresSoFar >= SecurityCenter.dnsEarlyPromptFailureThreshold {
+                                self.didFireEarlyDNSPrompt = true
+                                self.dnsStatusDelegate?.dnsVerificationProbeFailedEarly()
+                            }
+                            DispatchQueue.main.asyncAfter(deadline: .now() + SecurityCenter.dnsCheckRetryDelay) { [weak self] in
+                                self?.performDNSCheck(attemptsRemaining: attemptsRemaining - 1, isInitialAttempt: false, completion: completion)
+                            }
+                            return
                         }
 
                         self.isDoTVerifiedActive = false
                         self.dnsStatusDelegate?.dnsStatusUpdated(false)
-                        self.dnsCheckWorkItem = nil
+                        completion?(false)
                     }
                 }
             }
 
             self.dnsCheckWorkItem = workItem
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0, execute: workItem)
-        //}
+            // Settle delay before every probe. The total retry wall-clock (≈5 × this + retry
+            // delays) is deliberately generous: the onboarding auto-connect path relies on it
+            // to outlast both the DoT profile's activation latency and the transient .inactive
+            // window during the onboarding→main transition. The manual-connect case no longer
+            // waits this out for feedback — `dnsVerificationProbeFailedEarly` surfaces the
+            // "select the profile in Settings" prompt after a couple of failures while these
+            // retries keep running in the background.
+            DispatchQueue.main.asyncAfter(deadline: .now() + SecurityCenter.dnsCheckInitialDelay, execute: workItem)
     }
 
     private var isCurrentlyReachable: Bool {

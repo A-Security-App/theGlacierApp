@@ -91,6 +91,8 @@ final class UserRegistrationVM: UserRegistrationViewModel, ObservableObject {
     
     let rootCoordinator: any GlacierRootCoordinator
     let authenticationService: GlacierAuthenticationService
+    /// Prevents duplicate ConfirmSignUp submissions; see confirmAccount(userName:confirmationCode:).
+    private var isConfirmationInProgress = false
     
     // MARK: - Initializer
     
@@ -146,9 +148,10 @@ final class UserRegistrationVM: UserRegistrationViewModel, ObservableObject {
                 setRootScreen(.userOnboarding)
                 dismissSheet()
             } catch {
-                if let authError = error as? AWSCognitoAuthError, authError != .userCancelled {
-                    presentAlertWith(title: .errorText, description: errorDescription)
+                if cognitoAuthError(from: error) == .userCancelled {
+                    return
                 }
+                presentAlertWith(title: .errorText, description: errorDescription)
             }
         }
     }
@@ -202,6 +205,14 @@ final class UserRegistrationVM: UserRegistrationViewModel, ObservableObject {
 
     @MainActor
     func confirmAccount(userName: String, confirmationCode: String) {
+        // The verification deep link sets the OTP field AND calls this method
+        // directly, and the OTP field auto-submits at 6 digits — without this
+        // guard a single email-link tap fires two ConfirmSignUp requests, and
+        // the second one fails with "User cannot be confirmed. Current status
+        // is CONFIRMED", surfacing an error for an account that just verified.
+        guard !isConfirmationInProgress else { return }
+        isConfirmationInProgress = true
+        
         Task {
             let errorDescription = NSLocalizedString(
                 "Something went wrong while confirming your account. Please try again.",
@@ -214,6 +225,7 @@ final class UserRegistrationVM: UserRegistrationViewModel, ObservableObject {
                 dismissProgressIndicator()
                 
                 guard let authResult = result, authResult.isSignUpComplete else {
+                    isConfirmationInProgress = false
                     presentAlertWith(title: .errorText, description: errorDescription)
                     return
                 }
@@ -224,9 +236,23 @@ final class UserRegistrationVM: UserRegistrationViewModel, ObservableObject {
                 autoLoginUserAfterAccountConfirmation()
             } catch {
                 dismissProgressIndicator()
-                if let authError = error as? AWSCognitoAuthError, authError != .userCancelled {
-                    presentAlertWith(title: .errorText, description: errorDescription)
+                isConfirmationInProgress = false
+                
+                // ConfirmSignUp on an account that is already CONFIRMED throws
+                // .notAuthorized. The account is verified — treat it as success
+                // and move the user forward instead of stranding them on a
+                // screen where every retry fails with the same error.
+                if let authError = error as? AuthError, case .notAuthorized = authError {
+                    isUserAccountConfirmationPending = false
+                    UserDefaultsService.shared.set(true, for: \.isUserAccountConfirmed)
+                    autoLoginUserAfterAccountConfirmation()
+                    return
                 }
+                
+                if cognitoAuthError(from: error) == .userCancelled {
+                    return
+                }
+                presentAlertWith(title: .errorText, description: errorDescription)
             }
         }
     }
@@ -317,48 +343,66 @@ final class UserRegistrationVM: UserRegistrationViewModel, ObservableObject {
     @MainActor
     private func autoLoginUserAfterAccountConfirmation() {
         guard let email: String = UserDefaultsService.shared.get(for: \.userEmail),
-              let password: String = UserDefaultsService.shared.get(for: \.userPassword) else {
+              let password: String = UserDefaultsService.shared.get(for: \.userPassword),
+              !password.isEmpty else {
+            // No usable stored credentials (verification completed after a
+            // relaunch, or the password was already cleared by a previous
+            // login). The account is verified — send the user to log in
+            // instead of returning silently.
+            routeToLoginAfterAccountConfirmation()
             return
         }
         
         Task {
-            let errorDescription = NSLocalizedString(
-                "Something went wrong while confirming your account. Please try again.",
-                comment: "User account confirmation screen confirmation failure"
-            )
-            
             do {
                 presentProgressIndicator()
+                // A session from a previously used account can still exist on
+                // this device, and Amplify.Auth.signIn throws .invalidState when
+                // any user is already signed in. Clear it before auto sign-in.
+                _ = await authenticationService.signOut()
+                
                 let signInResult = try await authenticationService.signIn(with: email, password: password)
                 dismissProgressIndicator()
                 
                 guard let result = signInResult, result.isSignedIn else {
-                    presentAlertWith(title: .errorText, description: errorDescription)
+                    routeToLoginAfterAccountConfirmation()
                     return
                 }
                 
                 UserDefaultsService.shared.set("", for: \.userPassword)
                 UserDefaultsService.shared.set(true, for: \.isUserLoggedIn)
                 setRootScreen(.userOnboarding)
-            } catch let error {
+            } catch {
                 dismissProgressIndicator()
-                guard let authError = error as? AWSCognitoAuthError else {
-                    presentAlertWith(title: .errorText, description: errorDescription)
-                    return
-                }
-                
-                if case .codeExpired = authError {
-                    presentAlertWith(
-                        title: .errorText,
-                        description: NSLocalizedString(
-                            "This account confirmation email has expired. Please request a new one.",
-                            comment: "User account confirmation screen confirmation email expired error"
-                        )
-                    )
-                } else if case .userNotConfirmed = authError {
-                    presentAlertWith(title: .errorText, description: errorDescription)
-                }
+                // The account IS confirmed at this point — only the automatic
+                // sign-in failed. Don't report it as a confirmation failure;
+                // let the user log in manually.
+                routeToLoginAfterAccountConfirmation()
             }
         }
+    }
+    
+    @MainActor
+    private func routeToLoginAfterAccountConfirmation() {
+        UserDefaultsService.shared.set("", for: \.userPassword)
+        presentAlertWith(
+            title: .successText,
+            description: NSLocalizedString(
+                "Your account has been verified. Please log in to continue.",
+                comment: "User account confirmation screen verified, manual login required"
+            )
+        )
+        setRootScreen(.userAuthentication)
+    }
+    
+    /// Amplify wraps Cognito service errors inside `AuthError.underlyingError`;
+    /// casting the thrown error directly to `AWSCognitoAuthError` always fails,
+    /// which is how sign-in failures ended up presented as confirmation
+    /// failures (and real confirmation errors were silently swallowed).
+    private func cognitoAuthError(from error: Error) -> AWSCognitoAuthError? {
+        if let authError = error as? AuthError {
+            return authError.underlyingError as? AWSCognitoAuthError
+        }
+        return error as? AWSCognitoAuthError
     }
 }
