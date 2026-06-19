@@ -95,7 +95,14 @@ final class HomeVM: HomeViewModel, ObservableObject {
     private var hasPendingRequestForVPNConnection = false
     private var hasPendingFirstTimeVPNSetup = false
     private var didUserTappedDNSConnectionButton: Bool = false
-    
+    /// True while the "Enable Glacier DNS in Settings" popup we presented is on screen.
+    /// Lets a later successful verification dismiss it (self-heal).
+    private var isShowingDNSSetupPrompt = false
+    /// Guards the DNS-setup prompt to at most once per connect attempt, so the early
+    /// prompt and the final verdict don't both fire it (and it doesn't re-appear after
+    /// the user has dismissed it).
+    private var didPromptDNSSetupDuringVerification = false
+
     // MARK: - Initializer
     
     init(rootCoordinator: any GlacierRootCoordinator) {
@@ -269,6 +276,17 @@ final class HomeVM: HomeViewModel, ObservableObject {
             self,
             selector: #selector(onAppBecameActive),
             name: UIApplication.willEnterForegroundNotification,
+            object: nil
+        )
+
+        // Re-verify DNS status whenever the persisted DoT configuration changes.
+        // The onboarding auto-connect (`connectDNSIfSetUpDuringOnboarding`) applies the
+        // config fire-and-forget, so without this the home screen would keep showing
+        // "Connect" until the next app foreground re-ran the check.
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(onDNSConfigurationChanged),
+            name: .dnsOverTlsConfigurationDidChange,
             object: nil
         )
 
@@ -562,6 +580,19 @@ final class HomeVM: HomeViewModel, ObservableObject {
         }
     }
 
+    /// Fired when the persisted DoT configuration changes (enable/disable). Recompute the
+    /// displayed status from the now-persisted flag and re-verify against the live resolver.
+    /// This is what catches the onboarding auto-connect (`connectDNSIfSetUpDuringOnboarding`),
+    /// which applies the config fire-and-forget without going through `applyDNSConfig`.
+    @objc private func onDNSConfigurationChanged() {
+        // Only retry the verification when the change was an enable — a freshly-activated
+        // profile can lag before it's the live resolver. On disable, the persisted flag
+        // already drives the UI and a single probe is enough.
+        let didEnable = dnsController.loadSavedConfiguration().isEnabled
+        checkSecuredConnectionStatus()
+        securityCenter.doDNSCheck(retryUntilVerified: didEnable)
+    }
+
     @objc func onVPNStatusChange() {
         refreshDeviceSecurityStatus()
         // When the tunnel goes inactive (e.g. on-demand suppressed by a trusted-network
@@ -653,6 +684,10 @@ final class HomeVM: HomeViewModel, ObservableObject {
 extension HomeVM {
     
     private func toggleDNSConnection(_ shouldConnect: Bool) {
+        if shouldConnect {
+            // Fresh connect attempt — allow the DNS-setup prompt to fire once for it.
+            didPromptDNSSetupDuringVerification = false
+        }
         var dnsConfiguration = dnsController.loadSavedConfiguration()
         guard let url = dnsConfiguration.urlString,
               !url.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
@@ -674,16 +709,14 @@ extension HomeVM {
             // Recompute the displayed status from the now-persisted configuration rather than
             // relying solely on doDNSCheck's delegate callback, which can hang or skip on a
             // bad/blocked resolver. This guarantees the UI reflects the change immediately.
+            //
+            // The DoT verification probe is NOT armed here: a successful apply posts
+            // `.dnsOverTlsConfigurationDidChange`, which onDNSConfigurationChanged observes and
+            // uses to run `doDNSCheck(retryUntilVerified:)`. Arming it here as well used to start
+            // a second, redundant retry chain racing on the same work item. The notification is
+            // also the only trigger for the onboarding fire-and-forget path, so it's the single
+            // source of truth for re-verifying after a config change.
             self.checkSecuredConnectionStatus()
-            // The DoT verification lookup (CFHost) only carries information when enabling: it
-            // confirms the profile is actually selected in iOS Settings and routing through
-            // Glacier, and drives the "select the profile in Settings" prompt. On disable, the
-            // persisted isEnabled=false already determines isConnectedToDNS, so there's no reason
-            // to hit the resolver — avoiding a pointless round-trip and any false negative from a
-            // flaky network.
-            if configuration.isEnabled {
-                self.securityCenter.doDNSCheck()
-            }
         }
     }
     
@@ -724,6 +757,7 @@ extension HomeVM {
                     style: .tertiary,
                     title: NSLocalizedString("Cancel", comment: "Cancel button title"),
                     onTap: {
+                        self.isShowingDNSSetupPrompt = false
                         self.dismissPopup()
                     }
                 ),
@@ -731,6 +765,7 @@ extension HomeVM {
                     style: .primary,
                     title: NSLocalizedString("Open Settings", comment: "Open settings button title"),
                     onTap: {
+                        self.isShowingDNSSetupPrompt = false
                         self.dismissPopup()
                         self.hasPendingRequestForDNSConnection = true
                         
@@ -747,6 +782,7 @@ extension HomeVM {
             ],
             buttonsAlignment: .horizontal
         )
+        isShowingDNSSetupPrompt = true
         presentPopup(with: popupConfiguration)
     }
 
@@ -956,7 +992,7 @@ extension HomeVM: DNSStatusDelegate {
     func dnsStatusUpdated(_ enabled: Bool) {
         DispatchQueue.main.async { [weak self] in
             guard let strongSelf = self else { return }
-            
+
             strongSelf.isGlacierDNSEnabledIniOSSettings = enabled
             
             /**
@@ -969,7 +1005,17 @@ extension HomeVM: DNSStatusDelegate {
             // The gradient's onChange(of: isSecured) handles the smooth transition.
             strongSelf.refreshDeviceSecurityStatus(suppressScanAnimation: true)
             
-            if !enabled, strongSelf.dnsController.loadSavedConfiguration().isEnabled {
+            if enabled {
+                // DoT is verified as the live resolver. If we'd already surfaced the
+                // "select the profile in Settings" prompt during this connect attempt —
+                // e.g. an early negative that the profile then corrected — dismiss it, since
+                // the situation it warned about no longer holds.
+                if strongSelf.isShowingDNSSetupPrompt {
+                    strongSelf.isShowingDNSSetupPrompt = false
+                    strongSelf.dismissPopup()
+                }
+                strongSelf.didPromptDNSSetupDuringVerification = false
+            } else if strongSelf.dnsController.loadSavedConfiguration().isEnabled {
                 // DNS config is marked enabled but the check IP wasn't returned —
                 // the user hasn't selected Glacier DNS in iOS Settings yet.
 
@@ -978,14 +1024,35 @@ extension HomeVM: DNSStatusDelegate {
                 // 2. VPN is configured with on-demand but the tunnel is currently suppressed
                 //    (trusted-network rule fired) — DNS should be routed through DoT but isn't
                 //    because the profile hasn't been selected in iOS Settings.
+                // Skip if we already prompted earlier in this same connect attempt (the early
+                // probe-failed prompt), so it doesn't fire twice or re-appear after dismissal.
                 let isVPNSuppressedByOnDemand = strongSelf.securityCenter.isVpnEnabled()
                                              && !strongSelf.securityCenter.isVpnTunnelConnected()
-                if strongSelf.didUserTappedDNSConnectionButton || isVPNSuppressedByOnDemand {
+                if (strongSelf.didUserTappedDNSConnectionButton || isVPNSuppressedByOnDemand),
+                   !strongSelf.didPromptDNSSetupDuringVerification {
+                    strongSelf.didPromptDNSSetupDuringVerification = true
                     strongSelf.presentDNSSetupConfirmationPrompt(shouldDownloadAndAddDNSProfile: false)
                 }
             }
 
             strongSelf.didUserTappedDNSConnectionButton = false
+        }
+    }
+
+    /// A couple of verification probes have failed but retries are still running. Surface the
+    /// "select the profile in Settings" prompt now rather than making the user wait out the full
+    /// retry budget. Uses the same gating as the final-verdict prompt; if a later retry verifies
+    /// DoT, dnsStatusUpdated(true) dismisses the prompt.
+    func dnsVerificationProbeFailedEarly() {
+        DispatchQueue.main.async { [weak self] in
+            guard let strongSelf = self else { return }
+            guard strongSelf.dnsController.loadSavedConfiguration().isEnabled else { return }
+            guard !strongSelf.didPromptDNSSetupDuringVerification else { return }
+            let isVPNSuppressedByOnDemand = strongSelf.securityCenter.isVpnEnabled()
+                                         && !strongSelf.securityCenter.isVpnTunnelConnected()
+            guard strongSelf.didUserTappedDNSConnectionButton || isVPNSuppressedByOnDemand else { return }
+            strongSelf.didPromptDNSSetupDuringVerification = true
+            strongSelf.presentDNSSetupConfirmationPrompt(shouldDownloadAndAddDNSProfile: false)
         }
     }
 

@@ -12,6 +12,7 @@ import BackgroundTasks
 import Foundation
 import GRDB
 import MBProgressHUD
+import Network
 import NetworkExtension
 import PushKit
 import WidgetKit
@@ -51,6 +52,21 @@ public class GlacierApplicationDelegate: UIResponder, UIApplicationDelegate {
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
     ) -> Bool {
         GlacierApplicationDelegate.shared = self
+
+        // Unit tests are hosted inside Glacier.app, so this entire launch
+        // sequence runs before any test executes. It generates the SQLCipher
+        // DB key via a keychain access-group, configures Amplify, and registers
+        // a VoIP PushKit registry and a background task — all of which require
+        // entitlements and device services that an unsigned simulator build
+        // (CI runs with CODE_SIGNING_ALLOWED=NO) does not have. On a fresh
+        // keychain the access-group write fails with errSecMissingEntitlement
+        // and DBManager.init() hits fatalError("Could not generate key for
+        // GRDB"), crashing the host with SIGTRAP before tests can run. None of
+        // the unit tests need this bootstrap, so skip it under XCTest.
+        if ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil {
+            return true
+        }
+
         SAMKeychain.setAccessibilityType(kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly)
 
         // Synchronous proxy check before any network-dependent setup
@@ -265,17 +281,13 @@ public class GlacierApplicationDelegate: UIResponder, UIApplicationDelegate {
             // before the app backgrounds, so wasVPNConnected will be false there.
             let wasVPNConnected = sharedDefaults?.string(forKey: kActiveConnectionTypeKey) == SecuredConnectionType.vpn.rawValue
 
-            if !isConnected && wasVPNConnected {
-                // System killed the extension while user wanted VPN running — notify and recover.
-                self?.showVPNDisconnectedNotification()
-                if let manager = managers.first(where: { $0.isEnabled }) {
-                    do {
-                        try manager.connection.startVPNTunnel()
-                    } catch {
-                        Log.vpn.error("VPN health: reconnect attempt failed: \(error.localizedDescription)")
-                    }
-                }
-            }
+            // The "should we notify?" decision is network-state-dependent and is
+            // evaluated at the end of this handler (it may need an async SSID read).
+            // We deliberately do *not* force a reconnect here: on-demand is always
+            // enabled while VPN is on, so iOS re-arms the tunnel itself on any
+            // connect-network. A manual startVPNTunnel() would instead override the
+            // on-demand policy and force-connect even on a trusted network where the
+            // tunnel is intentionally down.
 
             // Run local-only security checks — no API calls, safe in background.
             // Mirrors HomeViewModel.scanDeviceForSecurityIssues() but avoids
@@ -314,8 +326,132 @@ public class GlacierApplicationDelegate: UIResponder, UIApplicationDelegate {
 
             WidgetCenter.shared.reloadAllTimelines()
 
-            task.setTaskCompleted(success: true)
+            // Notify only when the VPN should actually be up on the network the
+            // device is currently using. A disconnected tunnel is expected — not a
+            // failure — when on-demand rules deliberately hold it down (e.g. a
+            // trusted Wi-Fi SSID). Status alone can't distinguish that from a
+            // system kill, so we evaluate the on-demand policy against the current
+            // network and stay silent unless we can affirmatively confirm the
+            // tunnel should be connected here.
+            if !isConnected && wasVPNConnected {
+                self?.evaluateShouldBeConnectedOnCurrentNetwork(managers) { shouldConnect in
+                    if shouldConnect {
+                        self?.showVPNDisconnectedNotification()
+                    } else {
+                        Log.vpn.notice("[VPNHealth] tunnel down but on-demand policy/network does not require it here — suppressing notification")
+                    }
+                    task.setTaskCompleted(success: true)
+                }
+            } else {
+                task.setTaskCompleted(success: true)
+            }
         }
+    }
+
+    private enum PrimaryInterface {
+        case wifi, cellular, other, none
+    }
+
+    /// Decides whether the VPN tunnel *should* be connected on the network the
+    /// device is currently using, by evaluating the tunnel's on-demand rules
+    /// against the current interface (and SSID, when the policy is SSID-scoped).
+    /// Calls `completion(true)` only when we can affirmatively confirm the tunnel
+    /// should be up here. For a trusted/disconnect network, an undeterminable
+    /// network path, or an unreadable SSID we call `completion(false)` so the
+    /// caller stays silent rather than firing a false "VPN Disconnected" alert.
+    private func evaluateShouldBeConnectedOnCurrentNetwork(
+        _ managers: [NETunnelProviderManager],
+        completion: @escaping (Bool) -> Void
+    ) {
+        guard let manager = managers.first(where: { $0.isEnabled }) ?? managers.first else {
+            completion(false)
+            return
+        }
+        let option = ActivateOnDemandOption(from: manager)
+        let interface = GlacierApplicationDelegate.currentPrimaryInterface()
+
+        // No usable network path: the tunnel can't be up regardless, so there's
+        // nothing to alert about.
+        guard interface != .none else {
+            completion(false)
+            return
+        }
+
+        switch option {
+        case .off, .anyInterface(.anySSID):
+            // No SSID-scoped policy — the tunnel should be up wherever there's a network.
+            completion(true)
+
+        case .nonWiFiInterfaceOnly:
+            completion(interface == .cellular)
+
+        case .wiFiInterfaceOnly(let ssidOption):
+            switch interface {
+            case .wifi:
+                GlacierApplicationDelegate.resolveWiFiConnectDecision(ssidOption, completion: completion)
+            default:
+                // Cellular (or anything non-Wi-Fi) carries a disconnect rule here.
+                completion(false)
+            }
+
+        case .anyInterface(let ssidOption):
+            switch interface {
+            case .cellular:
+                completion(true)   // connect rule on the non-Wi-Fi interface
+            case .wifi:
+                GlacierApplicationDelegate.resolveWiFiConnectDecision(ssidOption, completion: completion)
+            default:
+                completion(false)
+            }
+        }
+    }
+
+    /// Resolves the connect/disconnect decision for the current Wi-Fi network
+    /// against an SSID-scoped on-demand option. SSID-specific options require the
+    /// current SSID; when it can't be read we report `false` (stay silent).
+    private static func resolveWiFiConnectDecision(
+        _ ssidOption: ActivateOnDemandSSIDOption,
+        completion: @escaping (Bool) -> Void
+    ) {
+        switch ssidOption {
+        case .anySSID:
+            completion(true)
+        case .onlySpecificSSIDs(let ssids):
+            fetchCurrentSSID { ssid in
+                guard let ssid else { completion(false); return }
+                completion(ssids.contains(ssid))
+            }
+        case .exceptSpecificSSIDs(let ssids):
+            fetchCurrentSSID { ssid in
+                guard let ssid else { completion(false); return }
+                completion(!ssids.contains(ssid))
+            }
+        }
+    }
+
+    private static func fetchCurrentSSID(_ completion: @escaping (String?) -> Void) {
+        NEHotspotNetwork.fetchCurrent { network in
+            if let ssid = network?.ssid {
+                completion(ssid)
+            } else {
+                // Fall back to the Captive Network copy used elsewhere in the app.
+                completion(TunnelsManager.retrieveCurrentSSID())
+            }
+        }
+    }
+
+    /// NWPathMonitor populates `currentPath` synchronously after `start()`,
+    /// matching the inline pattern used in WiFiSettingsViewModel. Biasing toward
+    /// silence on uncertainty, a momentary unsatisfied read returns `.none`.
+    private static func currentPrimaryInterface() -> PrimaryInterface {
+        let monitor = NWPathMonitor()
+        monitor.start(queue: .global())
+        let path = monitor.currentPath
+        defer { monitor.cancel() }
+        guard path.status == .satisfied else { return .none }
+        if path.usesInterfaceType(.wifi) { return .wifi }
+        if path.usesInterfaceType(.cellular) { return .cellular }
+        return .other
     }
 
     private func showVPNDisconnectedNotification() {

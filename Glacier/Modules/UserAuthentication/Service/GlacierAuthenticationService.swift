@@ -28,8 +28,9 @@ protocol GlacierAuthenticationService {
     
     func getCurrentUser() async throws -> AuthUser
     func getCurrentAuthSession() async throws -> AuthSession?
-    
+
     func signOut() async -> Bool
+    func deleteUser() async throws
 }
 
 /**
@@ -217,6 +218,25 @@ final class AmplifyAuthenticationService: GlacierAuthenticationService {
                         return
                     }
                     continuation.resume(returning: result.signedOutLocally)
+                }
+            }
+        }
+    }
+
+    /**
+     Calls Amplify.Auth.deleteUser() to permanently delete the signed-in user's
+     account from the Cognito user pool. On success Amplify also signs the user
+     out locally. Throws on failure so callers can keep local state intact and
+     prompt the user to retry.
+     */
+    func deleteUser() async throws {
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            Task {
+                do {
+                    try await Amplify.Auth.deleteUser()
+                    continuation.resume(returning: ())
+                } catch {
+                    continuation.resume(throwing: error)
                 }
             }
         }

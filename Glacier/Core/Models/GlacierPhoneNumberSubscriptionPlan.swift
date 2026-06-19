@@ -13,9 +13,9 @@ import Foundation
  It also returns reference of the user purchased phone number plan.
  */
 enum GlacierPhoneNumberSubscriptionPlan: String, CaseIterable {
-    case oneNumber = "com.glacier.app.addon.number1"
-    case twoNumbers = "com.glacier.app.addon.number2"
-    case fiveNumbers = "com.glacier.app.addon.number5"
+    case oneNumber = "com.glacier.secapp.addon.number1"
+    case twoNumbers = "com.glacier.secapp.addon.number2"
+    case fiveNumbers = "com.glacier.secapp.addon.number5"
     
     var maxPhoneNumbers: Int {
         switch self {

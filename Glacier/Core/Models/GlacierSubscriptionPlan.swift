@@ -13,8 +13,8 @@ import Foundation
  It also returns reference of the user purchased glacier plan.
  */
 enum GlacierSubscriptionPlan: String, CaseIterable {
-    case yearly = "com.glacier.app.sub.yearly"
-    case monthly = "com.glacier.app.sub.monthly"
+    case yearly = "com.glacier.secapp.sub.yearly"
+    case monthly = "com.glacier.secapp.sub.monthly"
 }
 
 extension GlacierSubscriptionPlan {

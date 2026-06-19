@@ -45,6 +45,12 @@ enum DnsOverTlsControllerError: LocalizedError {
 final class DnsOverTlsController {
     static let shared = DnsOverTlsController()
 
+    /// Network Extension reports a no-op save with this (private) domain/code pair. It's a
+    /// "configuration is unchanged" signal, not a failure, so saving the same DoT settings twice
+    /// is treated as success. NEConfigurationErrorDomain isn't a public symbol, hence the literals.
+    private static let neConfigurationErrorDomain = "NEConfigurationErrorDomain"
+    private static let neConfigurationUnchangedCode = 9
+
     private let preferences: DnsOverTlsPreferences
     private let dnsManager: NEDNSSettingsManager
     private let workQueue = DispatchQueue(label: "com.theglacierapp.dnsOverTls.controller")
@@ -328,6 +334,21 @@ final class DnsOverTlsController {
             DispatchQueue.main.async {
                 if let saveError = saveError {
                     let ns = saveError as NSError
+                    // "Configuration is unchanged" (NEConfigurationErrorDomain code 9) is not a
+                    // real failure: the DoT settings we're saving already match what's in the
+                    // Network Extension store, so the profile is already in the desired state.
+                    // Treat it as success — persist our enabled flag and post
+                    // .dnsOverTlsConfigurationDidChange so the verification probe runs and, if the
+                    // profile isn't selected in iOS Settings yet, the "select in Settings" prompt
+                    // appears. Reporting it as an error would strand the connect with no probe and
+                    // no UI feedback.
+                    if ns.domain == Self.neConfigurationErrorDomain,
+                       ns.code == Self.neConfigurationUnchangedCode {
+                        Log.vpn.notice("DoT apply(isEnabled=\(configuration.isEnabled, privacy: .public)): saveToPreferences reported configuration unchanged; treating as success")
+                        self.preferences.save(configuration: configuration)
+                        completion(.success(configuration))
+                        return
+                    }
                     Log.vpn.error("DoT apply(isEnabled=\(configuration.isEnabled, privacy: .public)): saveToPreferences failed domain=\(ns.domain, privacy: .public) code=\(ns.code, privacy: .public)")
                     completion(.failure(saveError))
                 } else {
