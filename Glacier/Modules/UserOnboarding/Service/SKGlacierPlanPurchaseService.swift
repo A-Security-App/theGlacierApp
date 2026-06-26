@@ -38,19 +38,10 @@ final class SKGlacierPlanPurchaseService: GlacierPlanPurchaseService {
 
     func loadAvailablePlans() async throws -> [Product] {
         let productIDs = Array(productIdentifiers)
-        // TEMP DIAGNOSTIC LOGGING — remove once IAP fetch is verified in sandbox.
-        Log.general.notice("[IAP] Requesting product IDs: \(productIDs.joined(separator: ", "), privacy: .public)")
         do {
             return try await withThrowingTaskGroup(of: [Product].self) { group in
                 group.addTask {
                     let products = try await Product.products(for: productIDs)
-                    // TEMP DIAGNOSTIC LOGGING — remove once IAP fetch is verified in sandbox.
-                    let returnedIDs = products.map(\.id)
-                    let missingIDs = productIDs.filter { !returnedIDs.contains($0) }
-                    Log.general.notice("[IAP] StoreKit returned \(products.count, privacy: .public) product(s): \(returnedIDs.joined(separator: ", "), privacy: .public)")
-                    if !missingIDs.isEmpty {
-                        Log.general.error("[IAP] StoreKit did NOT return these IDs — check exact match / status / propagation: \(missingIDs.joined(separator: ", "), privacy: .public)")
-                    }
                     return products.sorted {
                         $0.displayName.localizedCaseInsensitiveCompare($1.displayName) == .orderedAscending
                     }
@@ -64,8 +55,6 @@ final class SKGlacierPlanPurchaseService: GlacierPlanPurchaseService {
                 return result
             }
         } catch {
-            // TEMP DIAGNOSTIC LOGGING — remove once IAP fetch is verified in sandbox.
-            Log.general.error("[IAP] loadAvailablePlans failed (network error or 15s timeout): \(error.localizedDescription, privacy: .public)")
             throw GlacierPlanPurchaseError.errorLoadingPlanDetails
         }
     }
