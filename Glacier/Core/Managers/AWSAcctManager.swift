@@ -20,6 +20,11 @@ open class AWSAcctManager: NSObject
     private var secUpdateDelegate:SecurityUpdateDel?
     private var vpnOnly = false
     private var reauthNeeded = false
+    // Guards the one-time forced logout on a terminal auth failure so that a burst
+    // of failing fetchAuthSession calls (the app fires several in parallel) only
+    // routes to the login screen once. Reset on a fresh sign-in.
+    private var didHandleSessionExpiry = false
+    private let sessionExpiryLock = NSLock()
     let workQueue = DispatchQueue(label: "AWS Queue", qos: .userInitiated)
     private var userName:String?
     private var bucketOrg:String?
@@ -42,6 +47,7 @@ open class AWSAcctManager: NSObject
             case HubPayload.EventName.Auth.signedIn:
                 Log.auth.notice("User signed in")
                 self.userData.isSignedIn = true
+                self.resetSessionExpiryGuard()
                 self.endLogin()
                 SubscriptionAccessCoordinator.shared.handleSubscriptionStatusChange(isSubscribed: GlacierAccountModel.getGlacierAccount()?.hasActivePhoneNumberSubscription ?? false)
                 Task {
@@ -56,7 +62,13 @@ open class AWSAcctManager: NSObject
                 }
             case HubPayload.EventName.Auth.sessionExpired:
                 Log.auth.notice("Session expired")
-                self.login()
+                // Amplify emits this event only when the session cannot be
+                // refreshed — the refresh token is expired/revoked or the Cognito
+                // user was deleted. It is never emitted for transient network or
+                // service errors (those keep the session intact), so forcing a
+                // clean logout here cannot prematurely sign out a recoverable
+                // session.
+                Task { await self.handleTerminalSessionExpiry() }
             case HubPayload.EventName.Auth.signedOut:
                 Log.auth.notice("User signed out")
                 SubscriptionAccessCoordinator.shared.handleSubscriptionStatusChange(isSubscribed: false)
@@ -91,6 +103,19 @@ open class AWSAcctManager: NSObject
                 Log.auth.info("Is user signed in - \(session.isSignedIn)")
                 self.updateUI(forSignInStatus: session.isSignedIn)
                 if session.isSignedIn {
+                    // A session can report isSignedIn == true while every token
+                    // accessor fails with a terminal auth error (e.g. the Cognito
+                    // user was deleted or the refresh token was revoked). Detect
+                    // that here so we don't report a false success and loop
+                    // fetchAuthSession forever. Network/service errors are NOT
+                    // terminal and fall through to the normal success/retry path.
+                    if let cognitoSession = session as? AWSAuthCognitoSession,
+                       case .failure(let tokenError) = cognitoSession.getCognitoTokens(),
+                       Self.isTerminalAuthFailure(tokenError) {
+                        Log.auth.notice("[AWSAcctManager] Session reports signed-in but tokens are terminally invalid: \(tokenError)")
+                        await self.handleTerminalSessionExpiry()
+                        return false
+                    }
                     await self.fetchAttributes()
                     return true
                 }
@@ -136,6 +161,61 @@ open class AWSAcctManager: NSObject
             self.login()
         }
         return false
+    }
+
+    /// Returns true only for auth failures from which the session cannot recover —
+    /// the refresh token was rejected (expired/revoked) or the Cognito user was
+    /// deleted. Network and service errors (`.service`) are explicitly NOT terminal
+    /// so a bad connection never triggers a logout; they are left to retry/refresh.
+    private static func isTerminalAuthFailure(_ error: AuthError) -> Bool {
+        switch error {
+        case .sessionExpired, .notAuthorized:
+            return true
+        default:
+            return false
+        }
+    }
+
+    /// Forces a clean logout after a terminal auth failure and routes the user to
+    /// the login screen. Guarded so the parallel burst of failing session fetches
+    /// only triggers this once per signed-in session.
+    private func handleTerminalSessionExpiry() async {
+        sessionExpiryLock.lock()
+        if didHandleSessionExpiry {
+            sessionExpiryLock.unlock()
+            return
+        }
+        didHandleSessionExpiry = true
+        sessionExpiryLock.unlock()
+
+        Log.auth.notice("[AWSAcctManager] Terminal session expiry — signing out and routing to login")
+
+        // Sign out so Amplify clears the dead tokens from the keychain. Without
+        // this the stale refresh token stays cached and every relaunch hits the
+        // same NotAuthorizedException loop.
+        _ = await Amplify.Auth.signOut()
+
+        // Route to the auth screen. Posting isAuthSessionValid=false makes
+        // GlacierAppRootScreen show the "Your session has expired" alert (when the
+        // user was logged in) and present the login screen. Posted directly rather
+        // than via postAuthVerifiedOnce because that path is locked to fire once
+        // per launch for the startup routing decision.
+        await MainActor.run {
+            self.updateUI(forSignInStatus: false)
+            NotificationCenter.default.post(
+                name: .userAuthenticationVerified,
+                object: nil,
+                userInfo: [GlacierNotificationProperties.isAuthSessionValid: false]
+            )
+        }
+    }
+
+    /// Re-arms the terminal-session-expiry guard after a fresh sign-in so a later
+    /// expiry within the same app launch is handled again.
+    private func resetSessionExpiryGuard() {
+        sessionExpiryLock.lock()
+        didHandleSessionExpiry = false
+        sessionExpiryLock.unlock()
     }
 
     func fetchAttributes() async {
