@@ -20,7 +20,7 @@ enum SlidingCard: Int, CaseIterable, Identifiable {
         switch self {
         case .privacy: return NSLocalizedString("Browse privately, ad-free.", comment: "Slideing card privacy title")
         case .protection: return NSLocalizedString("Know you’re protected.", comment: "Slideing card protection title")
-        case .anonymity: return NSLocalizedString("Make calls anonymously.", comment: "Slideing card anonymity title")
+        case .anonymity: return NSLocalizedString("Make calls privately.", comment: "Slideing card anonymity title")
         }
     }
     
