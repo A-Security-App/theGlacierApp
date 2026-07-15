@@ -25,6 +25,7 @@ final class EndpointService {
         case dnsCheckEndpoint
         case dnsCheckIP
         case subscriptionEndpoint
+        case appleSubscriptionValidationEndpoint
     }
 
     // MARK: - Public properties
@@ -60,12 +61,14 @@ final class EndpointService {
     var dnsCheckEndpoint: String? { string(for: .dnsCheckEndpoint) }
     var dnsCheckIP: String? { string(for: .dnsCheckIP) }
     var subscriptionEndpoint: String? { string(for: .subscriptionEndpoint) }
+    var appleSubscriptionValidationEndpoint: String? { string(for: .appleSubscriptionValidationEndpoint) }
 
     var twilioAPIURL: URL? { endpointURL(path: twilioAPIEndpoint) }
     var wireGuardProfileURL: URL? { endpointURL(path: wgProfileEndpoint) }
     var dnsProfileURL: URL? { endpointURL(path: dnsProfileEndpoint) }
     var dnsAPIURL: URL? { endpointURL(path: dnsAPIEndpoint) }
     var subscriptionURL: URL? { endpointURL(path: subscriptionEndpoint) }
+    var appleSubscriptionValidationURL: URL? { endpointURL(path: appleSubscriptionValidationEndpoint) }
 
     func endpointURL(path: String?) -> URL? {
         guard

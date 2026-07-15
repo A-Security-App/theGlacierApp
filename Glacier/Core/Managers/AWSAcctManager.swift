@@ -195,6 +195,19 @@ open class AWSAcctManager: NSObject
         // same NotAuthorizedException loop.
         _ = await Amplify.Auth.signOut()
 
+        // Clear the cached logged-in flag, mirroring the manual sign-out in
+        // SettingsViewModel. This is essential: the startup fallback in
+        // tryFetchSession uses `signedIn = amplifySignedIn || cachedLoggedIn` so a
+        // transient VPN/network failure never falsely logs the user out. But after
+        // a genuine terminal expiry Amplify correctly reports "not signed in", and
+        // if this flag were left true the fallback would override that and route
+        // the user back to a logged-in-looking main screen with no valid session —
+        // every authenticated call then fails silently (signedOut). Clearing it
+        // here means the next launch sees cachedLoggedIn=false and routes cleanly
+        // to the login screen. Only reached on a confirmed terminal failure, so it
+        // does not regress the transient-failure protection.
+        UserDefaultsService.shared.remove(for: \.isUserLoggedIn)
+
         // Route to the auth screen. Posting isAuthSessionValid=false makes
         // GlacierAppRootScreen show the "Your session has expired" alert (when the
         // user was logged in) and present the login screen. Posted directly rather
@@ -230,7 +243,18 @@ open class AWSAcctManager: NSObject
                     jwt = nil
                 }
                 if let jwt, let email = jwt.claim(name: "email").string {
-                    if GlacierAccountModel.getGlacierAccount() == nil {
+                    if let existingAccount = GlacierAccountModel.getGlacierAccount() {
+                        // Self-heal a stale record left over from a previous user
+                        // (e.g. if logout cleanup didn't fully run). If the
+                        // persisted username doesn't match the signed-in email,
+                        // update it so Settings reflects the current user.
+                        if existingAccount.username != email {
+                            existingAccount.username = email
+                            existingAccount.loginDate = Date()
+                            existingAccount.saveAccount()
+                            TwilioBackendManager.sharedMgr().identity = email
+                        }
+                    } else {
                         let account = GlacierAccountModel(username: email)
                         account.loginDate = Date()
                         account.saveAccount()

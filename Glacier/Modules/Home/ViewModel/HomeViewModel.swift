@@ -432,7 +432,8 @@ final class HomeVM: HomeViewModel, ObservableObject {
             }
             let secInfo = strongSelf.securityCenter.getSecurityInfo().securityInfo
             let glacierUpToDate = secInfo.glacier_version_outdated == false
-            strongSelf.updateDeviceSettingsStatus(for: .glacierAndiOSVersionUpdated, isEnabled: glacierUpToDate)
+            let iosUpToDate = secInfo.os_version_outdated == false
+            strongSelf.updateDeviceSettingsStatus(for: .glacierAndiOSVersionUpdated, isEnabled: glacierUpToDate && iosUpToDate)
         }
     }
     

@@ -327,6 +327,12 @@ final class SettingsVM: SettingsViewModel, ObservableObject {
 
         CallManager.sharedCallManager().unregisterWithTwilio()
 
+        // Remove the persisted account record so the next login starts from a
+        // clean slate. Without this the old account's username (and other
+        // per-user state) survives logout, and login skips re-creating the
+        // account — leaving Settings showing the previous user's email.
+        GlacierAccountModel.getGlacierAccount()?.removeAccount()
+
         // Navigate immediately — don't block on DB cleanup.
         // DB removal runs fire-and-forget in the background so that
         // navigation always happens even when the phone-number list is empty.
