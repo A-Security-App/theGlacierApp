@@ -123,7 +123,9 @@ final class PhoneCallVM: PhoneCallViewModel, ObservableObject, PhoneNumberMenuCo
         } else {
             // currentUuid is nil — Twilio/CallKit already tore down the call (e.g. the
             // remote hung up and callDidDisconnect fired) but the UI was not dismissed.
-            // Drive cleanup directly so the screen doesn't stay stuck.
+            // Force any call CallKit still shows to end, then drive cleanup directly so
+            // neither the screen nor the CallKit call is left stuck.
+            callManager.forceEndCallKitCalls()
             disconnectCall(true)
         }
     }
@@ -132,6 +134,9 @@ final class PhoneCallVM: PhoneCallViewModel, ObservableObject, PhoneNumberMenuCo
 
     private func initializeCall() {
         guard let contact = phoneContact else { return }
+        // Reset the duration before connecting so a stale value from a prior call
+        // can't flash when this call transitions to the connected state.
+        resetCallTimer()
         CallManager.sharedCallManager().setGlacierCallDelegate(self)
         CallManager.sharedCallManager().makeVoiceCall(contact)
         callStatus = .ringing
@@ -139,7 +144,7 @@ final class PhoneCallVM: PhoneCallViewModel, ObservableObject, PhoneNumberMenuCo
 
     private func startCallTimer() {
         stopCallTimer()
-        callDurationSeconds = 0
+        resetCallTimer()
         callTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
             guard let self = self else { return }
             self.callDurationSeconds += 1
@@ -152,6 +157,12 @@ final class PhoneCallVM: PhoneCallViewModel, ObservableObject, PhoneNumberMenuCo
     private func stopCallTimer() {
         callTimer?.invalidate()
         callTimer = nil
+    }
+
+    /// Zeroes the elapsed duration and its label so the timer always starts fresh at 00:00.
+    private func resetCallTimer() {
+        callDurationSeconds = 0
+        callDurationLabel = "00:00"
     }
 
 }
@@ -173,6 +184,7 @@ extension PhoneCallVM {
         CallManager.sharedCallManager().finalizeVoiceCall()
         DispatchQueue.main.async {
             self.stopCallTimer()
+            self.resetCallTimer()
             self.callStatus = .ended
             
             // Let's notifiy dial pad screen about call ended event

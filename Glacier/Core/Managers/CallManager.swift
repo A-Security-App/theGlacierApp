@@ -364,7 +364,7 @@ extension CallManager : CXProviderDelegate {
 
     public func provider(_ provider: CXProvider, perform action: CXEndCallAction) {
         //print("Twilio provider:performEndCallAction: with *** userInitiatedDisconnect: \(userInitiatedDisconnect)")
-        Log.calls.notice("CXProvider:CXEndCallAction:")
+        Log.calls.notice("CXProvider:CXEndCallAction: userInitiatedDisconnect=\(self.userInitiatedDisconnect, privacy: .public)")
 
         self.callTimeout?.cancel()
 
@@ -748,25 +748,42 @@ extension CallManager {
             self.stopSound()
             TwilioBackendManager.sharedMgr().queryCallHistory(4)
         }
-        Log.calls.notice("performEndCallAction with \(uuid) and userInitiated \(userInitiated)")
+        Log.calls.notice("performEndCallAction with \(uuid, privacy: .public) and userInitiated \(userInitiated, privacy: .public)")
         userInitiatedDisconnect = userInitiated
-        
+
         let endCallAction = CXEndCallAction(call: uuid)
         let transaction = CXTransaction(action: endCallAction)
 
         callKitCallController.request(transaction) { error in
             if let error = error {
-                Log.calls.error("EndCallAction transaction request failed: \(error.localizedDescription).")
-                // CallKit rejected the action (e.g. it already considers the call
-                // ended). provider(_:perform:CXEndCallAction) will not fire, so force
-                // cleanup here so the UI is not left stuck.
+                Log.calls.error("EndCallAction transaction request failed: \(error.localizedDescription, privacy: .public).")
+                // CallKit rejected the action (e.g. it never/no longer considers the
+                // call active because the far end already tore down without us seeing
+                // callDidDisconnect). provider(_:perform:CXEndCallAction) will NOT
+                // fire, so force cleanup here: drop the Twilio leg, force CallKit to
+                // end the call, and dismiss the UI so nothing is left stuck.
                 DispatchQueue.main.async {
+                    self.activeCall?.disconnect()
+                    self.forceEndCallKitCalls()
                     self.gcdelegate?.disconnectCall(userInitiated)
                 }
                 return
             }
 
             Log.calls.notice("EndCallAction transaction request successful")
+        }
+    }
+
+    /// Forces CallKit to drop every call it still considers active, bypassing the
+    /// CXEndCallAction transaction (which CallKit can reject when its model has
+    /// desynced from reality — e.g. the far end hung up but no callDidDisconnect was
+    /// delivered). `reportCall(with:endedAt:reason:)` is authoritative and cannot be
+    /// rejected, so this guarantees the red end button always clears CallKit.
+    func forceEndCallKitCalls(reason: CXCallEndedReason = .remoteEnded) {
+        let calls = callKitCallController.callObserver.calls
+        for call in calls where !call.hasEnded {
+            Log.calls.notice("forceEndCallKitCalls: reporting \(call.uuid, privacy: .public) ended")
+            callKitProvider.reportCall(with: call.uuid, endedAt: Date(), reason: reason)
         }
     }
 
@@ -790,6 +807,7 @@ extension CallManager {
 
     func reportCallDisconnected(uuid: UUID, error: Error?) {
         //ALF IOSM-515
+        Log.calls.notice("reportCallDisconnected uuid=\(uuid, privacy: .public) userInitiated=\(self.userInitiatedDisconnect, privacy: .public) hasError=\(error != nil, privacy: .public)")
         self.isBusy = false
         self.busyTone = false
         
@@ -1034,7 +1052,7 @@ extension CallManager: CallDelegate {
     }
 
     public func callDidConnect(call: Call) {
-        Log.calls.notice("CallManager callDidConnect")
+        Log.calls.notice("CallManager callDidConnect uuid=\(call.uuid?.uuidString ?? "nil", privacy: .public)")
         activeCall = call
         // Fulfill any pending incoming-call answer action (no-op for outgoing)
         currentCall?.answerCallAction?.fulfill(withDateConnected: Date())
@@ -1055,7 +1073,7 @@ extension CallManager: CallDelegate {
 
     public func callDidFailToConnect(call: Call, error: Error) {
         let ns = error as NSError
-        Log.calls.error("CallManager callDidFailToConnect: \(error.localizedDescription) code=\(ns.code) domain=\(ns.domain)")
+        Log.calls.error("CallManager callDidFailToConnect: \(error.localizedDescription, privacy: .public) code=\(ns.code, privacy: .public) domain=\(ns.domain, privacy: .public)")
         callKitCompletionCallback?(false)
         callKitCompletionCallback = nil
         if let uuid = call.uuid {
@@ -1066,12 +1084,13 @@ extension CallManager: CallDelegate {
 
     public func callDidDisconnect(call: Call, error: Error?) {
         if let error = error {
-            Log.calls.notice("CallManager callDidDisconnect with error: \(error.localizedDescription)")
+            Log.calls.notice("CallManager callDidDisconnect with error: \(error.localizedDescription, privacy: .public)")
         } else {
-            Log.calls.notice("CallManager callDidDisconnect")
+            Log.calls.notice("CallManager callDidDisconnect (remote hang-up or normal end)")
         }
         // Capture before reportCallDisconnected resets the flag
         let wasUserInitiated = userInitiatedDisconnect
+        Log.calls.notice("callDidDisconnect wasUserInitiated=\(wasUserInitiated, privacy: .public) uuid=\(call.uuid?.uuidString ?? "nil", privacy: .public)")
         if let uuid = call.uuid {
             reportCallDisconnected(uuid: uuid, error: error)
         }

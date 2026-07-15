@@ -9,6 +9,8 @@
 import Foundation
 import SwiftUI
 import StoreKit
+import Alamofire
+import Amplify
 
 /**
  SKGlacierPlanPurchaseService connects to Apple StoreKit framework and provides APIs for,
@@ -61,7 +63,18 @@ final class SKGlacierPlanPurchaseService: GlacierPlanPurchaseService {
 
     func purchasePlan(_ product: Product) async throws {
         await finishExpiredUnfinishedTransactions()
-        let result = try await product.purchase()
+
+        // Attach the signed-in Glacier account's UUID (Cognito `sub`) as the App Store
+        // appAccountToken so future App Store Server notifications about this subscription can be
+        // mapped to the user. Resolving the token must never block the purchase: if no stable
+        // UUID is available (session momentarily stale, federated identity, etc.), we purchase
+        // without it — the backend link (linkAppleSubscription) still attributes the subscription
+        // by its original transaction ID.
+        var purchaseOptions: Set<Product.PurchaseOption> = []
+        if let accountToken = await resolveAppAccountToken() {
+            purchaseOptions.insert(.appAccountToken(accountToken))
+        }
+        let result = try await product.purchase(options: purchaseOptions)
 
         switch result {
         case .success(let verificationResult):
@@ -162,6 +175,17 @@ final class SKGlacierPlanPurchaseService: GlacierPlanPurchaseService {
             )
         }
         await transaction.finish()
+
+        // Link the purchase to the signed-in Glacier account so the console/backend recognizes
+        // this Apple subscription. Non-blocking on purpose: the transaction is already verified
+        // and finished, so a link failure must never surface as a purchase error or strand the
+        // transaction. Fired as an unstructured task calling the static linker so it completes
+        // independently of this service instance's lifetime; any link that does not land here
+        // (e.g. user not yet signed in) is retried by evaluateCurrentEntitlements on the next
+        // refresh.
+        Task.detached {
+            await SKGlacierPlanPurchaseService.linkAppleSubscription(transaction)
+        }
     }
 
     private func verify(_ result: VerificationResult<StoreKit.Transaction>) throws -> StoreKit.Transaction {
@@ -225,6 +249,118 @@ final class SKGlacierPlanPurchaseService: GlacierPlanPurchaseService {
                 GlacierNotificationProperties.activeGlacierPlanId: transaction.productID
             ]
         )
+
+        // Link this verified Apple subscription to the signed-in Glacier account. Non-blocking on
+        // purpose: this method runs on the interactive sign-in path (which holds a progress HUD
+        // across the await in resolveSubscriptionStatus) as well as on background
+        // launch/foreground/restore, and we must never make the user wait on this POST on a slow
+        // network — a slow-connection hang here is a UX regression we have deliberately avoided.
+        //
+        // Awaiting buys nothing here: local access is already granted by StoreKit
+        // (hasActiveSubscription is set true via .glacierPlanPurchaseVerified, and reconciliation
+        // is appleBaseSubscribed || backendSubscribed, so the user is never sent to the paywall
+        // regardless), and the link POST establishes the server-side linkage on its own — the
+        // console reflects the user as paid once the POST lands, independent of when this app
+        // next queries /mobile/status. Self-gates on auth: a no-op when the user isn't signed in
+        // yet, and retried on the next entitlement refresh.
+        //
+        // Fired as an unstructured task calling the STATIC linker so the request completes even
+        // though the enclosing SKGlacierPlanPurchaseService is a throwaway instance that
+        // deallocates as soon as this method returns. (A prior `Task { [weak self] … }` captured
+        // that transient instance weakly and dropped the link — the reliability bug this fixes.)
+        Task.detached {
+            await SKGlacierPlanPurchaseService.linkAppleSubscription(transaction)
+        }
+
         return wasDefinitive
+    }
+
+    // MARK: - Apple subscription linking
+
+    /// Request body for `POST apple/validate-receipt`.
+    private struct AppleSubscriptionLinkRequest: Encodable {
+        let transactionId: String
+    }
+
+    /// Links a verified StoreKit base-plan transaction to the signed-in Glacier account by
+    /// sending its original transaction ID to the backend. This is intentionally non-throwing:
+    /// linking is best-effort and must never break the purchase or entitlement-refresh flow.
+    /// A missing endpoint or unavailable auth (user not signed in yet) is a no-op; the link is
+    /// retried on the next entitlement refresh. Only base-plan transactions are sent here —
+    /// phone-line add-ons are out of scope for this endpoint.
+    ///
+    /// `static` on purpose: this must run to completion independently of the calling service
+    /// instance. Entitlement refresh creates throwaway `SKGlacierPlanPurchaseService()` instances
+    /// (see resolveSubscriptionStatus / refreshBackendSubscription) that deallocate as soon as
+    /// refreshEntitlements() returns. A previous `Task { [weak self] … }` captured that instance
+    /// weakly and silently dropped the link when it deallocated — so existing-subscriber repairs
+    /// never reached the backend. Being static (no `self`) plus an unstructured task decouples the
+    /// request from instance lifetime while keeping it off the UI-gating path.
+    private static func linkAppleSubscription(_ transaction: StoreKit.Transaction) async {
+        guard let url = EndpointService.shared.appleSubscriptionValidationURL else {
+            Log.general.error("[AppleSubLink] no validation URL configured — skipping link")
+            return
+        }
+
+        guard let headers = await GlacierAPIHeaders.authHeaders() else {
+            Log.general.info("[AppleSubLink] auth headers unavailable — deferring link to next refresh")
+            return
+        }
+
+        let body = AppleSubscriptionLinkRequest(transactionId: String(transaction.originalID))
+
+        await withCheckedContinuation { continuation in
+            GlacierPinningConfiguration.pinnedSession
+                .request(url,
+                         method: .post,
+                         parameters: body,
+                         encoder: JSONParameterEncoder.default,
+                         headers: headers,
+                         requestModifier: { $0.timeoutInterval = 15 })
+                .validate()
+                .response { response in
+                    let statusCode = response.response?.statusCode ?? 0
+                    switch response.result {
+                    case .success:
+                        Log.general.info("[AppleSubLink] linked Apple subscription (status \(statusCode))")
+                    case .failure(let error):
+                        // Includes 4xx/5xx (validate() fails non-2xx) and transport errors.
+                        // Left as best-effort: a locally-verified entitlement still grants access,
+                        // and the link retries on the next refresh.
+                        Log.general.notice("[AppleSubLink] link request failed (status \(statusCode)): \(error)")
+                    }
+                    continuation.resume()
+                }
+        }
+    }
+
+    /// Resolves the current Glacier account's stable UUID (Cognito `sub`) for use as the App Store
+    /// `appAccountToken`. Returns `nil` — never blocks or throws into the purchase flow — when
+    /// Amplify is not configured, no user is signed in, or the user id is not a UUID.
+    private func resolveAppAccountToken() async -> UUID? {
+        guard GlacierApplicationDelegate.shared?.amplifyIsConfigured == true else { return nil }
+
+        // getCurrentUser() reads local Cognito state (no network round-trip), but bound it with a
+        // short timeout anyway so the purchase sheet is never delayed on a bad connection. On
+        // timeout, error, or a non-UUID id we return nil and purchase without the token — the
+        // backend link still attributes the subscription by its original transaction ID.
+        return await withTaskGroup(of: UUID?.self) { group in
+            group.addTask {
+                do {
+                    let user = try await Amplify.Auth.getCurrentUser()
+                    return UUID(uuidString: user.userId)
+                } catch {
+                    Log.general.info("[AppleSubLink] no signed-in user for appAccountToken — purchasing without it")
+                    return nil
+                }
+            }
+            group.addTask {
+                try? await Task.sleep(nanoseconds: 3_000_000_000)
+                return nil
+            }
+            let result = await group.next() ?? nil
+            group.cancelAll()
+            return result
+        }
     }
 }
