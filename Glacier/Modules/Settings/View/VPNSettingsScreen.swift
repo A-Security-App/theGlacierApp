@@ -23,7 +23,28 @@ struct VPNSettingsScreen<ViewModel: VPNSettingsViewModel & ObservableObject>: Vi
     
     @State private var secondaryTextColor: Color?
     @State private var seperatorLineColor: Color = .grey20
-    
+
+    private let learnMoreURLString = "https://support.theglacierapp.com"
+
+    /// VPN connection description with a tappable "Learn more." link at the end.
+    private var vpnDescriptionText: AttributedString {
+        var description = AttributedString(NSLocalizedString(
+            "An extra layer of encryption. Ideal for public Wi-Fi, travel, or untrusted networks. ",
+            comment: "VPN settings screen VPN connection description"))
+
+        var learnMore = AttributedString(NSLocalizedString(
+            "Learn more.",
+            comment: "VPN settings screen VPN connection description learn more link"))
+        if let url = URL(string: learnMoreURLString) {
+            learnMore.link = url
+        }
+        learnMore.foregroundColor = glacierColorScheme.activeScheme == .dark ? .white : .black
+        learnMore.underlineStyle = .single
+
+        description.append(learnMore)
+        return description
+    }
+
     // MARK: - Initializer
     
     init(viewModel: ViewModel) {
@@ -61,9 +82,7 @@ struct VPNSettingsScreen<ViewModel: VPNSettingsViewModel & ObservableObject>: Vi
                                     }
                                     
                                     GlacierLabel(
-                                        text: NSLocalizedString(
-                                            "An extra layer of encryption. Ideal for public Wi-Fi, travel, or untrusted networks. Learn more.",
-                                            comment: "VPN settings screen VPN connection description"),
+                                        attributedString: vpnDescriptionText,
                                         font: .bodyRegular,
                                         customTextColor: $secondaryTextColor
                                     )
