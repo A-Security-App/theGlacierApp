@@ -188,6 +188,11 @@ final class HomeVM: HomeViewModel, ObservableObject {
                         titleColor: .ember,
                         onTap: {
                             self.dismissPopup()
+                            // One tap turns off both VPN and DNS together. Turning the VPN off makes
+                            // the tunnel go inactive, which fires onVPNStatusChange ->
+                            // refreshDoTResolutionIfSuppressed; the DnsOverTlsController suppresses
+                            // that heal for a few seconds after this explicit disable, so it can't
+                            // re-enable the DoT profile we're deliberately turning off here.
                             self.toggleVPNConnection(false)
                             self.toggleDNSConnection(false)
                         }
@@ -361,8 +366,11 @@ final class HomeVM: HomeViewModel, ObservableObject {
         var issues: [String] = []
         let jailStatus = IOSSecuritySuite.amIJailbrokenWithFailMessage()
         let reverseStatus = IOSSecuritySuite.amIReverseEngineeredWithFailedChecks()
-        
-        if jailStatus.jailbroken {
+        // Supplement 1.9.11 with the rootless (/var/jb) and TrollStore markers
+        // it predates. Additive — see GlacierJailbreakChecks.
+        let glacierJail = GlacierJailbreakChecks.run()
+
+        if jailStatus.jailbroken || glacierJail.jailbroken {
             issues.append(
                 NSLocalizedString("Your system shows signs of being jailbroken.", comment: "Home screen jailbreak detection")
             )
@@ -600,6 +608,11 @@ final class HomeVM: HomeViewModel, ObservableObject {
         // rule), fire a DNS check so we immediately detect whether DoT is still routing
         // and prompt the user to select the profile in iOS Settings if needed.
         if !securityCenter.isVpnTunnelConnected() {
+            // The tunnel (and its DNS proxy) is down, so the system-wide DoT profile is the only
+            // thing steering DNS. Refresh its pinned resolver IPs in case they went unroutable on
+            // the network switch that suppressed the tunnel; a successful re-apply re-verifies via
+            // the .dnsOverTlsConfigurationDidChange path. The doDNSCheck below is the fallback probe.
+            dnsController.refreshDoTResolutionIfSuppressed(isTunnelConnected: false)
             DispatchQueue.main.asyncAfter(deadline: .now() + 1) { [weak self] in
                 self?.securityCenter.doDNSCheck()
             }
@@ -613,6 +626,12 @@ final class HomeVM: HomeViewModel, ObservableObject {
             self.connectToDNSIfRequired()
             self.scanDeviceForSecurityIssues()
             self.scanDeviceForSecuritySettings()
+            // If DoT is enabled but the tunnel is suppressed (on-demand on a trusted network), heal
+            // the profile's pinned resolver IPs so DNS works — the common case when a user opens the
+            // app after noticing DNS is down. No-op when the tunnel is actually connected.
+            self.dnsController.refreshDoTResolutionIfSuppressed(
+                isTunnelConnected: self.securityCenter.isVpnTunnelConnected()
+            )
             self.securityCenter.doDNSCheck()
             self.queryDnsAnalyticsIfNeededAfterForeground()
         }

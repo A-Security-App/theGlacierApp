@@ -121,7 +121,7 @@
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Access to the photo library is required to send your existing photos.</string>
 	<key>PrivacyPolicyURL</key>
-	<string>https://theglacierapp.com/privacy</string>
+	<string>https://www.theglacierapp.com/privacy</string>
 	<key>TermsOfUseURL</key>
 	<string>https://www.theglacierapp.com/terms</string>
 	<key>UIAppFonts</key>

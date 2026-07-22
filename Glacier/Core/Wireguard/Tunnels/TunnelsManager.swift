@@ -375,6 +375,27 @@ class TunnelsManager {
     func setOnDemandEnabled(_ isOnDemandEnabled: Bool, on tunnel: TunnelContainer, completionHandler: @escaping (TunnelsManagerError?) -> Void) {
         
         let tunnelProviderManager = tunnel.tunnelProvider
+
+        // Disabling on-demand must be unconditional and idempotent. The in-memory
+        // `isActivateOnDemandEnabled` flag is derived from `isOnDemandEnabled` alone (see
+        // TunnelContainer), so a guard keyed on `isOnDemandEnabled && isEnabled` could early-return
+        // while the flag — and therefore tunnelInOperation()/isTunnelEnabled() — keep reporting the
+        // tunnel as "on", leaving the VPN toggle stuck ON. Always persist false and clear the flag so
+        // turning the VPN off stays off. Intentionally do NOT touch `isEnabled` (on-demand off plus
+        // startDeactivation is enough to stop auto-reconnect) and do NOT touch any DNS/DoT profile.
+        guard isOnDemandEnabled else {
+            tunnelProviderManager.isOnDemandEnabled = false
+            tunnelProviderManager.saveToPreferences { error in
+                if let error = error {
+                    completionHandler(TunnelsManagerError.systemErrorOnModifyTunnel(systemError: error))
+                    return
+                }
+                tunnel.isActivateOnDemandEnabled = tunnelProviderManager.isOnDemandEnabled
+                completionHandler(nil)
+            }
+            return
+        }
+
         let isCurrentlyEnabled = (tunnelProviderManager.isOnDemandEnabled && tunnelProviderManager.isEnabled)
         guard isCurrentlyEnabled != isOnDemandEnabled else {
             completionHandler(nil)
@@ -410,10 +431,11 @@ class TunnelsManager {
                     completionHandler(nil)
                 }
             } else {
-                // Disabling on-demand: mirror the persisted state into the in-memory flag.
-                // Without this, tunnelInOperation()/isTunnelEnabled() keep reporting the tunnel
-                // as in-operation (they treat isActivateOnDemandEnabled == true as "on"), so the
-                // UI stays "connected" after the user turns the VPN off on a suppressed tunnel.
+                // Reached only on an *enable* call whose preferences already had on-demand true
+                // while isEnabled was false (so isActivatingOnDemand is false). Disable calls no
+                // longer flow here — the unconditional guard at the top of this method handles
+                // them. Mirror the persisted state into the in-memory flag so
+                // tunnelInOperation()/isTunnelEnabled() stay consistent with preferences.
                 tunnel.isActivateOnDemandEnabled = tunnelProviderManager.isOnDemandEnabled
                 completionHandler(nil)
             }

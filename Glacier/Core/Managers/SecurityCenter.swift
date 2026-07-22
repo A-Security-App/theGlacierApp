@@ -163,9 +163,15 @@ open class SecurityCenter: NSObject {
         let jailStatus = IOSSecuritySuite.amIJailbrokenWithFailMessage()
         let reStatus = IOSSecuritySuite.amIReverseEngineeredWithFailedChecks()
         let proxied = IOSSecuritySuite.amIProxied()
-        if jailStatus.jailbroken {
+        // Supplement 1.9.11's jailbreak checks with the rootless (/var/jb) and
+        // TrollStore fingerprints it predates. Purely additive — OR'd below.
+        let glacierJail = GlacierJailbreakChecks.run()
+        if jailStatus.jailbroken || glacierJail.jailbroken {
             compromised = true
-            let reason = " with reason: \(jailStatus.failMessage)"
+            var reasons: [String] = []
+            if jailStatus.jailbroken { reasons.append(jailStatus.failMessage) }
+            if glacierJail.jailbroken { reasons.append(glacierJail.indicators.joined(separator: ", ")) }
+            let reason = " with reason: \(reasons.joined(separator: "; "))"
             self.secInfoUtil.securityInfo.compromised_detail = COMPROMISED_JAILBROKEN + reason //IOSM#58
         } else if proxied {
             compromised = true

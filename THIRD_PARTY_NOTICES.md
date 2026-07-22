@@ -90,7 +90,7 @@ its installed `Pods/<Name>/` directory. The set includes:
 - Alamofire (MIT)
 - BBlock (MIT)
 - GRDB.swift / SQLCipher (MIT)
-- IOSSecuritySuite (MIT)
+- IOSSecuritySuite (BSD 2-Clause) — pinned to 1.9.11; see note below
 - JWTDecode (MIT)
 - Kingfisher (MIT)
 - MBProgressHUD (MIT)
@@ -102,3 +102,18 @@ See each pod's installed LICENSE for the authoritative text.
 [`license_plist.yml`](license_plist.yml) configures
 [LicensePlist](https://github.com/mono0926/LicensePlist) to generate the
 in-app "Licenses" Settings entries from these.
+
+### Note on IOSSecuritySuite version
+
+IOSSecuritySuite is deliberately pinned to **1.9.11** in the [Podfile](Podfile).
+Releases 1.9.11 and earlier are licensed under **BSD 2-Clause** (permissive;
+commercial and paid distribution allowed). Starting with **2.0.0**, SecuRing
+relicensed the library under a proprietary EULA whose Free/Standard/Standard+
+plans forbid selling or charging fees for a program that includes the Software —
+only the paid Enterprise plan permits it. Because Glacier is a subscription app,
+staying on the BSD-licensed 1.9.11 avoids that restriction. All APIs the app
+uses (`amIJailbrokenWithFailMessage`, `amIReverseEngineeredWithFailedChecks`,
+`amIProxied`, `amIRunInEmulator`, `amIDebugged`) are present in 1.9.11.
+
+Do not upgrade to 2.x without an explicit licensing decision (an Enterprise
+license from SecuRing, or replacing the dependency).

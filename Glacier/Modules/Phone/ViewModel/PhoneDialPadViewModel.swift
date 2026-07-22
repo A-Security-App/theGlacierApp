@@ -110,7 +110,12 @@ final class PhoneDialPadVM: PhoneDialPadViewModel, ObservableObject, PhoneNumber
     
     func formatNumber(with mask: String, number: String) {
         let raw = number.replacingOccurrences(of: allowedCharacters, with: "", options: .regularExpression)
-        if raw.starts(with: "+") { return }
+        if raw.starts(with: "+") {
+            // International numbers (e.g. pasted from iOS Recents) shouldn't get
+            // the US mask applied — keep the value as-is instead of dropping it.
+            phoneNumber = raw
+            return
+        }
         
         let numbers = raw.replacingOccurrences(of: allowedDigits, with: "", options: .regularExpression)
         var result = ""
