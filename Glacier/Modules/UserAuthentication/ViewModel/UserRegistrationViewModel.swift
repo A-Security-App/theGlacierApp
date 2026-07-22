@@ -10,6 +10,7 @@ import Foundation
 import SwiftUI
 import Amplify
 import AWSCognitoAuthPlugin
+import SAMKeychain
 
 /**
  UserRegistrationViewModel protocol defines requirements for view models that provides user registration related workflows.
@@ -295,7 +296,7 @@ final class UserRegistrationVM: UserRegistrationViewModel, ObservableObject {
                     isUserAccountConfirmationPending = true
                  
                     UserDefaultsService.shared.set(email, for: \.userEmail)
-                    UserDefaultsService.shared.set(password, for: \.userPassword)
+                    PendingSignupCredentialStore.save(password)
                     UserDefaultsService.shared.set(true, for: \.isUserAccountCreated)
                     UserDefaultsService.shared.set(false, for: \.isUserAccountConfirmed)
                     
@@ -343,7 +344,7 @@ final class UserRegistrationVM: UserRegistrationViewModel, ObservableObject {
     @MainActor
     private func autoLoginUserAfterAccountConfirmation() {
         guard let email: String = UserDefaultsService.shared.get(for: \.userEmail),
-              let password: String = UserDefaultsService.shared.get(for: \.userPassword),
+              let password = PendingSignupCredentialStore.read(),
               !password.isEmpty else {
             // No usable stored credentials (verification completed after a
             // relaunch, or the password was already cleared by a previous
@@ -369,7 +370,7 @@ final class UserRegistrationVM: UserRegistrationViewModel, ObservableObject {
                     return
                 }
                 
-                UserDefaultsService.shared.set("", for: \.userPassword)
+                PendingSignupCredentialStore.clear()
                 UserDefaultsService.shared.set(true, for: \.isUserLoggedIn)
                 setRootScreen(.userOnboarding)
             } catch {
@@ -384,7 +385,7 @@ final class UserRegistrationVM: UserRegistrationViewModel, ObservableObject {
     
     @MainActor
     private func routeToLoginAfterAccountConfirmation() {
-        UserDefaultsService.shared.set("", for: \.userPassword)
+        PendingSignupCredentialStore.clear()
         presentAlertWith(
             title: .successText,
             description: NSLocalizedString(
@@ -404,5 +405,72 @@ final class UserRegistrationVM: UserRegistrationViewModel, ObservableObject {
             return authError.underlyingError as? AWSCognitoAuthError
         }
         return error as? AWSCognitoAuthError
+    }
+}
+
+/**
+ Stores the sign-up password only for the short window between account creation and the
+ automatic sign-in that runs after email confirmation.
+
+ The password used to live in `UserDefaults` (an unencrypted plist), which is inappropriate
+ for a credential. It now lives in the Keychain, using the app's shared service/access group
+ and the global accessibility set in `GlacierApplicationDelegate`
+ (`kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly` — device-only, not iCloud-synced, and
+ available after first unlock so the confirmation deep link can complete in the background).
+
+ The value is written at account creation and deleted as soon as auto sign-in succeeds or the
+ user is routed to manual login, so it is never persisted long-term.
+ */
+enum PendingSignupCredentialStore {
+
+    /// Legacy `UserDefaults` key that previously held the plaintext password. Retained only so
+    /// `clear()` can purge values written by older builds. Do not write to it.
+    private static let legacyUserDefaultsKey = "userPassword"
+
+    /// Persists the sign-up password to the Keychain for the pending-confirmation flow.
+    static func save(_ password: String) {
+        var error: NSError?
+        let stored = SAMKeychain.setPassword(
+            password,
+            forService: kServiceName,
+            account: kGlacierPendingSignupAcct,
+            accessGroup: kGlacierKeyGroup,
+            error: &error
+        )
+        if !stored {
+            Log.auth.error("Failed to store pending sign-up password: \(String(describing: error?.localizedDescription))")
+        }
+    }
+
+    /// Returns the stored sign-up password, or `nil` if none is present.
+    static func read() -> String? {
+        var error: NSError?
+        let password = SAMKeychain.password(
+            forService: kServiceName,
+            account: kGlacierPendingSignupAcct,
+            accessGroup: kGlacierKeyGroup,
+            error: &error
+        )
+        // errSecItemNotFound is expected when nothing is stored; don't log it as an error.
+        if let error, error.code != Int(errSecItemNotFound) {
+            Log.auth.error("Failed to read pending sign-up password: \(error.localizedDescription)")
+        }
+        return password
+    }
+
+    /// Removes the stored sign-up password from the Keychain and purges any legacy plaintext
+    /// value left in `UserDefaults` by an older build.
+    static func clear() {
+        var error: NSError?
+        SAMKeychain.deletePassword(
+            forService: kServiceName,
+            account: kGlacierPendingSignupAcct,
+            accessGroup: kGlacierKeyGroup,
+            error: &error
+        )
+        if let error, error.code != Int(errSecItemNotFound) {
+            Log.auth.error("Failed to delete pending sign-up password: \(error.localizedDescription)")
+        }
+        UserDefaults.standard.removeObject(forKey: legacyUserDefaultsKey)
     }
 }

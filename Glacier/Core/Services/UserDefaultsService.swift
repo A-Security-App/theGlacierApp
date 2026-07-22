@@ -28,7 +28,9 @@ final class UserDefaultsService: LocalStorageService {
     struct LocalStorageKeys {
         // User authentication module
         var userEmail: String { "userEmail" }
-        var userPassword: String { "userPassword" }
+        // NOTE: The sign-up password is intentionally NOT stored here. It is held in the
+        // Keychain via PendingSignupCredentialStore for the brief window between account
+        // creation and post-confirmation auto sign-in. Do not reintroduce a UserDefaults key.
         var isUserAccountCreated: String { "isUserAccountCreated" }
         var isUserAccountConfirmed: String { "isUserAccountConfirmed" }
         var isUserLoggedIn: String { "isUserLoggedIn" }

@@ -29,7 +29,12 @@ abstract_target 'GlacierPods' do
     pod 'Kingfisher', '~> 7.12.0'
 
     pod 'TwilioVoice', '~> 6.12.0'
-    pod 'IOSSecuritySuite', '~> 2.2.0'
+    # Pinned to 1.9.11 (the last BSD-2-Clause release). Versions 2.0.0+ are
+    # relicensed under a proprietary SecuRing EULA that forbids charging fees
+    # for a program that includes the Software except under the paid Enterprise
+    # plan — incompatible with our subscription app. Do NOT bump to 2.x without
+    # a licensing decision. All APIs we use exist in 1.9.11.
+    pod 'IOSSecuritySuite', '1.9.11'
     pod 'JWTDecode', '~> 3.3'
     pod 'Alamofire', '~> 5.9.1'
     pod 'MBProgressHUD', '~> 1.2'

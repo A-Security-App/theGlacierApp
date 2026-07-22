@@ -31,6 +31,9 @@ final class DnsOverTlsPreferences {
     private enum Keys {
         static let url = "dnsOverTls.global.url"
         static let enabled = "dnsOverTls.global.enabled"
+        // Shared with the packet-tunnel extension (PacketTunnelDnsPreferences), which writes
+        // IPv4-preferred, NAT64-aware last-known-good DoT server IPs here while the tunnel runs.
+        static let resolvedServers = "dnsOverTls.global.resolvedServers"
         static let appGroupIdentifier = "group.com.theglacierapp.GlacierApp"
     }
 
@@ -57,5 +60,23 @@ final class DnsOverTlsPreferences {
             userDefaults.set(false, forKey: Keys.enabled)
         }
         NotificationCenter.default.post(name: .dnsOverTlsConfigurationDidChange, object: self)
+    }
+
+    /// Last set of successfully-resolved DoT server IP addresses, or an empty array if none have
+    /// been persisted yet. Written by the packet-tunnel extension (IPv4-preferred, NAT64-aware)
+    /// while the tunnel runs, and by the app when it re-resolves. These are used as a bootstrap
+    /// source when the tunnel is suppressed and the system resolver is pinned to a dead DoT profile,
+    /// so they must not be resolved through `getaddrinfo`/`CFHost` at that point.
+    func savedResolvedServers() -> [String] {
+        return userDefaults.stringArray(forKey: Keys.resolvedServers) ?? []
+    }
+
+    /// Persists successfully-resolved DoT server IP addresses as the last-known-good set.
+    func saveResolvedServers(_ servers: [String]) {
+        if servers.isEmpty {
+            userDefaults.removeObject(forKey: Keys.resolvedServers)
+        } else {
+            userDefaults.set(servers, forKey: Keys.resolvedServers)
+        }
     }
 }

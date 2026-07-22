@@ -15,6 +15,9 @@ let kGlacierAcct                    = "com.theglacierapp.Acct"
 let kGlacierKeyGroup                = "UG8VC96NZF.group.com.theglacierapp.gappaccess"
 let kCognitoAcct                    = "com.theglacierapp.Cognito"
 let kGlacierVpn                     = "com.theglacierapp.Vpn"
+/// Keychain account for the transient sign-up password held only between account
+/// creation and the post-confirmation auto sign-in. Never stored in UserDefaults.
+let kGlacierPendingSignupAcct       = "com.theglacierapp.PendingSignup"
 
 // MARK: - Encryption Keys
 

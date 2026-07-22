@@ -293,7 +293,11 @@ public class GlacierApplicationDelegate: UIResponder, UIApplicationDelegate {
             // Mirrors HomeViewModel.scanDeviceForSecurityIssues() but avoids
             // SecurityCenter.isCompromised() to prevent NotificationCenter
             // side-effects from a background context.
+            // Supplement 1.9.11 with rootless (/var/jb) + TrollStore markers.
+            // GlacierJailbreakChecks is stat-only with no side effects, so it's
+            // safe in this background context. Additive — OR'd with the library.
             let isJailbroken = IOSSecuritySuite.amIJailbrokenWithFailMessage().jailbroken
+                || GlacierJailbreakChecks.run().jailbroken
             let isProxied    = IOSSecuritySuite.amIProxied()
             let isRE         = IOSSecuritySuite.amIReverseEngineeredWithFailedChecks().reverseEngineered
             let isEmulator   = IOSSecuritySuite.amIRunInEmulator()
@@ -334,13 +338,19 @@ public class GlacierApplicationDelegate: UIResponder, UIApplicationDelegate {
             // network and stay silent unless we can affirmatively confirm the
             // tunnel should be connected here.
             if !isConnected && wasVPNConnected {
-                self?.evaluateShouldBeConnectedOnCurrentNetwork(managers) { shouldConnect in
-                    if shouldConnect {
-                        self?.showVPNDisconnectedNotification()
-                    } else {
-                        Log.vpn.notice("[VPNHealth] tunnel down but on-demand policy/network does not require it here — suppressing notification")
+                // Tunnel is down while VPN is intended on — the on-demand-suppressed case. The
+                // tunnel's DNS proxy isn't running, so the system-wide DoT profile is the only thing
+                // steering DNS; heal its pinned resolver IPs (background, no user interaction needed)
+                // so DNS keeps working, then decide whether to surface a disconnected notification.
+                DnsOverTlsController.shared.refreshDoTResolutionIfSuppressed(isTunnelConnected: false) { _ in
+                    self?.evaluateShouldBeConnectedOnCurrentNetwork(managers) { shouldConnect in
+                        if shouldConnect {
+                            self?.showVPNDisconnectedNotification()
+                        } else {
+                            Log.vpn.notice("[VPNHealth] tunnel down but on-demand policy/network does not require it here — suppressing notification")
+                        }
+                        task.setTaskCompleted(success: true)
                     }
-                    task.setTaskCompleted(success: true)
                 }
             } else {
                 task.setTaskCompleted(success: true)

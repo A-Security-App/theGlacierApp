@@ -59,6 +59,16 @@ final class DnsOverTlsController {
     private let resolveServerAddress: (String) throws -> [String]
     private var cachedResolvedServers: [String]?
     private var cachedResolvedHost: String?
+    /// When the user last explicitly disabled DoT (via `apply(isEnabled: false)`), or nil if the
+    /// most recent apply was an enable. Guarded by `workQueue`. Used by
+    /// `refreshDoTResolutionIfSuppressed` to avoid re-enabling a profile the user is deliberately
+    /// turning off right now — e.g. the one-tap "turn off VPN + DNS" path, whose incidental
+    /// tunnel-inactive event would otherwise fire a heal before the disable has persisted.
+    private var lastUserDisableAt: Date?
+    /// How long after an explicit disable the resilience heal stays suppressed. Comfortably covers
+    /// the lag between `startDeactivation` and the tunnel reporting inactive (a few seconds); a
+    /// subsequent enable clears the suppression outright, so this never blocks a genuine later heal.
+    private static let healSuppressionWindow: TimeInterval = 8
 
     init(preferences: DnsOverTlsPreferences = .shared,
          dnsManager: NEDNSSettingsManager = .shared(),
@@ -86,6 +96,9 @@ final class DnsOverTlsController {
                completion: @escaping (Result<DnsOverTlsConfiguration, Error>) -> Void) {
         let sanitized = configuration.sanitized()
         workQueue.async {
+            // Record disable intent (and clear it on enable) so an incidental resilience heal can't
+            // re-enable a profile the user just turned off. See `refreshDoTResolutionIfSuppressed`.
+            self.lastUserDisableAt = sanitized.isEnabled ? nil : Date()
             self.dnsManager.loadFromPreferences { loadError in
                 if let loadError = loadError {
                     let ns = loadError as NSError
@@ -194,8 +207,18 @@ final class DnsOverTlsController {
                     }
                 }
 
-                let servers = resolvedHostsAr.isEmpty ? [host] : resolvedHostsAr
+                // Prefer IPv4, cap the list — mirrors the extension's preferredServerList so the
+                // profile is pinned to globally-routable IPs rather than a network-local NAT64 IPv6
+                // that dies after a network switch (the root cause of DNS breaking while suppressed).
+                let servers = DnsOverTlsController.preferredServerList(from: resolvedHostsAr, fallbackHost: host)
                 self.resolvedHosts = resolvedHostsAr
+                // Persist IP-only servers as last-known-good so an off-tunnel refresh can bootstrap
+                // without the system resolver (which is pinned to this very profile). Never persist a
+                // bare hostname.
+                let ipServers = servers.filter { IPv4Address($0) != nil || IPv6Address($0) != nil }
+                if !ipServers.isEmpty {
+                    self.preferences.saveResolvedServers(ipServers)
+                }
                 let tlsSettings = NEDNSOverTLSSettings(servers: servers)
                 tlsSettings.serverName = serverName
 
@@ -261,6 +284,117 @@ final class DnsOverTlsController {
         }
     }
 
+    /// Clears the in-memory resolved-server cache so the next `apply` re-resolves from scratch.
+    /// `apply` short-circuits on this cache when `cachedResolvedHost == host`, so clearing it is
+    /// what forces a fresh resolution.
+    func clearResolvedServerCache() {
+        workQueue.async {
+            self.cachedResolvedServers = nil
+            self.cachedResolvedHost = nil
+        }
+    }
+
+    /// Re-resolves and re-applies the system-wide DoT profile when it is enabled but the WireGuard
+    /// tunnel is NOT active (suppressed by on-demand on a trusted network). In that state the tunnel's
+    /// own DNS proxy is not running, so the system DoT profile is the only thing steering DNS; if its
+    /// pinned server IPs became unroutable after a network change, all DNS fails until the profile is
+    /// refreshed. Bootstraps fresh IPs WITHOUT using the system resolver (which is pinned to the very
+    /// profile that may be broken), then re-applies via the existing `apply` plumbing. Never points the
+    /// profile at empty/hostname servers.
+    ///
+    /// - `isTunnelConnected`: whether a WireGuard tunnel is actively connected. Pass the value from
+    ///   `SecurityCenter.isVpnTunnelConnected()` — NOT `isVpnEnabled()`, which is true whenever
+    ///   on-demand is configured even while suppressed. When the tunnel is connected the extension
+    ///   owns DNS via its proxy, so this is a no-op.
+    func refreshDoTResolutionIfSuppressed(
+        isTunnelConnected: Bool,
+        completion: ((Result<DnsOverTlsConfiguration, Error>) -> Void)? = nil
+    ) {
+        let saved = loadSavedConfiguration()
+        guard saved.isEnabled, !isTunnelConnected,
+              let urlString = saved.urlString,
+              let host = URLComponents(string: urlString)?.host, !host.isEmpty else {
+            completion?(.failure(DnsOverTlsControllerError.missingHost))
+            return
+        }
+
+        let bootstrapIPs = bootstrapResolvedServers(for: host)
+        guard !bootstrapIPs.isEmpty else {
+            // No usable IPs available without the system resolver — leave the existing profile intact
+            // rather than risk writing empty/invalid servers (a hostname fails save with
+            // NEConfigurationErrorDomain code 2). A later trigger heals it once IPs are available.
+            Log.vpn.notice("DoT refresh skipped: no bootstrap IPs available; leaving profile intact")
+            completion?(.failure(DnsOverTlsControllerError.hostResolutionFailed(host)))
+            return
+        }
+
+        // All of the following runs on the serial workQueue so the suppression check and the
+        // cache seed observe (and precede) any in-flight explicit disable. workQueue is serial, so
+        // apply()'s own workQueue block runs after this one.
+        workQueue.async {
+            // Don't fight a deliberate disable. When the user turns DoT off (e.g. the one-tap
+            // "turn off VPN + DNS"), the disconnect's tunnel-inactive event lands here, but the
+            // disable may not have persisted yet — re-enabling would leave DNS stuck on. A recent
+            // disable means "leave it off"; a later enable clears the window so genuine heals run.
+            if let disabledAt = self.lastUserDisableAt,
+               Date().timeIntervalSince(disabledAt) < DnsOverTlsController.healSuppressionWindow {
+                Log.vpn.notice("DoT refresh skipped: user disabled DoT within the suppression window")
+                DispatchQueue.main.async {
+                    completion?(.failure(DnsOverTlsControllerError.missingHost))
+                }
+                return
+            }
+            // Seed the cache so apply() writes exactly these bootstrapped IPs instead of re-resolving
+            // through the (possibly broken) system resolver.
+            self.cachedResolvedServers = bootstrapIPs
+            self.cachedResolvedHost = host
+            Log.vpn.notice("DoT refresh: re-applying enabled profile with \(bootstrapIPs.count, privacy: .public) bootstrap IP(s) while tunnel suppressed")
+            self.apply(configuration: DnsOverTlsConfiguration(urlString: urlString, isEnabled: true)) { result in
+                completion?(result)
+            }
+        }
+    }
+
+    /// Returns fresh DoT server IPs WITHOUT using the system name resolver (which the DoT profile
+    /// hijacks). Order: (1) last-known-good IPs persisted by the extension/app, IPv4-preferred and
+    /// NAT64-aware; (2) IP-only servers already installed in the current profile. Returns [] if
+    /// neither yields usable IP addresses — the caller then leaves the profile untouched.
+    private func bootstrapResolvedServers(for host: String) -> [String] {
+        let persisted = preferences.savedResolvedServers().filter {
+            IPv4Address($0) != nil || IPv6Address($0) != nil
+        }
+        if !persisted.isEmpty {
+            return DnsOverTlsController.preferredServerList(from: persisted, fallbackHost: host)
+        }
+        if let existing = (dnsManager.dnsSettings as? NEDNSOverTLSSettings)?.servers {
+            let ipOnly = existing.filter { IPv4Address($0) != nil || IPv6Address($0) != nil }
+            if !ipOnly.isEmpty {
+                return DnsOverTlsController.preferredServerList(from: ipOnly, fallbackHost: host)
+            }
+        }
+        return []
+    }
+
+    /// Prefers IPv4, then IPv6, capped at `limit`. Mirrors the extension's
+    /// `PacketTunnelDNSConfigurator.preferredServerList` so app- and extension-pinned IPs match.
+    /// Falls back to the hostname only when no addresses are available (callers guard against
+    /// persisting/installing a bare hostname).
+    static func preferredServerList(from resolvedServers: [String], fallbackHost: String, limit: Int = 4) -> [String] {
+        guard !resolvedServers.isEmpty else {
+            return [fallbackHost]
+        }
+        let ipv4Addresses = resolvedServers.filter { IPv4Address($0) != nil }
+        let ipv6Addresses = resolvedServers.filter { IPv6Address($0) != nil }
+        var prioritized = ipv4Addresses + ipv6Addresses
+        if prioritized.isEmpty {
+            prioritized = resolvedServers
+        }
+        if prioritized.count > limit {
+            prioritized = Array(prioritized.prefix(limit))
+        }
+        return prioritized
+    }
+
     func removeDoTProfile() {
         self.dnsManager.loadFromPreferences { error in
             if let error = error {
@@ -287,10 +421,10 @@ final class DnsOverTlsController {
         }
 
         var hints = addrinfo(
-            ai_flags: AI_ADDRCONFIG,
+            ai_flags: 0,              // No AI_ADDRCONFIG — allows results on IPv6-only cellular networks
             ai_family: AF_UNSPEC,
-            ai_socktype: SOCK_DGRAM,
-            ai_protocol: IPPROTO_UDP,
+            ai_socktype: SOCK_STREAM, // TCP — correct for DoT; required to trigger NAT64/DNS64 synthesis
+            ai_protocol: IPPROTO_TCP, // TCP — required for iOS to synthesize IPv6 addresses via NAT64
             ai_addrlen: 0,
             ai_canonname: nil,
             ai_addr: nil,
