@@ -313,9 +313,18 @@ final class MainVM: MainViewModel, ObservableObject {
     @objc private func onPhoneNumberPlanPurchaseSuccessful() {
         DispatchQueue.main.async {
             self.dismissSheet()
-            
+
+            let wasAlreadySubscribed = self.hasPhoneNumberSubscription
             self.hasPhoneNumberSubscription = true
-            self.setTabs(userHasPhoneLineSubscription: true)
+
+            // Only (re)build the tab set on the first-time transition into a phone
+            // subscription (which adds the Contacts/History tabs and lands on Home).
+            // On an upgrade the user already has all tabs and is sitting on the Phone
+            // tab, so calling setTabs would reset selectedTab = .home and yank them
+            // back to the Home tab. Leave them where they were.
+            if !wasAlreadySubscribed {
+                self.setTabs(userHasPhoneLineSubscription: true)
+            }
         }
     }
     

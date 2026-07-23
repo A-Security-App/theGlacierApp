@@ -34,6 +34,14 @@ final class UserDefaultsService: LocalStorageService {
         var isUserAccountCreated: String { "isUserAccountCreated" }
         var isUserAccountConfirmed: String { "isUserAccountConfirmed" }
         var isUserLoggedIn: String { "isUserLoggedIn" }
+        /// Set to `true` the first time this install completes a trustworthy launch
+        /// (protected data available, UserDefaults cache not poisoned). iOS wipes
+        /// UserDefaults on uninstall but preserves Keychain, so a Cognito session
+        /// left behind by a previous install makes Amplify report signed-in on a
+        /// fresh (re)install and the router skips login. This sentinel — absent only
+        /// on a genuinely fresh container — gates the reinstall detection in
+        /// `tryFetchSession` so it runs exactly once per install.
+        var hasCompletedFirstLaunch: String { "hasCompletedFirstLaunch" }
         /// Stores the Amplify AuthProvider used for the current session (e.g. "apple", "google").
         /// Nil/absent means the user signed in with email/password (not Hosted UI).
         var hostedUIProvider: String { "hostedUIProvider" }
