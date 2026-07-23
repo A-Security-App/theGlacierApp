@@ -123,6 +123,30 @@ final class SKGlacierPhoneNumberPlanPurchaseService: GlacierPlanPurchaseService 
             throw GlacierPlanPurchaseError.failedVerification
         }
 
+        // Ignore superseded (revoked) transactions. When a subscription is upgraded within the
+        // group (e.g. number1 -> number5), StoreKit refunds and revokes the previous subscription
+        // and re-delivers that revoked transaction through Transaction.updates. Posting it would
+        // clobber the just-stored higher tier back down to the old one — the exact cause of the
+        // UI showing "Upgrade to add phone lines" after a successful upgrade. A revoked
+        // transaction never reflects the currently-active entitlement, so drop it silently.
+        if transaction.revocationDate != nil {
+            await transaction.finish()
+            return
+        }
+
+        // Highest-rank-wins guard. This per-transaction path (direct purchase + the background
+        // Transaction.updates listener) must only ever confirm or RAISE the stored tier, never
+        // lower it: individual transactions can arrive out of order or stale, and a lower-tier
+        // event here would clobber a higher active plan. Authoritative lowering (e.g. a downgrade
+        // that took effect at renewal) is handled exclusively by evaluateCurrentEntitlements(),
+        // which inspects the full current-entitlement set and picks the max rank.
+        let incomingRank = GlacierPhoneNumberSubscriptionPlan(rawValue: transaction.productID)?.rank ?? 0
+        let storedRank = GlacierPhoneNumberSubscriptionPlan.activePlan?.rank ?? 0
+        if incomingRank < storedRank {
+            await transaction.finish()
+            return
+        }
+
         // Post success directly using the verified transaction we already have.
         // Calling evaluateCurrentEntitlements() here caused a race condition:
         // Transaction.currentEntitlements can lag on a first-ever purchase, returning

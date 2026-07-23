@@ -119,7 +119,51 @@ public extension GlacierApplicationDelegate {
             postAuthVerifiedOnce(signedIn: UserDefaultsService.shared.get(for: \.isUserLoggedIn) ?? false)
             return
         }
+        // Snapshot local-install state BEFORE fetchCurrentAuthSession, which can
+        // create a GlacierAccount row from the session token (via fetchAttributes)
+        // and thereby mask a genuinely-empty container from the reinstall check below.
+        let cacheTrustworthy = UIApplication.shared.isProtectedDataAvailable && !Self.userDefaultsCachePoisoned
+        let hasCompletedFirstLaunch = UserDefaultsService.shared.get(for: \.hasCompletedFirstLaunch) ?? false
+        let hadPriorUserState = (UserDefaultsService.shared.get(for: \.isUserLoggedIn) ?? false)
+            || (UserDefaultsService.shared.get(for: \.isUserOnboardingCompleted) ?? false)
+            || (GlacierAccountModel.getGlacierAccount() != nil)
+
         let amplifySignedIn = await AWSAcctManager.sharedMgr().fetchCurrentAuthSession(presentLoginOnFailure: false)
+
+        // First-launch-after-(re)install detection.
+        // iOS preserves the Keychain across an uninstall but wipes UserDefaults and
+        // the app container, so a Cognito session left by a previous install (e.g. a
+        // prior TestFlight build) makes fetchAuthSession report signed-in on a fresh
+        // App Store install. The router then skips login and strands the user on the
+        // (non-dismissible) lapse paywall. If Amplify reports signed-in on this
+        // install's first trustworthy launch while the local container shows no prior
+        // user state at all, this is that reinstall: clear the stale Keychain session
+        // and route to login instead.
+        //
+        // Guards:
+        //  - cacheTrustworthy: an absent UserDefaults read is only meaningful when
+        //    protected data is available and cfprefsd's per-process cache wasn't
+        //    primed empty (the reboot-before-first-unlock case). Otherwise skip — the
+        //    launch is retried authoritatively from applicationWillEnterForeground.
+        //  - hadPriorUserState: distinguishes a reinstall (empty container) from a
+        //    normal app update of a logged-in user (UserDefaults/account survive), so
+        //    an update never signs anyone out.
+        //  - hasCompletedFirstLaunch: makes the detection fire at most once per install.
+        if cacheTrustworthy && !hasCompletedFirstLaunch {
+            if amplifySignedIn && !hadPriorUserState {
+                Log.auth.notice("[GlacierAuth] tryFetchSession: signed-in Keychain session with an empty container on first launch — treating as reinstall, clearing stale session and routing to login.")
+                _ = await Amplify.Auth.signOut()
+                AWSAcctManager.sharedMgr().updateUI(forSignInStatus: false)
+                UserDefaultsService.shared.remove(for: \.isUserLoggedIn)
+                UserDefaultsService.shared.set(true, for: \.hasCompletedFirstLaunch)
+                postAuthVerifiedOnce(signedIn: false)
+                return
+            }
+            // Trustworthy launch with either no session or a legitimate existing
+            // install — record it so the detection never fires on a later launch.
+            UserDefaultsService.shared.set(true, for: \.hasCompletedFirstLaunch)
+        }
+
         let cachedLoggedIn = UserDefaultsService.shared.get(for: \.isUserLoggedIn) ?? false
         // A fast `false` from Amplify during a VPN reconnect (partial tunnel, degraded
         // Cognito response) must not override a cached logged-in state.  A genuine
