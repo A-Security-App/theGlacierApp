@@ -249,10 +249,7 @@ final class DnsOverTlsController {
     /// overwritten).
     ///
     /// - Existing installs (`isExistingUser == true`, i.e. an in-place update of a user with prior
-    ///   local state) are seeded from `identifierForVendor` so the derived label is byte-identical
-    ///   to what the backend already knows — the IDFV is stable across an in-place update, so this
-    ///   preserves the exact hostname and keeps backend continuity. This is the last time the IDFV
-    ///   is read for these installs.
+    ///   local state) preserves the exact hostname and keeps backend continuity.
     /// - Fresh installs / reinstalls (`isExistingUser == false`) are seeded from a random UUID, so
     ///   no Apple device identifier is ever derived into the hostname that leaves the device.
     ///
@@ -267,7 +264,7 @@ final class DnsOverTlsController {
         if isExistingUser, let idfv = UIDevice.current.identifierForVendor?.uuidString {
             source = idfv
         } else {
-            // New install, or an existing install with no IDFV available (no stable prior label to
+            // New install, or an existing install with no ID available (no stable prior label to
             // preserve) — either way a random, non-device-derived seed is correct.
             source = UUID().uuidString
         }
@@ -282,7 +279,7 @@ final class DnsOverTlsController {
         }
 
         // Fallback: reached only if a DoT label is needed before the launch-time seed has run
-        // (e.g. an untrustworthy first launch). Reproduce the legacy IDFV-derived value so an
+        // (e.g. an untrustworthy first launch). Reproduce the legacy ID value so an
         // existing install keeps its exact label; this is NOT persisted, so the authoritative
         // seed still writes the correct digest later. A new install cannot reach this in practice
         // because seeding runs at launch before any DoT configuration is built.

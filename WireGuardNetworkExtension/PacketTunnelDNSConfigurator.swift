@@ -191,14 +191,14 @@ final class PacketTunnelDNSConfigurator {
     private static func shortDeviceID(prefix: String = "glr", length: Int = 10) -> String {
         // Authoritative path: use the digest the app seeded into the shared app group. For a fresh
         // install this is derived from a random UUID (no device identifier); for an existing install
-        // it reproduces the legacy IDFV-derived label.
+        // it reproduces the legacy ID.
         if let digest = PacketTunnelDnsPreferences().deviceLabelHash() {
             return "\(prefix)-\(String(digest.prefix(length)))"
         }
 
         // Fallback (safety net for an existing install only): the app seeds at launch before the
         // tunnel is ever configured, so a seeded digest is normally present here. If it is somehow
-        // missing, reproduce the legacy IDFV-derived label so an existing install keeps its exact
+        // missing, reproduce the legacy ID label so an existing install keeps its exact
         // hostname. A fresh install cannot reach this: its extension default path only runs after
         // onboarding, by which point the app has already seeded a random digest.
         #if canImport(UIKit)
