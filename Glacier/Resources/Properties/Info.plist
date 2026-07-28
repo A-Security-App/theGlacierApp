@@ -31,6 +31,7 @@
 			<string>com.theglacierapp.Glacier</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
+				<string>com.theglacierapp.glacier</string>
 				<string>glacierapp</string>
 			</array>
 		</dict>
@@ -54,16 +55,6 @@
 	<true/>
 	<key>NSAppTransportSecurity</key>
 	<dict>
-		<key>NSAllowsLocalNetworking</key>
-		<true/>
-		<key>NSExceptionDomains</key>
-		<dict>
-			<key>localhost</key>
-			<dict>
-				<key>NSTemporaryExceptionAllowsInsecureHTTPLoads</key>
-				<true/>
-			</dict>
-		</dict>
 		<key>NSPinnedDomains</key>
 		<dict>
 			<key>auth2.theglacierapp.com</key>

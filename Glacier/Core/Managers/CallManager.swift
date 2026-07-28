@@ -196,6 +196,16 @@ public class CallManager : NSObject {
             return
         }
 
+        // Reconcile any stale call state left over from a previous call before
+        // starting a new one. Under the VPN/DoT, the disconnect signal for a prior
+        // call can fail to reach the app (callDidDisconnect never fires), so its
+        // CallKit call is never reported ended. With maximumCallsPerCallGroup = 1
+        // that leaked slot causes every subsequent CXStartCallAction to be rejected
+        // and the call silently fails to connect until the app is relaunched. A
+        // fresh dial is authoritative intent to start a new call, so clear the
+        // residue first. (Skipped when an incoming invite is live — see helper.)
+        reconcileStaleCallStateBeforeDial()
+
         var updatedContact = contact
         updatedContact.phoneNumber = callto
 
@@ -214,7 +224,52 @@ public class CallManager : NSObject {
             performStartCallAction(uuid: uuid, receiver: contact.name) //receiver)
         }
     }
-    
+
+    /// Clears leftover call state from a prior call before a new outgoing call is
+    /// placed, so a leaked CallKit call (e.g. a prior call whose disconnect signal
+    /// never reached the app under VPN/DoT) can't occupy the single available call
+    /// slot and cause the new call to be silently rejected.
+    ///
+    /// Only stale residue is cleared: if an incoming invite is currently live
+    /// (`activeCallInvite != nil`) this is a no-op, so a genuinely ringing inbound
+    /// call is never torn down by the act of dialing out. Both the Twilio leg and
+    /// the CallKit call are ended, and the call-tracking fields are reset to mirror
+    /// `reportCallDisconnected`, since the SDK's own disconnect callback may never
+    /// arrive to do it.
+    private func reconcileStaleCallStateBeforeDial() {
+        // Never stomp a live incoming invite.
+        guard activeCallInvite == nil else { return }
+
+        let hasResidue = currentCall != nil
+            || currentUuid != nil
+            || activeCall != nil
+            || (callObserver?.calls.contains { !$0.hasEnded } ?? false)
+
+        guard hasResidue else { return }
+
+        Log.calls.notice("makeVoiceCall: clearing stale call state before dialing")
+
+        // Drop any lingering Twilio leg, then authoritatively end every CallKit call
+        // CallKit still considers active (reportCall(with:endedAt:) can't be rejected).
+        activeCall?.disconnect()
+        forceEndCallKitCalls()
+
+        // Reset the same tracking state reportCallDisconnected would, in case the
+        // SDK's callDidDisconnect never fired for the previous call.
+        isBusy = false
+        busyTone = false
+        receivedRetract = false
+        endedCall = false
+        awaitingCallResponse = false
+        hasIncomingVoiceCall = false
+        userInitiatedDisconnect = false
+        currentUuid = nil
+        notificationUuid = nil
+        currentCall = nil
+        alternateCall = nil
+        activeCall = nil
+    }
+
     static func cleanPhoneNumber(_ phoneNumber: String) -> String {
         let cleanedPhoneNumber = phoneNumber.replacingOccurrences(of: "[^0-9]", with: "", options: .regularExpression)
         return cleanedPhoneNumber
@@ -825,7 +880,16 @@ extension CallManager {
 
             self.callKitProvider.reportCall(with: uuid, endedAt: nil, reason: reason)
         }
-        
+
+        // Only tear down the current-call tracking if this disconnect is for the
+        // call we currently consider active. A late/stale callback for a prior call
+        // (e.g. a leg we force-disconnected in reconcileStaleCallStateBeforeDial
+        // right before dialing again) must not wipe the newer call's state.
+        guard currentUuid == nil || currentUuid == uuid else {
+            Log.calls.notice("reportCallDisconnected: ignoring stale disconnect for \(uuid, privacy: .public); current call is \(self.currentUuid?.uuidString ?? "nil", privacy: .public)")
+            return
+        }
+
         self.awaitingCallResponse = false
         self.currentUuid = nil
         self.notificationUuid = nil
@@ -1099,7 +1163,11 @@ extension CallManager: CallDelegate {
         if !wasUserInitiated {
             gcdelegate?.disconnectCall(false)
         }
-        activeCall = nil
+        // Don't clear a newer active call when this is a stale callback for a
+        // previous leg (matches the uuid guard in reportCallDisconnected).
+        if activeCall == nil || activeCall?.uuid == call.uuid {
+            activeCall = nil
+        }
     }
 
     public func callDidReceiveQualityWarnings(call: Call, currentWarnings: Set<NSNumber>, previousWarnings: Set<NSNumber>) {

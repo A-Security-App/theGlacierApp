@@ -238,18 +238,58 @@ final class DnsOverTlsController {
         return self.resolvedHosts
     }
     
+    /// SHA-256 of `input`, rendered as a lowercase hex string (64 chars).
+    private static func sha256Hex(_ input: String) -> String {
+        let hash = SHA256.hash(data: Data(input.utf8))
+        return hash.compactMap { String(format: "%02x", $0) }.joined()
+    }
+
+    /// Establishes the stored digest that seeds the `glr-<hash>` DoT hostname label. Runs once
+    /// per install at the first trustworthy launch and is a no-op afterwards (the digest is never
+    /// overwritten).
+    ///
+    /// - Existing installs (`isExistingUser == true`, i.e. an in-place update of a user with prior
+    ///   local state) are seeded from `identifierForVendor` so the derived label is byte-identical
+    ///   to what the backend already knows — the IDFV is stable across an in-place update, so this
+    ///   preserves the exact hostname and keeps backend continuity. This is the last time the IDFV
+    ///   is read for these installs.
+    /// - Fresh installs / reinstalls (`isExistingUser == false`) are seeded from a random UUID, so
+    ///   no Apple device identifier is ever derived into the hostname that leaves the device.
+    ///
+    /// The caller must pass `isExistingUser` computed from local state snapshotted before the auth
+    /// session is fetched (see GlacierApplicationDelegate.tryFetchSession), and must only call this
+    /// on a trustworthy launch (protected data available, cache not poisoned) so an existing user
+    /// is never misclassified as new.
+    func seedDeviceLabelHashIfNeeded(isExistingUser: Bool) {
+        guard preferences.deviceLabelHash() == nil else { return }
+
+        let source: String
+        if isExistingUser, let idfv = UIDevice.current.identifierForVendor?.uuidString {
+            source = idfv
+        } else {
+            // New install, or an existing install with no IDFV available (no stable prior label to
+            // preserve) — either way a random, non-device-derived seed is correct.
+            source = UUID().uuidString
+        }
+        preferences.saveDeviceLabelHash(Self.sha256Hex(source))
+    }
+
     func shortDeviceID(prefix: String = "glr", length: Int = 10) -> String {
+        // Authoritative path: derive the label from the stored (non-device-derived for new
+        // installs) digest seeded at launch.
+        if let digest = preferences.deviceLabelHash() {
+            return "\(prefix)-\(String(digest.prefix(length)))"
+        }
+
+        // Fallback: reached only if a DoT label is needed before the launch-time seed has run
+        // (e.g. an untrustworthy first launch). Reproduce the legacy IDFV-derived value so an
+        // existing install keeps its exact label; this is NOT persisted, so the authoritative
+        // seed still writes the correct digest later. A new install cannot reach this in practice
+        // because seeding runs at launch before any DoT configuration is built.
         guard let uuid = UIDevice.current.identifierForVendor?.uuidString else {
             return "\(prefix)-unknown"
         }
-
-        // Hash the UUID using SHA256
-        let hash = SHA256.hash(data: Data(uuid.utf8))
-
-        // Convert the first N bytes of the hash to a hex string
-        let hexString = hash.compactMap { String(format: "%02x", $0) }.joined()
-        let shortHash = String(hexString.prefix(length))
-
+        let shortHash = String(Self.sha256Hex(uuid).prefix(length))
         return "\(prefix)-\(shortHash)"
     }
     

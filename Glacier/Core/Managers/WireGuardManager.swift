@@ -64,7 +64,7 @@ open class WireGuardManager: NSObject
             return
         }
         let checkBlock: (TunnelsManager) -> Void = { manager in
-            let installedRegion = UserDefaults.standard.string(forKey: "glacier_vpn_installed_region") ?? "us-east-1"
+            let installedRegion = UserDefaults.standard.string(forKey: "glacier_vpn_installed_region") ?? "us-east-2"
             if manager.tunnel(named: installedRegion) == nil {
                 // No profile found – fetch from server
                 self.queryForProfiles(region: installedRegion)
@@ -78,7 +78,29 @@ open class WireGuardManager: NSObject
             self.onTunnelsManagerReady = checkBlock
         }
     }
-    func queryForProfiles(region: String = "us-east-1", onDemandOption: ActivateOnDemandOption = .off, responseHandler: ((Bool) -> Void)? = nil) {
+    /// Computes the initial default VPN region for a brand-new profile install,
+    /// from the device time zone alone — no location permission, no network call.
+    ///
+    /// - Pacific time zones  → a random pick between us-west-1 and us-west-2 (spreads load).
+    /// - Everything else (Central, Eastern, Mountain, and any unrecognised zone) → us-east-2.
+    /// - us-east-1 is intentionally never auto-selected here (it is being offloaded), but the
+    ///   user can still choose it — or any other region — manually in VPN Settings.
+    ///
+    /// IMPORTANT: the Pacific branch is non-deterministic. Call this EXACTLY ONCE per setup
+    /// flow, capture the result in a local, and reuse that value for BOTH the profile download
+    /// (`queryForProfiles(region:)`) and the persisted `glacier_vpn_installed_region`. Never
+    /// call it again to "re-read" the default — a second call could return the other western
+    /// region and no longer match the installed tunnel's name.
+    static func defaultInitialRegion(timeZone: TimeZone = .current) -> String {
+        switch timeZone.identifier {
+        case "America/Los_Angeles", "America/Tijuana", "America/Vancouver":
+            return ["us-west-1", "us-west-2"].randomElement() ?? "us-west-2"
+        default:
+            return "us-east-2"
+        }
+    }
+
+    func queryForProfiles(region: String = "us-east-2", onDemandOption: ActivateOnDemandOption = .off, responseHandler: ((Bool) -> Void)? = nil) {
         guard !SecurityCenter.isProxyDetected else { responseHandler?(false); return }
         if WireGuardManager.isSimulatorBuild {
             responseHandler?(false)
@@ -161,7 +183,7 @@ open class WireGuardManager: NSObject
         DispatchQueue.global(qos: .userInitiated).async {
             do {
                 let fileContents = try String(contentsOf: url)
-                let newConfig = try TunnelConfiguration(fromWgQuickConfig: fileContents, called: region ?? "us-east-1")
+                let newConfig = try TunnelConfiguration(fromWgQuickConfig: fileContents, called: region ?? "us-east-2")
                 DispatchQueue.main.async { [weak self] in
                     guard let self, let tunnelsManager = self.tunnelsManager else {
                         responseHandler?(false)

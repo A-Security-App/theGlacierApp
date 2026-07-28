@@ -157,11 +157,28 @@ open class SecurityCenter: NSObject {
         }
     }
     
+    /// Reverse-engineering failed checks, excluding the EXPERIMENTAL `.pSelectFlag`
+    /// check. That check reads P_SELECT, which the kernel sets on any process
+    /// currently in a select()/poll() call (normal networking), so it false-positives
+    /// on clean devices ("Suspicious PFlag value"). Use this instead of
+    /// IOSSecuritySuite's raw amIReverseEngineered* APIs.
+    static func significantReverseEngineeringChecks() -> [FailedCheckType] {
+        return IOSSecuritySuite.amIReverseEngineeredWithFailedChecks()
+            .failedChecks
+            .filter { $0.check != .pSelectFlag }
+    }
+
+    /// Whether the device shows real signs of reverse engineering, ignoring the
+    /// pSelectFlag false positive. Replacement for IOSSecuritySuite.amIReverseEngineered().
+    @objc public static func isReverseEngineered() -> Bool {
+        return !significantReverseEngineeringChecks().isEmpty
+    }
+
     public func isCompromised() -> Bool {
         var compromised = false
 
         let jailStatus = IOSSecuritySuite.amIJailbrokenWithFailMessage()
-        let reStatus = IOSSecuritySuite.amIReverseEngineeredWithFailedChecks()
+        let reFailedChecks = SecurityCenter.significantReverseEngineeringChecks()
         let proxied = IOSSecuritySuite.amIProxied()
         // Supplement 1.9.11's jailbreak checks with the rootless (/var/jb) and
         // TrollStore fingerprints it predates. Purely additive — OR'd below.
@@ -178,9 +195,9 @@ open class SecurityCenter: NSObject {
             self.secInfoUtil.securityInfo.compromised_detail = COMPROMISED_PROXIED
         //} else if IOSSecuritySuite.amIDebugged() {
         //    compromised = true
-        } else if reStatus.reverseEngineered {
+        } else if !reFailedChecks.isEmpty {
             compromised = true
-            let reason = ": The following checks failed: \(reStatus.failedChecks)"
+            let reason = ": The following checks failed: \(reFailedChecks)"
             self.secInfoUtil.securityInfo.compromised_detail = COMPROMISED_REVERSE_ENGINEERED + reason
         } else if IOSSecuritySuite.amIRunInEmulator() {
             compromised = true

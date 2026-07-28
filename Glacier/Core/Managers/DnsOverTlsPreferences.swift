@@ -34,6 +34,11 @@ final class DnsOverTlsPreferences {
         // Shared with the packet-tunnel extension (PacketTunnelDnsPreferences), which writes
         // IPv4-preferred, NAT64-aware last-known-good DoT server IPs here while the tunnel runs.
         static let resolvedServers = "dnsOverTls.global.resolvedServers"
+        // Full SHA-256 hex digest (64 chars) that seeds the `glr-<hash>` DoT hostname label.
+        // Written once by the app (see DnsOverTlsController.seedDeviceLabelHashIfNeeded) and read
+        // by both the app and the packet-tunnel extension. Storing the digest — not the raw device
+        // identifier — means no Apple device identifier is persisted or re-read after seeding.
+        static let deviceLabelHash = "dnsOverTls.deviceLabelHash"
         static let appGroupIdentifier = "group.com.theglacierapp.GlacierApp"
     }
 
@@ -78,5 +83,17 @@ final class DnsOverTlsPreferences {
         } else {
             userDefaults.set(servers, forKey: Keys.resolvedServers)
         }
+    }
+
+    /// Full SHA-256 hex digest that seeds the DoT hostname label, or nil if it hasn't been
+    /// seeded yet. See DnsOverTlsController.seedDeviceLabelHashIfNeeded.
+    func deviceLabelHash() -> String? {
+        return userDefaults.string(forKey: Keys.deviceLabelHash)
+    }
+
+    /// Persists the SHA-256 hex digest used to derive the DoT hostname label. Written once at
+    /// first trustworthy launch; never overwritten thereafter.
+    func saveDeviceLabelHash(_ digest: String) {
+        userDefaults.set(digest, forKey: Keys.deviceLabelHash)
     }
 }

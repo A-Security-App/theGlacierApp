@@ -53,7 +53,11 @@ final class VPNSetupVM: VPNSetupViewModel {
     @MainActor
     func presentAddVPNConfirmationPrompt() {
         presentProgressIndicator()
-        WireGuardManager.shared().queryForProfiles { [weak self] didLoadProfiles in
+        // Compute the initial region ONCE and reuse it for both the profile download and the
+        // persisted key below, so the installed tunnel's name always matches (the western
+        // branch of defaultInitialRegion is random — see its doc comment).
+        let initialRegion = WireGuardManager.defaultInitialRegion()
+        WireGuardManager.shared().queryForProfiles(region: initialRegion) { [weak self] didLoadProfiles in
             guard let strongSelf = self else { return }
             DispatchQueue.main.async {
                 strongSelf.didShowVPNConfigurationPrompt = true
@@ -72,7 +76,7 @@ final class VPNSetupVM: VPNSetupViewModel {
                 }
 
                 UserDefaults(suiteName: kGlacierGroup)?.set(SecuredConnectionType.vpn.rawValue, forKey: kLastConnectionTypeKey)
-                UserDefaults.standard.set("us-east-1", forKey: "glacier_vpn_installed_region")
+                UserDefaults.standard.set(initialRegion, forKey: "glacier_vpn_installed_region")
 
                 // Ensure the DoT profile is set to full coverage now that VPN is enabled,
                 // so DNS stays protected whenever on-demand rules suppress the tunnel.

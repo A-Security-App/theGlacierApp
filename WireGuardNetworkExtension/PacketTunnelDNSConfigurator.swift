@@ -189,6 +189,18 @@ final class PacketTunnelDNSConfigurator {
     }*/
 
     private static func shortDeviceID(prefix: String = "glr", length: Int = 10) -> String {
+        // Authoritative path: use the digest the app seeded into the shared app group. For a fresh
+        // install this is derived from a random UUID (no device identifier); for an existing install
+        // it reproduces the legacy IDFV-derived label.
+        if let digest = PacketTunnelDnsPreferences().deviceLabelHash() {
+            return "\(prefix)-\(String(digest.prefix(length)))"
+        }
+
+        // Fallback (safety net for an existing install only): the app seeds at launch before the
+        // tunnel is ever configured, so a seeded digest is normally present here. If it is somehow
+        // missing, reproduce the legacy IDFV-derived label so an existing install keeps its exact
+        // hostname. A fresh install cannot reach this: its extension default path only runs after
+        // onboarding, by which point the app has already seeded a random digest.
         #if canImport(UIKit)
         guard let uuid = UIDevice.current.identifierForVendor?.uuidString else {
             return "\(prefix)-unknown"
@@ -290,6 +302,9 @@ private final class PacketTunnelDnsPreferences {
         static let url = "dnsOverTls.global.url"
         static let enabled = "dnsOverTls.global.enabled"
         static let resolvedServers = "dnsOverTls.global.resolvedServers"
+        // Full SHA-256 hex digest seeding the `glr-<hash>` DoT hostname label. Written by the app
+        // (DnsOverTlsController.seedDeviceLabelHashIfNeeded); the extension only ever reads it.
+        static let deviceLabelHash = "dnsOverTls.deviceLabelHash"
         static let appGroupIdentifier = "group.com.theglacierapp.GlacierApp"
     }
 
@@ -301,6 +316,12 @@ private final class PacketTunnelDnsPreferences {
 
     func hasSavedConfiguration() -> Bool {
         return userDefaults.object(forKey: Keys.url) != nil
+    }
+
+    /// Full SHA-256 hex digest seeding the DoT hostname label, or nil if the app hasn't seeded it
+    /// yet. Read-only in the extension.
+    func deviceLabelHash() -> String? {
+        return userDefaults.string(forKey: Keys.deviceLabelHash)
     }
 
     func currentConfiguration() -> PacketTunnelDnsConfiguration {

@@ -100,10 +100,12 @@ final class AmplifyAuthenticationService: GlacierAuthenticationService {
         try await withCheckedThrowingContinuation { continuation in
             Task {
                 do {
-                    let signInResult = try await Amplify.Auth.signIn(
-                        username: email,
-                        password: password
-                    )
+                    let signInResult = try await self.signInClearingStaleSession {
+                        try await Amplify.Auth.signIn(
+                            username: email,
+                            password: password
+                        )
+                    }
                     continuation.resume(returning: signInResult)
                 } catch {
                     continuation.resume(throwing: error)
@@ -123,12 +125,14 @@ final class AmplifyAuthenticationService: GlacierAuthenticationService {
                     // which suppresses the "Glacier wants to use...to sign in" iOS system dialog.
                     // Amplify stores this preference and reuses it during sign-out, so the sign-out
                     // Hosted UI redirect also runs silently without any popup.
-                    let result = try await Amplify.Auth.signInWithWebUI(
-                        for: provider,
-                        presentationAnchor: presentationAnchor(),
-                        options: .init(pluginOptions: AWSAuthWebUISignInOptions(preferPrivateSession: true))
-                    )
-                    
+                    let result = try await self.signInClearingStaleSession {
+                        try await Amplify.Auth.signInWithWebUI(
+                            for: provider,
+                            presentationAnchor: self.presentationAnchor(),
+                            options: .init(pluginOptions: AWSAuthWebUISignInOptions(preferPrivateSession: true))
+                        )
+                    }
+
                     guard result.isSignedIn else {
                         continuation.resume(throwing: UserAuthenticationError.authenticationFailure)
                         return
@@ -141,6 +145,37 @@ final class AmplifyAuthenticationService: GlacierAuthenticationService {
         }
     }
     
+    /**
+     Runs an Amplify sign-in, transparently recovering from the `.invalidState`
+     error Amplify throws when a residual Cognito session from a previous account
+     or login is still present on the device ("There is already a user in the
+     signedIn state. SignOut the user first before calling signIn").
+
+     Such a session can linger for reasons the app-launch reinstall check in
+     `tryFetchSession` doesn't cover (an untrustworthy first launch, a not-first
+     launch, or a device that still holds prior local user state), and it then
+     causes a manual Login / Sign-in-with-provider tap to throw.
+
+     On that specific error — and only that error — it signs the stale session
+     out and retries the sign-in exactly once. Every other error is rethrown
+     unchanged, and the common no-stale-session case takes the fast path with no
+     extra work. This is only ever reached because the user is actively signing
+     in, so it can never sign out a user who has a valid session and shouldn't be
+     seeing the login screen at all — that routing happens elsewhere.
+     */
+    private func signInClearingStaleSession(
+        _ attempt: () async throws -> AuthSignInResult
+    ) async throws -> AuthSignInResult {
+        do {
+            return try await attempt()
+        } catch let error as AuthError {
+            guard case .invalidState = error else { throw error }
+            Log.auth.notice("[GlacierAuth] signIn hit .invalidState (residual session on device) — signing out stale session and retrying sign-in once.")
+            _ = await Amplify.Auth.signOut()
+            return try await attempt()
+        }
+    }
+
     /**
      Calls Amplify.Auth.resetPassword() method to initiate user password reset flow.
      */

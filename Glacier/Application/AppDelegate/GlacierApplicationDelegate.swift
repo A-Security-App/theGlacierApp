@@ -69,6 +69,15 @@ public class GlacierApplicationDelegate: UIResponder, UIApplicationDelegate {
 
         SAMKeychain.setAccessibilityType(kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly)
 
+        // Purge any existing on-disk HTTP cache, then disable the process-wide
+        // shared URLCache before any networking (Amplify/Cognito included) starts.
+        // The default URLCache writes responses to Cache.db; for auth traffic that
+        // can persist token-bearing Cognito responses to disk. Sessions the app
+        // builds itself are already ephemeral; this closes the shared-cache path
+        // used by SDK networking we don't configure directly.
+        URLCache.shared.removeAllCachedResponses()
+        URLCache.shared = URLCache(memoryCapacity: 0, diskCapacity: 0, directory: nil)
+
         // Synchronous proxy check before any network-dependent setup
         SecurityCenter.isProxyDetected = IOSSecuritySuite.amIProxied()
 
@@ -299,7 +308,7 @@ public class GlacierApplicationDelegate: UIResponder, UIApplicationDelegate {
             let isJailbroken = IOSSecuritySuite.amIJailbrokenWithFailMessage().jailbroken
                 || GlacierJailbreakChecks.run().jailbroken
             let isProxied    = IOSSecuritySuite.amIProxied()
-            let isRE         = IOSSecuritySuite.amIReverseEngineeredWithFailedChecks().reverseEngineered
+            let isRE         = SecurityCenter.isReverseEngineered()
             let isEmulator   = IOSSecuritySuite.amIRunInEmulator()
 
             // Update kActiveConnectionTypeKey only for the VPN case. If VPN is
@@ -718,6 +727,10 @@ extension GlacierApplicationDelegate: PKPushRegistryDelegate {
             //AND NOT TWILIO key:twi_message_type, twilio.voice.call
             let userInfo = payload.dictionaryPayload
             
+            #if DEBUG
+            // Full payload is logged only in debug builds. VoIP push payloads carry
+            // caller/callee identifiers, the Call SID, custom parameters, and an
+            // encrypted bridge token, so the raw contents must never reach release logs.
             let jsonData: Data?
             do {
                 jsonData = try JSONSerialization.data(withJSONObject: userInfo, options: [.prettyPrinted])
@@ -730,6 +743,11 @@ extension GlacierApplicationDelegate: PKPushRegistryDelegate {
             } else {
                 Log.calls.debug("Received VoIP push payload (raw): \(userInfo)")
             }
+            #else
+            // Release: log only the non-sensitive message type for diagnostics.
+            let twilioMessageType = userInfo[kNotificationTwilioType] as? String ?? "unknown"
+            Log.calls.notice("Received VoIP push (type: \(twilioMessageType, privacy: .public))")
+            #endif
             
             if let type = userInfo[kNotificationTwilioType] as? String, type == kNotificationTwilioVoiceCall {
                 //looks like Twilio library wants to get called first
