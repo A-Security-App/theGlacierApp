@@ -129,8 +129,7 @@ public extension GlacierApplicationDelegate {
             || (GlacierAccountModel.getGlacierAccount() != nil)
 
         // Seed the DoT hostname-label digest once, using the same trustworthy-launch snapshot the
-        // reinstall detection below relies on. An in-place update of an existing user
-        // (hadPriorUserState == true) is seeded from IDFV so its hostname is unchanged; a fresh
+        // reinstall detection below relies on. An existing user hostname is unchanged; a fresh
         // install / reinstall is seeded from a random UUID so no device identifier feeds the label.
         // Guarded by cacheTrustworthy so an existing user is never misread as new; done before
         // fetchCurrentAuthSession, which can create a GlacierAccount row and mask an empty container.
