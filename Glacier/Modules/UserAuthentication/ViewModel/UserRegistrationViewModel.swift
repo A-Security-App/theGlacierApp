@@ -358,10 +358,9 @@ final class UserRegistrationVM: UserRegistrationViewModel, ObservableObject {
             do {
                 presentProgressIndicator()
                 // A session from a previously used account can still exist on
-                // this device, and Amplify.Auth.signIn throws .invalidState when
-                // any user is already signed in. Clear it before auto sign-in.
-                _ = await authenticationService.signOut()
-                
+                // this device. `signIn` clears such a stale session itself (it
+                // recovers from Amplify's `.invalidState`), so no pre-sign-out is
+                // needed here.
                 let signInResult = try await authenticationService.signIn(with: email, password: password)
                 dismissProgressIndicator()
                 

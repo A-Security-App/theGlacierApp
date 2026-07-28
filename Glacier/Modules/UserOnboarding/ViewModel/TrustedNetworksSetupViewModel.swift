@@ -143,7 +143,7 @@ final class TrustedNetworksSetupVM: NSObject, TrustedNetworksSetupViewModel, Obs
     }
 
     private func commitTrustedNetwork(_ networkName: String) {
-        let installedRegion = UserDefaults.standard.string(forKey: "glacier_vpn_installed_region") ?? "us-east-1"
+        let installedRegion = UserDefaults.standard.string(forKey: "glacier_vpn_installed_region") ?? "us-east-2"
         guard let tunnelMgr = WireGuardManager.shared().tunnelsManager,
               let tunnel = tunnelMgr.tunnel(named: installedRegion),
               let tunnelConfig = tunnel.tunnelConfiguration else {

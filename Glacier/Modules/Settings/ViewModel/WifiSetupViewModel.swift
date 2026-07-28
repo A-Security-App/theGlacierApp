@@ -33,7 +33,7 @@ final class WifiSetupVM: NSObject, WifiSetupViewModel, ObservableObject {
     private let wireGuardManager = WireGuardManager.shared()
 
     private var currentInstalledRegion: String {
-        UserDefaults.standard.string(forKey: "glacier_vpn_installed_region") ?? "us-east-1"
+        UserDefaults.standard.string(forKey: "glacier_vpn_installed_region") ?? "us-east-2"
     }
 
     // MARK: - Initializer

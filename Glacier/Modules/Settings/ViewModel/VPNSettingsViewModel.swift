@@ -117,7 +117,7 @@ final class VPNSettingsVM: VPNSettingsViewModel, ObservableObject {
     ]
 
     private var currentInstalledRegion: String {
-        get { UserDefaults.standard.string(forKey: "glacier_vpn_installed_region") ?? "us-east-1" }
+        get { UserDefaults.standard.string(forKey: "glacier_vpn_installed_region") ?? "us-east-2" }
         set { UserDefaults.standard.set(newValue, forKey: "glacier_vpn_installed_region") }
     }
 
@@ -691,7 +691,11 @@ extension VPNSettingsVM {
     private func presentAddVPNConfirmationPrompt() {
         presentProgressIndicator()
 
-        wireGuardManager.queryForProfiles { [weak self] didLoadProfiles in
+        // Compute the initial region ONCE and reuse it for the download, the persisted key, and
+        // the selected location shown on screen (the western branch is random — see the doc
+        // comment on defaultInitialRegion).
+        let initialRegion = WireGuardManager.defaultInitialRegion()
+        wireGuardManager.queryForProfiles(region: initialRegion) { [weak self] didLoadProfiles in
             guard let strongSelf = self else { return }
             DispatchQueue.main.async {
                 strongSelf.dismissProgressIndicator()
@@ -709,9 +713,9 @@ extension VPNSettingsVM {
                 }
 
                 strongSelf.hasPendingRequestForVPNConnection = true
-                strongSelf.currentInstalledRegion = "us-east-1"
+                strongSelf.currentInstalledRegion = initialRegion
                 strongSelf.isVPNSettingsUpdateInProgress = true
-                strongSelf.selectedLocation = strongSelf.location(forRegion: "us-east-1")
+                strongSelf.selectedLocation = strongSelf.location(forRegion: initialRegion)
                 strongSelf.isVPNSettingsUpdateInProgress = false
             }
         }

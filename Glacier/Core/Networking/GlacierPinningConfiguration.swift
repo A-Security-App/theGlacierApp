@@ -78,7 +78,13 @@ enum GlacierPinningConfiguration {
     // MARK: Alamofire Integration
     /// Shared pinned Session for use in contexts that cannot hold a stored property
     /// (e.g. AppDelegate extensions). Initialised once and reused across calls.
-    static let pinnedSession = Session(serverTrustManager: makeServerTrustManager())
+    ///
+    /// Uses an ephemeral configuration (in-memory only, no on-disk URLCache) so that
+    /// responses to token-bearing backend calls are never written to Cache.db. This
+    /// matches the ephemeral sessions held by SecurityCenter, TwilioBackendManager,
+    /// and WireGuardManager.
+    static let pinnedSession = Session(configuration: .ephemeral,
+                                       serverTrustManager: makeServerTrustManager())
     /// Returns a ServerTrustManager that enforces CA pinning on every host
     /// without requiring domain names to be listed in source code.
     static func makeServerTrustManager() -> ServerTrustManager {

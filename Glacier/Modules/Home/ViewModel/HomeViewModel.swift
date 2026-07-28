@@ -87,7 +87,7 @@ final class HomeVM: HomeViewModel, ObservableObject {
     private var numberOfBlockedTrackers: Int = 0
     
     private var currentInstalledRegion: String {
-        UserDefaults.standard.string(forKey: "glacier_vpn_installed_region") ?? "us-east-1"
+        UserDefaults.standard.string(forKey: "glacier_vpn_installed_region") ?? "us-east-2"
     }
 
     private var isGlacierDNSEnabledIniOSSettings = false
@@ -365,7 +365,7 @@ final class HomeVM: HomeViewModel, ObservableObject {
 
         var issues: [String] = []
         let jailStatus = IOSSecuritySuite.amIJailbrokenWithFailMessage()
-        let reverseStatus = IOSSecuritySuite.amIReverseEngineeredWithFailedChecks()
+        let reFailedChecks = SecurityCenter.significantReverseEngineeringChecks()
         // Supplement 1.9.11 with the rootless (/var/jb) and TrollStore markers
         // it predates. Additive — see GlacierJailbreakChecks.
         let glacierJail = GlacierJailbreakChecks.run()
@@ -376,7 +376,7 @@ final class HomeVM: HomeViewModel, ObservableObject {
             )
         }
         
-        if reverseStatus.reverseEngineered {
+        if !reFailedChecks.isEmpty {
             issues.append(
                 NSLocalizedString("This app appears to be running in a modified or analyzed environment.", comment: "Home screen reverse engineering detection")
             )

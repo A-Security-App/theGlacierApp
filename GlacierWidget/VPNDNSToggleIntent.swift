@@ -13,6 +13,15 @@ struct VPNDNSToggleIntent: AppIntent {
     static var title: LocalizedStringResource = "Toggle VPN/DNS"
     static var description = IntentDescription("Toggle Glacier VPN or DNS protection on or off.")
 
+    /// Require the device to be unlocked (passcode / Touch ID / Face ID) before this
+    /// intent can run. Without this the policy defaults to `.alwaysAllowed`, which lets
+    /// Shortcuts / Siri / the Action Button / Control Center invoke it in the background
+    /// on a locked device — allowing protection to be disabled without authentication.
+    /// The widget's own button goes through a `glacierapp://widget/...` deep link that
+    /// opens the app (and therefore already forces an unlock); this covers the remaining
+    /// background-invocation surfaces.
+    static var authenticationPolicy: IntentAuthenticationPolicy = .requiresLocalDeviceAuthentication
+
     // MARK: - Shared keys (mirrors GlacierConstants.swift)
 
     private static let kGroup                = "group.com.theglacierapp.GlacierApp"
