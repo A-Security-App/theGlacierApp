@@ -66,6 +66,10 @@ enum DeviceSecuritySettingType: CaseIterable, Hashable {
         }
     }
     
+    // NOTE: `.glacierAndiOSVersionUpdated` covers BOTH the Glacier app version and the iOS version,
+    // which have different fixes. Its popup is built dynamically in HomeViewModel.presentDeviceSettings
+    // based on which version is actually outdated. The values below are only a static fallback and
+    // are not shown for that row.
     var popupTitle: String {
         switch self {
         case .screenLock: return NSLocalizedString(

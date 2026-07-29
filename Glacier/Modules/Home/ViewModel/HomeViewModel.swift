@@ -206,6 +206,18 @@ final class HomeVM: HomeViewModel, ObservableObject {
     }
     
     func presentDeviceSettings(for setting: DeviceSecuritySettingType) {
+        // The version row covers BOTH the Glacier app version and the iOS version, which have
+        // different fixes (App Store vs. Settings → Software Update). Build the popup dynamically
+        // so it only tells the user to fix whichever is actually outdated.
+        if setting == .glacierAndiOSVersionUpdated {
+            let secInfo = securityCenter.getSecurityInfo().securityInfo
+            presentVersionUpdatePopup(
+                glacierOutdated: secInfo.glacier_version_outdated == true,
+                iosOutdated: secInfo.os_version_outdated == true
+            )
+            return
+        }
+
         let popupConfiguration = PopupConfiguration(
             title: setting.popupTitle,
             description: setting.popupDescription,
@@ -223,7 +235,7 @@ final class HomeVM: HomeViewModel, ObservableObject {
                     title: NSLocalizedString("Open Settings", comment: "Open settings button title"),
                     onTap: {
                         self.dismissPopup()
-                        
+
                         //guard let url = URL(string: UIApplication.openSettingsURLString),
                         guard let url = URL(string: UIApplication.settingsRootURL),
                               UIApplication.shared.canOpenURL(url) else {
@@ -233,6 +245,94 @@ final class HomeVM: HomeViewModel, ObservableObject {
                     }
                 )
             ]
+        )
+        presentPopup(with: popupConfiguration)
+    }
+
+    /// Builds the "Glacier & iOS Version" popup based on which version(s) are actually outdated.
+    /// - A stale Glacier app is fixed in the App Store; a stale iOS is fixed in Settings → General
+    ///   → Software Update. When both are stale we show both sets of steps and offer both buttons.
+    private func presentVersionUpdatePopup(glacierOutdated: Bool, iosOutdated: Bool) {
+        let glacierSteps = NSLocalizedString(
+            "Update Glacier: \n→ Open the App Store \n→ On the Glacier page, tap “Update”",
+            comment: "Popup steps to update the Glacier app from the App Store"
+        )
+        let iosSteps = NSLocalizedString(
+            "Update iOS: \n→ Open Settings \n→ General \n→ Software Update",
+            comment: "Popup steps to update the iOS version from Settings"
+        )
+
+        // If neither flag is set (defensive fallback — e.g. the row was tapped after the state
+        // changed), show both fixes so the popup is never empty.
+        let neitherFlagged = !glacierOutdated && !iosOutdated
+        let showGlacierButton = glacierOutdated || neitherFlagged
+        let showiOSButton = iosOutdated || neitherFlagged
+
+        // Assemble the description from whichever fix(es) apply.
+        var sections: [String] = []
+        if showGlacierButton { sections.append(glacierSteps) }
+        if showiOSButton { sections.append(iosSteps) }
+        let description = sections.joined(separator: "\n\n")
+
+        var buttons: [PopupButton] = [
+            PopupButton(
+                style: .tertiary,
+                title: NSLocalizedString("Cancel", comment: "Cancel button title"),
+                onTap: { [weak self] in
+                    self?.dismissPopup()
+                }
+            )
+        ]
+
+        if showGlacierButton {
+            buttons.append(
+                PopupButton(
+                    style: .primary,
+                    title: NSLocalizedString("Open App Store", comment: "Open App Store button title"),
+                    onTap: { [weak self] in
+                        self?.dismissPopup()
+                        // Deep-link straight to Glacier's App Store product page (App Store ID
+                        // 6776005049, bundle com.theglacierapp.Glacier). The itms-apps scheme opens
+                        // the App Store app directly; fall back to the https URL if it can't.
+                        let appStoreURL = URL(string: "itms-apps://apps.apple.com/app/id6776005049")
+                        let webURL = URL(string: "https://apps.apple.com/app/id6776005049")
+                        if let url = appStoreURL, UIApplication.shared.canOpenURL(url) {
+                            UIApplication.shared.open(url)
+                        } else if let url = webURL {
+                            UIApplication.shared.open(url)
+                        }
+                    }
+                )
+            )
+        }
+
+        if showiOSButton {
+            buttons.append(
+                PopupButton(
+                    style: .primary,
+                    title: NSLocalizedString("Open Settings", comment: "Open settings button title"),
+                    onTap: { [weak self] in
+                        self?.dismissPopup()
+                        guard let url = URL(string: UIApplication.settingsRootURL),
+                              UIApplication.shared.canOpenURL(url) else {
+                            return
+                        }
+                        UIApplication.shared.open(url)
+                    }
+                )
+            )
+        }
+
+        let popupConfiguration = PopupConfiguration(
+            title: NSLocalizedString(
+                "Update Glacier & iOS",
+                comment: "Device security settings screen update glacier version title"
+            ),
+            description: description,
+            descriptionAlignment: .leading,
+            buttons: buttons,
+            // Three buttons (Cancel + both fixes) won't fit horizontally, so stack when needed.
+            buttonsAlignment: buttons.count > 2 ? .vertical : .horizontal
         )
         presentPopup(with: popupConfiguration)
     }
