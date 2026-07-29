@@ -134,13 +134,22 @@ final class UserLoginVM: UserLoginViewModel, ObservableObject {
                 setRootScreen(UserOnboardingScreen.shouldShowUserOnboarding ? .userOnboarding : .main)
                 dismissSheet()
             } catch {
-                if let authError = error as? AWSCognitoAuthError, authError != .userCancelled {
-                    presentAlertWith(title: .errorText, description: errorDescription)
+                // Amplify wraps the real Cognito/service error inside `AuthError.underlyingError`,
+                // so the previous `error as? AWSCognitoAuthError` cast always failed. Every social
+                // sign-in failure (Amplify not yet configured, missing presentation anchor, Hosted UI
+                // / cert-pinning failure, Cognito service error) was therefore silently swallowed —
+                // no alert, no log, no navigation — which is why "Continue with Google" appeared to
+                // do nothing. Log the raw error so the underlying cause is diagnosable, then surface
+                // everything except a deliberate user cancellation.
+                Log.auth.error("[GlacierAuth] Login signInWith(\(authProvider.authProviderName, privacy: .public)) failed: \(String(describing: error), privacy: .public)")
+                if cognitoAuthError(from: error) == .userCancelled {
+                    return
                 }
+                presentAlertWith(title: .errorText, description: errorDescription)
             }
         }
     }
-    
+
     func presentPasswordResetScreen() {
         guard let coordinator = passwordResetCoordinator as? PasswordResetCoordinator else { return }
         coordinator.presentScreen(.passwordReset)
@@ -187,5 +196,16 @@ final class UserLoginVM: UserLoginViewModel, ObservableObject {
                 )
             }
         }
+    }
+
+    /// Amplify wraps Cognito service errors inside `AuthError.underlyingError`;
+    /// casting the thrown error directly to `AWSCognitoAuthError` always fails,
+    /// which is how social sign-in failures ended up silently swallowed on the
+    /// login path. Mirrors the same helper in `UserRegistrationVM`.
+    private func cognitoAuthError(from error: Error) -> AWSCognitoAuthError? {
+        if let authError = error as? AuthError {
+            return authError.underlyingError as? AWSCognitoAuthError
+        }
+        return error as? AWSCognitoAuthError
     }
 }
