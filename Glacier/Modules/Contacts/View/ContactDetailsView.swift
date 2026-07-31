@@ -12,28 +12,28 @@ import SwiftUI
  ContactDetailsView shows name, phone number, avatar image and other details for the given contact
  */
 struct ContactDetailsView: View {
-    
+
     // MARK: - Public properties
-    
+
     var contact: PhoneContact
     @Binding var backgroundColor: Color?
     @Binding var secondaryTextColor: Color?
     @Binding var avatarForegroundColor: Color?
     @Binding var avatarBackgroundColor: Color?
     var action: () -> Void
-    
+
     // MARK: - Private properties
-    
+
     @State private var hasValidName = true
-    
+
     // MARK: - UI/UX
-    
+
     var body: some View {
         ZStack {
             RoundedRectangle(cornerRadius: 8)
                 .fill(backgroundColor ?? .grey10)
                 .frame(height: 80)
-            
+
             VStack(alignment: .leading, spacing: 24) {
                 HStack(alignment: .center, spacing: 16) {
                     GlacierContactAvatarView(
@@ -45,7 +45,7 @@ struct ContactDetailsView: View {
                         foregroundColor: $avatarForegroundColor,
                         backgroundColor: $avatarBackgroundColor
                     )
-                    
+
                     VStack(alignment: .leading, spacing: 8) {
                         if !contact.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                             GlacierLabel(
@@ -62,13 +62,13 @@ struct ContactDetailsView: View {
                     }
 
                     Spacer()
-                    
+
                     if !contact.phoneLabel.isEmpty {
                         GlacierLabel(text: contact.phoneLabel, font: .bodySmallThick)
                             .padding(.all, 8)
                             .background(GlacierBackground(cornerRadius: 8))
                     }
-                    
+
                     Button(
                         action: {
                             action()
@@ -85,7 +85,7 @@ struct ContactDetailsView: View {
                         }
                     )
                 }
-                
+
                 GlacierLineSeparator()
             }
         }

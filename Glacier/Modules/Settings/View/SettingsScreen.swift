@@ -44,14 +44,18 @@ struct SettingsScreen<ViewModel: SettingsViewModel & ObservableObject>: View {
                         HStack(alignment: .center) {
                             GlacierLabel(
                                 text: NSLocalizedString("Account", comment: "Settings screen account"),
-                                font: .bodyThick
+                                font: .bodyThick,
+                                lineLimit: 1
                             )
-                            
-                            Spacer()
-                            
+                            .fixedSize()
+
+                            Spacer(minLength: 8)
+
                             GlacierLabel(
                                 text: viewModel.userEmail,
                                 font: .bodyThick,
+                                lineLimit: 1,
+                                minimumScaleFactor: 0.7,
                                 customTextColor: .constant(.grey50)
                             )
                         }
@@ -135,12 +139,17 @@ struct SettingsScreen<ViewModel: SettingsViewModel & ObservableObject>: View {
                             GlacierLabel(
                                 text: NSLocalizedString("Reboot Reminder", comment: "Settings screen reboot reminder title"),
                                 font: .bodyThick,
-                                textAlignment: .leading
+                                textAlignment: .leading,
+                                lineLimit: 1,
+                                minimumScaleFactor: 0.7
                             )
+                            .layoutPriority(1)
 
                             Spacer()
 
                             Toggle(isOn: $viewModel.isRebootReminderEnabled, label: { Text("") })
+                                .labelsHidden()
+                                .fixedSize()
                                 .toggleStyle(SwitchToggleStyle(tint: .green50))
                         }
                         .padding(.vertical, 6)

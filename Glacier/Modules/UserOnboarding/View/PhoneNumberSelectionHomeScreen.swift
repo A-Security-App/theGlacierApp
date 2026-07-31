@@ -33,6 +33,9 @@ struct PhoneNumberSelectionHomeScreen<ViewModel: PhoneNumberSelectionHomeViewMod
                 .ignoresSafeArea()
             
             VStack(alignment: .leading, spacing: 20) {
+                Button {
+                    viewModel.presentPhoneNumberSelectionView()
+                } label: {
                 GlacierViewContainer(shouldReverseColor: true, darkColor: .grey95, lightColor: .white) {
                     VStack(alignment: .leading, spacing: 16) {
                         GlacierLabel(
@@ -42,34 +45,38 @@ struct PhoneNumberSelectionHomeScreen<ViewModel: PhoneNumberSelectionHomeViewMod
                         )
                         .opacity(visibleIndices.contains(0) ? 1 : 0)
                         .padding(.top, 8)
-                        
+
                         GlacierLabel(
                             text: viewModel.subHeaderText,
                             font: .headerOne,
                             shouldReverseColor: true
                         )
                         .opacity(visibleIndices.contains(1) ? 1 : 0)
-                        
+
                         Spacer()
-                        
+
                         HStack(alignment: .bottom) {
                             GlacierLabel(
                                 text: NSLocalizedString("Choose your number.", comment: "Phone number selection screen overview"),
                                 font: .headerOne,
                                 shouldReverseColor: true
                             )
-                            
+
                             Spacer(minLength: 32)
-                            
+
                             GlacierImageButton(name: "right-arrow-icon", imageWidth: 16, imageHeight: 16, backgroundOpacity: 0, shouldReverseColor: true) {
                                 viewModel.presentPhoneNumberSelectionView()
                             }
+                            .allowsHitTesting(false)
                         }
                         .opacity(visibleIndices.contains(2) ? 1 : 0)
                     }
                 }
+                }
+                .buttonStyle(.plain)
+                .contentShape(Rectangle())
                 .padding(.top, 40)
-                
+
                 GlacierButton(style: .tertiary,  title: NSLocalizedString("Skip for Now", comment: "Skip button title")) {
                     viewModel.skip()
                 }

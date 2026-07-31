@@ -33,6 +33,9 @@ struct PhoneNumberPlanPurchaseHomeScreen<ViewModel: PhoneNumberPlanPurchaseHomeV
                 .ignoresSafeArea()
             
             VStack(alignment: .leading, spacing: 20) {
+                Button {
+                    viewModel.presentPhoneNumberPlanPurchaseView()
+                } label: {
                 GlacierViewContainer(shouldReverseColor: true, darkColor: .grey95, lightColor: .white) {
                     VStack(alignment: .leading, spacing: 16) {
                         GlacierLabel(
@@ -43,27 +46,31 @@ struct PhoneNumberPlanPurchaseHomeScreen<ViewModel: PhoneNumberPlanPurchaseHomeV
                         .frame(width: 200, alignment: .leading)
                         .opacity(visibleIndices.contains(0) ? 1 : 0)
                         .padding(.top, 8)
-                        
+
                         Spacer()
-                        
+
                         HStack(alignment: .bottom) {
                             GlacierLabel(
                                 text: NSLocalizedString("For conversations that never point back to you.", comment: "Phone number purchase home screen overview"),
                                 font: .headerOne,
                                 customTextColor: .constant(.grey50)
                             )
-                            
+
                             Spacer(minLength: 32)
-                            
+
                             GlacierImageButton(name: "right-arrow-icon", imageWidth: 16, imageHeight: 16, backgroundOpacity: 0, shouldReverseColor: true) {
                                 viewModel.presentPhoneNumberPlanPurchaseView()
                             }
+                            .allowsHitTesting(false)
                         }
                         .opacity(visibleIndices.contains(1) ? 1 : 0)
                     }
                 }
+                }
+                .buttonStyle(.plain)
+                .contentShape(Rectangle())
                 .padding(.top, 40)
-                
+
                 GlacierButton(style: .tertiary,  title: NSLocalizedString("Skip for Now", comment: "Skip button title")) {
                     viewModel.skip()
                 }

@@ -94,6 +94,8 @@ struct GlacierSearchBar: View {
                 TextField(placeholder, text: $searchText)
                     .multilineTextAlignment(.leading)
                     .font(.bodyThick)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
                     .foregroundColor(tintColor)
                     .autocapitalization(.none)
                     .disableAutocorrection(true)

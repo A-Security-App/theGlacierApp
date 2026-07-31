@@ -331,6 +331,32 @@ open class TwilioBackendManager: NSObject
             }
         }
     }
+    func deleteCallHistory(_ number:String, responseHandler: ((Bool) -> Void)? = nil) {
+        guard !SecurityCenter.isProxyDetected else { responseHandler?(false); return }
+        Task { [weak self] in
+            guard let self else { return }
+            guard let headers = await GlacierAPIHeaders.authHeaders() else {
+                responseHandler?(false)
+                return
+            }
+            // DELETE call-history?number=<E.164>, no request body. URLEncoding places the
+            // number in the query string and percent-encodes the leading + as %2B.
+            self.sessionManager.request(self.callHistoryUrl(), method: .delete, parameters: ["number": number], encoding: URLEncoding.default, headers: headers)
+                .validate()
+                .responseData(queue: self.internalQueue) { response in
+                    switch response.result {
+                    case .success(_):
+                        responseHandler?(true)
+                        return
+                    case .failure(let error):
+                        // A 502 indicates a partial deletion and can be retried.
+                        Log.calls.error("Error deleting call history: \(error)")
+                        responseHandler?(false)
+                        return
+                    }
+            }
+        }
+    }
     private func removeAccount(_ selectedNumber:String) {
         self.internalQueue.async {
             if let acct = self.getExistingAccount(phoneNumber:selectedNumber) {

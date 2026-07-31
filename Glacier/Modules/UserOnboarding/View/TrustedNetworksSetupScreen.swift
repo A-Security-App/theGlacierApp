@@ -33,6 +33,9 @@ struct TrustedNetworksSetupScreen<ViewModel: TrustedNetworksSetupViewModel>: Vie
                 .ignoresSafeArea()
             
             VStack(alignment: .leading, spacing: 20) {
+                Button {
+                    viewModel.addTrustedNetwork()
+                } label: {
                 GlacierViewContainer(shouldReverseColor: true, darkColor: .grey95, lightColor: .white) {
                     VStack(alignment: .leading, spacing: 16) {
                         GlacierLabel(
@@ -42,7 +45,7 @@ struct TrustedNetworksSetupScreen<ViewModel: TrustedNetworksSetupViewModel>: Vie
                         )
                         .opacity(visibleIndices.contains(0) ? 1 : 0)
                         .padding(.top, 8)
-                        
+
                         GlacierLabel(
                             text: NSLocalizedString("Add wi-fi to trusted network list.", comment: "Trusted networks setup screen sub header"),
                             font: .headerOne,
@@ -50,27 +53,31 @@ struct TrustedNetworksSetupScreen<ViewModel: TrustedNetworksSetupViewModel>: Vie
                         )
                         .frame(width: 200, alignment: .leading)
                         .opacity(visibleIndices.contains(1) ? 1 : 0)
-                        
+
                         Spacer()
-                        
+
                         HStack(alignment: .bottom) {
                             GlacierLabel(
                                 text: NSLocalizedString("VPN will automatically turn off on this network. \nUpdate anytime.", comment: "Trusted networks setup screen overview"),
                                 font: .headerOne,
                                 customTextColor: .constant(.grey50)
                             )
-                            
+
                             Spacer(minLength: 32)
-                            
+
                             GlacierImageButton(name: "right-arrow-icon", imageWidth: 16, imageHeight: 16, backgroundOpacity: 0, shouldReverseColor: true) {
                                 viewModel.addTrustedNetwork()
                             }
+                            .allowsHitTesting(false)
                         }
                         .opacity(visibleIndices.contains(2) ? 1 : 0)
                     }
                 }
+                }
+                .buttonStyle(.plain)
+                .contentShape(Rectangle())
                 .padding(.top, 40)
-                
+
                 GlacierButton(style: .tertiary,  title: NSLocalizedString("Skip for Now", comment: "Skip button title")) {
                     viewModel.skip()
                 }

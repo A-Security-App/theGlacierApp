@@ -49,7 +49,10 @@ struct PhoneDialPadScreen<ViewModel: PhoneDialPadViewModel & ObservableObject>: 
                 // Typed number
                 GlacierLabel(
                     text: viewModel.phoneNumber.isEmpty ? " " : viewModel.phoneNumber,
-                    font: .neueHassGroteskFont(ofSize: 35)
+                    font: .neueHassGroteskFont(ofSize: 35),
+                    textAlignment: .center,
+                    lineLimit: 1,
+                    minimumScaleFactor: 0.3
                 )
                 .frame(maxWidth: .infinity)
                 .frame(height: 60)

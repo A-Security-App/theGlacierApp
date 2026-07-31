@@ -34,6 +34,9 @@ struct UserPermissionsScreen<ViewModel: UserPermissionsViewModel>: View {
                 .ignoresSafeArea()
             
             VStack(alignment: .leading, spacing: 20) {
+                Button {
+                    viewModel.presentContactsAccessPrompt()
+                } label: {
                 GlacierViewContainer(shouldReverseColor: true, darkColor: .grey95, lightColor: .white) {
                     VStack(alignment: .leading, spacing: 16) {
                         GlacierLabel(
@@ -43,25 +46,29 @@ struct UserPermissionsScreen<ViewModel: UserPermissionsViewModel>: View {
                         )
                         .opacity(visibleIndices.contains(0) ? 1 : 0)
                         .padding(.top, 8)
-                        
+
                         Spacer()
-                        
+
                         HStack(alignment: .bottom) {
                             GlacierLabel(
                                 text: NSLocalizedString("Notifications help you receive calls in real time.\n\nContact access is only used to help identify or start calls. Your contacts never leave your phone.", comment: "User permissions screen overview"),
                                 font: .headerOne,
                                 customTextColor: .constant(.grey50)
                             )
-                            
+
                             Spacer(minLength: 32)
-                            
+
                             GlacierImageButton(name: "right-arrow-icon", imageWidth: 16, imageHeight: 16, backgroundOpacity: 0, shouldReverseColor: true) {
                                 viewModel.presentContactsAccessPrompt()
                             }
+                            .allowsHitTesting(false)
                         }
                         .opacity(visibleIndices.contains(1) ? 1 : 0)
                     }
                 }
+                }
+                .buttonStyle(.plain)
+                .contentShape(Rectangle())
                 .padding(.top, 40)
             }
             .padding(.top, 16)

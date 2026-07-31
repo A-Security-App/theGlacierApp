@@ -51,7 +51,13 @@ final class PhoneVM: PhoneViewModel, ObservableObject {
     
     func initialize() {
         if hasPhoneNumberSubscription && phoneNumbers.isEmpty {
-            TwilioBackendManager.sharedMgr().queryForNumbers()
+            // Re-read GRDB in case numbers were stored after this PhoneVM was constructed
+            // but the subscription flag never transitioned (so onPhoneSubscriptionStateDidChange
+            // took its early return). Only fall back to the backend query when nothing is stored.
+            phoneNumbers = PhoneAccountModel.allAccountsSortedByDisplayName()
+            if phoneNumbers.isEmpty {
+                TwilioBackendManager.sharedMgr().queryForNumbers()
+            }
         }
     }
     
@@ -123,8 +129,17 @@ final class PhoneVM: PhoneViewModel, ObservableObject {
         let hasSubscription = userAccountModel.hasActivePhoneNumberSubscription
         guard hasSubscription != hasPhoneNumberSubscription else { return }
         hasPhoneNumberSubscription = hasSubscription
-        if hasSubscription && phoneNumbers.isEmpty {
-            TwilioBackendManager.sharedMgr().queryForNumbers()
+        if hasSubscription {
+            // Read any locally-stored numbers directly from GRDB (as MainVM does). The
+            // backend query below posts .newPhoneNumberAdded / .userPhoneNumberDetailsUpdated
+            // only when a number is created or removed — not when it already exists — so
+            // relying on it alone leaves the dialpad stuck on the "Add phone number" state
+            // for an existing subscriber whose PhoneVM initialized before the subscription
+            // flag resolved. Reading GRDB here closes that launch race.
+            phoneNumbers = PhoneAccountModel.allAccountsSortedByDisplayName()
+            if phoneNumbers.isEmpty {
+                TwilioBackendManager.sharedMgr().queryForNumbers()
+            }
         }
     }
     

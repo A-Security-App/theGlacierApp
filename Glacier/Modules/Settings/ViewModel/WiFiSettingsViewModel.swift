@@ -253,7 +253,7 @@ final class WiFiSettingsVM: WiFiSettingsViewModel, ObservableObject {
                 ),
                 PopupButton(
                     style: .primary,
-                    title: NSLocalizedString("Trust Network", comment: "Trust network button title"),
+                    title: NSLocalizedString("Add", comment: "Trust network button title"),
                     onTap: {
                         self.dismissPopup()
                         self.updateTunnelOnDemandRules(for: networkName)

@@ -57,13 +57,15 @@ struct PhoneNumberPlanPurchaseScreen<ViewModel: GlacierPlanPurchaseViewModel & O
                         GlacierLabel(
                             text: NSLocalizedString("Select your monthly plan", comment: "Phone number plan purchase screen header text"),
                             font: .headerTwo,
-                            textAlignment: .center
+                            textAlignment: .center,
+                            allowsVerticalGrowth: true
                         )
-                        
+
                         GlacierLabel(
                             text: NSLocalizedString("Completely private phone calls.", comment: "Phone number plan purchase screen sub header text"),
                             font: .headerTwo,
                             textAlignment: .center,
+                            allowsVerticalGrowth: true,
                             customTextColor: .constant(.grey60)
                         )
                     }
@@ -91,8 +93,10 @@ struct PhoneNumberPlanPurchaseScreen<ViewModel: GlacierPlanPurchaseViewModel & O
                         ),
                         font: .bodySmall,
                         textAlignment: .leading,
+                        allowsVerticalGrowth: true,
                         customTextColor: .constant(.grey60)
                     )
+                    .frame(maxWidth: .infinity, alignment: .leading)
                     
                     HStack(alignment: .center, spacing: 24) {
                         GlacierLabelButton(

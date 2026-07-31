@@ -32,8 +32,13 @@ struct VPNSetupScreen<ViewModel: VPNSetupViewModel>: View {
         ZStack {
             GlacierBackground()
                 .ignoresSafeArea()
-            
+
+            GeometryReader { geo in
+            ScrollView(.vertical, showsIndicators: false) {
             VStack(alignment: .leading, spacing: 20) {
+                Button {
+                    viewModel.presentAddVPNConfirmationPrompt()
+                } label: {
                 GlacierViewContainer(shouldReverseColor: true, darkColor: .grey95, lightColor: .white) {
                     VStack(alignment: .leading, spacing: 16) {
                         GlacierLabel(
@@ -43,34 +48,38 @@ struct VPNSetupScreen<ViewModel: VPNSetupViewModel>: View {
                         )
                         .opacity(visibleIndices.contains(0) ? 1 : 0)
                         .padding(.top, 8)
-                        
+
                         GlacierLabel(
                             text: NSLocalizedString("Setup your VPN.", comment: "VPN setup screen sub header"),
                             font: .headerOne,
                             shouldReverseColor: true
                         )
                         .opacity(visibleIndices.contains(1) ? 1 : 0)
-                        
+
                         Spacer()
-                        
+
                         HStack(alignment: .bottom) {
                             GlacierLabel(
                                 text: NSLocalizedString("Hides where you're going and everything you do along the way.\n\nIdeal for public Wi-Fi, travel, or untrusted networks.\n\nHeads up - can sometimes slow your connection or limit browsing.", comment: "VPN setup screen overview"),
                                 font: .headerOne,
                                 customTextColor: .constant(.grey50)
                             )
-                            
+
                             Spacer(minLength: 32)
-                            
+
                             GlacierImageButton(name: "right-arrow-icon", imageWidth: 16, imageHeight: 16, backgroundOpacity: 0, shouldReverseColor: true) {
                                 viewModel.presentAddVPNConfirmationPrompt()
                             }
+                            .allowsHitTesting(false)
                         }
                         .opacity(visibleIndices.contains(2) ? 1 : 0)
                     }
                 }
+                }
+                .buttonStyle(.plain)
+                .contentShape(Rectangle())
                 .padding(.top, 40)
-                
+
                 GlacierButton(style: .tertiary,  title: NSLocalizedString("Skip for Now", comment: "Skip button title")) {
                     viewModel.skip()
                 }
@@ -78,6 +87,9 @@ struct VPNSetupScreen<ViewModel: VPNSetupViewModel>: View {
             }
             .padding(.top, 16)
             .padding(.horizontal, 16)
+            .frame(minHeight: geo.size.height)
+            }
+            }
         }
         .onFirstAppear {
             UserDefaultsService.shared.set(OnboardingScreen.vpnSetup.name, for: \.inProgressUserOnboardingScreen)

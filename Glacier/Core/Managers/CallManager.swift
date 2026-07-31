@@ -1118,6 +1118,22 @@ extension CallManager: CallDelegate {
     public func callDidConnect(call: Call) {
         Log.calls.notice("CallManager callDidConnect uuid=\(call.uuid?.uuidString ?? "nil", privacy: .public)")
         activeCall = call
+
+        // Belt-and-suspenders audio enable. Call audio is normally turned on in
+        // provider(_:didActivate:), but iOS intermittently fails to call that
+        // delegate for a VoIP call that follows an earlier call in the same app
+        // session (see the commented workaround in performSetHeldCallAction and
+        // https://developer.apple.com/forums/thread/694836). When that happens the
+        // previous call's didDeactivate has already set isEnabled = false and it is
+        // never flipped back, so the call connects but has no audio until the app is
+        // relaunched. callDidConnect is guaranteed to fire on every established call,
+        // so enable the audio device here as well; it is idempotent when didActivate
+        // did fire.
+        if !self.tvoaudioDevice.isEnabled {
+            Log.calls.notice("callDidConnect: enabling audio device (didActivate may not have fired)")
+        }
+        self.tvoaudioDevice.isEnabled = true
+
         // Fulfill any pending incoming-call answer action (no-op for outgoing)
         currentCall?.answerCallAction?.fulfill(withDateConnected: Date())
         reportCallConnected(uuid: call.uuid, connectTime: Date())

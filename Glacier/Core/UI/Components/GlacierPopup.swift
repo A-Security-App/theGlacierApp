@@ -110,6 +110,7 @@ struct GlacierPopup: View {
                                     customTitleColor: button.titleColor,
                                     height: 48,
                                     cornerRadius: 24,
+                                    padding: 12,
                                     action: {
                                         button.onTap()
                                     }
