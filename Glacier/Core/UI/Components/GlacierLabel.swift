@@ -39,9 +39,26 @@ struct GlacierLabel: View {
     private var isUnderlined: Bool
     private var lineSpacing: CGFloat
     private let shouldReverseColor: Bool
-    
+    /**
+     Optional maximum number of lines. `nil` (default) keeps SwiftUI's default of unlimited lines.
+     */
+    private let lineLimit: Int?
+    /**
+     Smallest factor the text is allowed to shrink to before truncating, in the range 0...1.
+     Defaults to `1` (no scaling), which preserves the existing behavior. Values below 1 let the
+     text shrink to fit its available width — useful for single-line headers/buttons that should
+     scale down rather than clip when Dynamic Type / Display Zoom enlarge the font.
+     */
+    private let minimumScaleFactor: CGFloat
+    /**
+     When `true`, the label is allowed to grow vertically to fit its full content
+     (`.fixedSize(horizontal: false, vertical: true)`), so constrained multi-line text wraps
+     instead of truncating with an ellipsis. Defaults to `false` to preserve existing layouts.
+     */
+    private let allowsVerticalGrowth: Bool
+
     // MARK: - Initializer
-    
+
     init(
         text: String? = nil,
         attributedString: AttributedString? = nil,
@@ -50,6 +67,9 @@ struct GlacierLabel: View {
         isUnderlined: Bool = false,
         lineSpacing: CGFloat = 0,
         shouldReverseColor: Bool = false,
+        lineLimit: Int? = nil,
+        minimumScaleFactor: CGFloat = 1,
+        allowsVerticalGrowth: Bool = false,
         customTextColor: Binding<Color?> = .constant(nil)
     ) {
         self.text = text
@@ -59,6 +79,9 @@ struct GlacierLabel: View {
         self.isUnderlined = isUnderlined
         self.lineSpacing = lineSpacing
         self.shouldReverseColor = shouldReverseColor
+        self.lineLimit = lineLimit
+        self.minimumScaleFactor = minimumScaleFactor
+        self.allowsVerticalGrowth = allowsVerticalGrowth
         self._customTextColor = customTextColor
     }
     
@@ -77,6 +100,9 @@ struct GlacierLabel: View {
         .font(font)
         .foregroundColor(textColor)
         .multilineTextAlignment(textAlignment)
+        .lineLimit(lineLimit)
+        .minimumScaleFactor(minimumScaleFactor)
+        .fixedSize(horizontal: false, vertical: allowsVerticalGrowth)
         .onAppear {
             isAppearing = true
             setupColors(for: glacierColorScheme.activeScheme)

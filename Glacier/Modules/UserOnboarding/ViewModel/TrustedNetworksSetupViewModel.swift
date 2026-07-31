@@ -122,7 +122,7 @@ final class TrustedNetworksSetupVM: NSObject, TrustedNetworksSetupViewModel, Obs
                 ),
                 PopupButton(
                     style: .primary,
-                    title: NSLocalizedString("Trust Network", comment: "Trust network button title"),
+                    title: NSLocalizedString("Add", comment: "Trust network button title"),
                     onTap: {
                         self.updateTunnelOnDemandRules(for: networkName)
                         self.dismissPopup()

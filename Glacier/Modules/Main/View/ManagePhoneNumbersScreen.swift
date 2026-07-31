@@ -207,6 +207,18 @@ struct ManagePhoneNumbersScreen<ViewModel: ManagePhoneNumbersViewModel & Observa
                             viewModel.presentBurnNumberConfirmationPrompt(for: phoneNumber)
                             selectedPhoneNumber = nil
                         }
+                    ),
+                    GlacierMenuItem(
+                        icon: "trash-icon",
+                        title: NSLocalizedString("Delete history", comment: "Mnage phone number screen delete call history"),
+                        action: {
+                            showMenu = false
+                            guard let phoneNumber = selectedPhoneNumber else {
+                                return
+                            }
+                            viewModel.presentDeleteHistoryConfirmationPrompt(for: phoneNumber)
+                            selectedPhoneNumber = nil
+                        }
                     )
                 ]
                 )

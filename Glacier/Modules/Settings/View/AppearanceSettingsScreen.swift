@@ -36,44 +36,46 @@ struct AppearanceSettingsScreen<ViewModel: AppearanceSettingsViewModel & Observa
                 GlacierBackground()
                     .ignoresSafeArea()
                 
-                VStack(alignment: .center, spacing: 16) {
-                    ForEach(viewModel.schemes, id: \.self) { scheme in
-                        GlacierViewContainer {
-                            VStack(alignment: .leading, spacing: 40) {
-                                HStack(alignment: .center, spacing: 8) {
+                ScrollView(.vertical, showsIndicators: false) {
+                    VStack(alignment: .center, spacing: 16) {
+                        ForEach(viewModel.schemes, id: \.self) { scheme in
+                            GlacierViewContainer {
+                                VStack(alignment: .leading, spacing: 40) {
+                                    HStack(alignment: .center, spacing: 8) {
+                                        GlacierLabel(
+                                            text: scheme.title,
+                                            font: .bodyThick
+                                        )
+
+                                        Spacer()
+
+                                        GlacierImage(
+                                            name: .constant(viewModel.selectedScheme.title == scheme.title ? "radioButton-selected-icon" : "radioButton-deselected-icon"),
+                                            width: 16,
+                                            height: 16,
+                                            shouldAdaptToColorSchemeChange: true
+                                        )
+                                        .frame(width: 16, height: 16)
+                                    }
+
                                     GlacierLabel(
-                                        text: scheme.title,
-                                        font: .bodyThick
+                                        text: scheme.description,
+                                        font: .bodyRegular,
+                                        allowsVerticalGrowth: true,
+                                        customTextColor: $descriptionTextColor
                                     )
-                                    
-                                    Spacer()
-                                    
-                                    GlacierImage(
-                                        name: .constant(viewModel.selectedScheme.title == scheme.title ? "radioButton-selected-icon" : "radioButton-deselected-icon"),
-                                        width: 16,
-                                        height: 16,
-                                        shouldAdaptToColorSchemeChange: true
-                                    )
-                                    .frame(width: 16, height: 16)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .padding(.trailing, 60)
                                 }
-                                
-                                GlacierLabel(
-                                    text: scheme.description,
-                                    font: .bodyRegular,
-                                    customTextColor: $descriptionTextColor
-                                )
-                                .padding(.trailing, 60)
+                            }
+                            .onTapGesture {
+                                viewModel.selectedScheme = scheme
                             }
                         }
-                        .onTapGesture {
-                            viewModel.selectedScheme = scheme
-                        }
                     }
-                    
-                    Spacer()
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 28)
                 }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 28)
             }
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -102,7 +104,7 @@ struct AppearanceSettingsScreen<ViewModel: AppearanceSettingsViewModel & Observa
         .onFirstAppear {
             viewModel.glacierColorScheme = glacierColorScheme
         }
-        .presentationDetents([.fraction(0.75)])
+        .presentationDetents([.fraction(0.75), .large])
         .onAppear {
             descriptionTextColor = glacierColorScheme.activeScheme == .light ? .grey60 : .grey40
         }

@@ -59,13 +59,15 @@ struct UserRegistrationScreen<ViewModel: UserRegistrationViewModel & ObservableO
                             GlacierLabel(
                                 text: NSLocalizedString("Create your account", comment: "User registration screen header"),
                                 font: .headerTwo,
-                                textAlignment: .center
+                                textAlignment: .center,
+                                allowsVerticalGrowth: true
                             )
-                            
+
                             GlacierLabel(
                                 text: subHeaderText,
                                 font: .headerTwo,
                                 textAlignment: .center,
+                                allowsVerticalGrowth: true,
                                 customTextColor: .constant(.grey60)
                             )
                         }

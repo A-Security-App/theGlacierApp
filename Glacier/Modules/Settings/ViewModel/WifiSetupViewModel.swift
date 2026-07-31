@@ -103,7 +103,7 @@ final class WifiSetupVM: NSObject, WifiSetupViewModel, ObservableObject {
                 ),
                 PopupButton(
                     style: .primary,
-                    title: NSLocalizedString("Trust Network", comment: "Trust network button title"),
+                    title: NSLocalizedString("Add", comment: "Trust network button title"),
                     onTap: {
                         self.commitTrustedNetwork(networkName)
                         self.dismissPopup()

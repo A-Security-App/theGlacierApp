@@ -29,6 +29,9 @@ protocol ManagePhoneNumbersViewModel: GlacierViewModelWithRootCoordinator {
     
     @MainActor
     func presentBurnNumberConfirmationPrompt(for phoneNumber: PhoneAccountModel)
+
+    @MainActor
+    func presentDeleteHistoryConfirmationPrompt(for phoneNumber: PhoneAccountModel)
     func copyPhoneNumber(_ phoneNumber: PhoneAccountModel)
 }
 
@@ -186,6 +189,44 @@ final class ManagePhoneNumbersVM: ManagePhoneNumbersViewModel, ObservableObject 
 
     }
     
+    func presentDeleteHistoryConfirmationPrompt(for phoneNumber: PhoneAccountModel) {
+        guard let number = phoneNumber.grdbRecord?.phoneNumber else { return }
+
+        let configuration = PopupConfiguration(
+            title: NSLocalizedString(
+                "Delete call history",
+                comment: "Manage phone numbers screen delete call history prompt title"
+            ),
+            description: String(
+                format: NSLocalizedString(
+                    "All call history for %@ will be permanently deleted. This cannot be undone.",
+                    comment: "Manage phone numbers screen delete call history prompt description"
+                ),
+                number
+            ),
+            buttons: [
+                PopupButton(
+                    style: .tertiary,
+                    title: NSLocalizedString("Delete history", comment: "Manage phone numbers screen delete call history menu item"),
+                    titleColor: .ember,
+                    onTap: {
+                        self.dismissPopup()
+                        self.deleteCallHistory(number)
+                    }
+                ),
+                PopupButton(
+                    style: .tertiary,
+                    title: NSLocalizedString("Cancel", comment: "Cancel button title"),
+                    onTap: {
+                        self.dismissPopup()
+                    }
+                )
+            ],
+            buttonsAlignment: .vertical
+        )
+        presentPopup(with: configuration)
+    }
+
     func copyPhoneNumber(_ phoneNumber: PhoneAccountModel) {
         UIPasteboard.general.string = phoneNumber.grdbRecord?.phoneNumber
     }
@@ -269,6 +310,32 @@ final class ManagePhoneNumbersVM: ManagePhoneNumbersViewModel, ObservableObject 
         }
     }
     
+    @MainActor
+    private func deleteCallHistory(_ phoneNumber: String) {
+        presentProgressIndicator()
+        TwilioBackendManager.sharedMgr().deleteCallHistory(phoneNumber) { didDeleteHistory in
+            DispatchQueue.main.async {
+                self.dismissProgressIndicator()
+            }
+
+            guard didDeleteHistory else {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    self.presentAlertWith(
+                        title: .errorText,
+                        description: NSLocalizedString(
+                            "Something went wrong while deleting call history. Please try again.",
+                            comment: "Manage phone numbers screen delete call history error"
+                        )
+                    )
+                }
+                return
+            }
+
+            // Clear the locally cached records so the History screen reflects the deletion.
+            CallRecord.removeAll(for: phoneNumber)
+        }
+    }
+
     @MainActor
     @objc private func onPhoneNumberPlanPurchaseSuccessful() {
         DispatchQueue.main.async {

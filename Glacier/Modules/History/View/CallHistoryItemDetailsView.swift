@@ -12,20 +12,20 @@ import SwiftUI
  CallHistoryItemDetailsView shows name, phone number, avatar image, time stamp and other details for the given call history record.
  */
 struct CallHistoryItemDetailsView: View {
-    
+
     // MARK: - Public properties
-    
+
     var callRecord: CallRecord
     @Binding var backgroundColor: Color?
     @Binding var secondaryTextColor: Color?
     @Binding var avatarForegroundColor: Color?
     @Binding var avatarBackgroundColor: Color?
     var action: () -> Void
-    
+
     // MARK: - Private properties
-    
+
     @State private var hasValidName = true
-    
+
     private var initials: String {
         var initials = GlacierImages.stringInitials(withMaxCharacters: callRecord.name, maxCharacters: 2) ?? ""
         if initials.isEmpty {
@@ -33,7 +33,7 @@ struct CallHistoryItemDetailsView: View {
         }
         return initials
     }
-    
+
     private var avatarImage: UIImage? {
         let phoneNumber = callRecord.isIncoming ? callRecord.from : callRecord.to
         guard let matchingContact = ContactsManager.shared.matchContact(for: phoneNumber) else {
@@ -41,31 +41,31 @@ struct CallHistoryItemDetailsView: View {
         }
         return matchingContact.avatar
     }
-    
+
     // MARK: - UI/UX
-    
+
     var body: some View {
         ZStack {
             RoundedRectangle(cornerRadius: 8)
                 .fill(backgroundColor ?? .grey10)
                 .frame(height: 80)
-            
+
             VStack(alignment: .leading, spacing: 24) {
                 HStack(alignment: .center, spacing: 16) {
-                    
+
                     // Avatar image or name initials
                     ZStack {
                         RoundedRectangle(cornerRadius: 16)
                             .fill(avatarBackgroundColor ?? .grey10)
                             .frame(width: 48, height: 48)
-                        
+
                         if let image = avatarImage {
                             Image(uiImage: image)
                                 .resizable()
                                 .scaledToFit()
                                 .frame(width: 48, height: 48)
                                 .cornerRadius(16)
-                            
+
                         } else {
                             GlacierLabel(
                                 text: initials,
@@ -74,7 +74,7 @@ struct CallHistoryItemDetailsView: View {
                             )
                         }
                     }
-                    
+
                     // Name and phone number
                     VStack(alignment: .leading, spacing: 8) {
                         if !callRecord.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
@@ -83,7 +83,7 @@ struct CallHistoryItemDetailsView: View {
                                 font: .bodyThick
                             )
                         }
-                        
+
                         HStack(alignment: .center, spacing: 2) {
                             GlacierImage(
                                 name: .constant(callRecord.isIncoming ? "incoming-call-icon" : "outgoing-call-icon"),
@@ -91,7 +91,7 @@ struct CallHistoryItemDetailsView: View {
                                 shouldAdaptToColorSchemeChange: false,
                                 customTintColor: $secondaryTextColor
                             )
-                            
+
                             GlacierLabel(
                                 text: callRecord.phoneNumber,
                                 font: .bodyThick,
@@ -99,10 +99,10 @@ struct CallHistoryItemDetailsView: View {
                             )
                         }
                     }
-                    
+
                     Spacer()
-                    
-                    
+
+
                     HStack(alignment: .center, spacing: 8) {
 
                         // Timestamp
@@ -130,7 +130,7 @@ struct CallHistoryItemDetailsView: View {
                         )
                     }
                 }
-                
+
                 GlacierLineSeparator()
             }
         }

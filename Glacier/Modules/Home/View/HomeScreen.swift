@@ -60,17 +60,19 @@ struct HomeScreen<ViewModel: HomeViewModel & ObservableObject>: View {
                                         text: viewModel.securityStatusText,
                                         font: .headerOne,
                                         textAlignment: .leading,
+                                        minimumScaleFactor: 0.6,
+                                        allowsVerticalGrowth: true,
                                         customTextColor: .constant(.black)
                                     )
                                     .frame(width: 170, alignment: .leading)
                                     .padding(.top, 4)
                                     .opacity(viewModel.isScanningDevice ? 0 : 1)
                                     .layoutPriority(3)
-                                    
+
                                     Spacer()
-                                    
+
                                     HStack(alignment: .bottom) {
-                                        
+
                                         // Security risk warning text
                                         if let issueText = viewModel.securityIssueText {
                                             GlacierLabel(
@@ -78,6 +80,8 @@ struct HomeScreen<ViewModel: HomeViewModel & ObservableObject>: View {
                                                 font: .bodyThick,
                                                 textAlignment: .leading,
                                                 lineSpacing: 5,
+                                                minimumScaleFactor: 0.6,
+                                                allowsVerticalGrowth: true,
                                                 customTextColor: .constant(.black)
                                             )
                                             .frame(width: 190, alignment: .leading)
@@ -112,12 +116,15 @@ struct HomeScreen<ViewModel: HomeViewModel & ObservableObject>: View {
                                     }
                                     .padding(.bottom, 30)
                                     .layoutPriority(1)
-                                    
+
                                     HStack(alignment: .center) {
                                         GlacierLabel(
                                             text: NSLocalizedString("Today", comment: "Home screen today text"),
-                                            font: .bodyLargeThick
+                                            font: .bodyLargeThick,
+                                            lineLimit: 1,
+                                            minimumScaleFactor: 0.7
                                         )
+                                        .fixedSize()
                                         .opacity(viewModel.isScanningDevice ? 0 : 1)
                                         
                                         Spacer()
@@ -127,6 +134,8 @@ struct HomeScreen<ViewModel: HomeViewModel & ObservableObject>: View {
                                             GlacierLabel(
                                                 text: viewModel.blockedTrackersInfoText,
                                                 font: .bodyLarge,
+                                                lineLimit: 1,
+                                                minimumScaleFactor: 0.6,
                                                 customTextColor: $blockedTrackerTextColor
                                             )
                                             .frame(width: 180, alignment: .trailing)
@@ -142,7 +151,7 @@ struct HomeScreen<ViewModel: HomeViewModel & ObservableObject>: View {
                                     .layoutPriority(2)
                                 }
                                 .padding(.all, 24)
-                                .frame(height: 310)
+                                .frame(minHeight: 310)
                             }
                         }
                         
@@ -151,19 +160,20 @@ struct HomeScreen<ViewModel: HomeViewModel & ObservableObject>: View {
                         GlacierViewContainer {
                             VStack(alignment: .leading) {
                                 HStack(alignment: .center, spacing: 8) {
-                                    GlacierLabel(text: viewModel.connectionStatusText, font: .bodyThick)
+                                    GlacierLabel(text: viewModel.connectionStatusText, font: .bodyThick, lineLimit: 1, minimumScaleFactor: 0.7)
                                         .padding(.vertical, 8)
+                                        .layoutPriority(1)
                                     if let activeLabel = viewModel.activeConnectionLabel {
                                         HStack(spacing: 6) {
                                             if viewModel.isConnectedToVPN,
                                                activeLabel != SecuredConnectionType.dns.label {
-                                                GlacierLabel(text: SecuredConnectionType.dns.label, font: .bodySmallThick)
+                                                GlacierLabel(text: SecuredConnectionType.dns.label, font: .bodySmallThick, lineLimit: 1, minimumScaleFactor: 0.7)
                                                     .padding(.all, 8)
                                                     .background(
                                                         GlacierBackground(cornerRadius: 8)
                                                     )
                                             }
-                                            GlacierLabel(text: activeLabel, font: .bodySmallThick)
+                                            GlacierLabel(text: activeLabel, font: .bodySmallThick, lineLimit: 1, minimumScaleFactor: 0.7)
                                                 .padding(.all, 8)
                                                 .background(
                                                     GlacierBackground(cornerRadius: 8)
@@ -262,7 +272,9 @@ struct HomeScreen<ViewModel: HomeViewModel & ObservableObject>: View {
                                                     text: securitySetting.type.actionButtonTitle,
                                                     font: .bodyThick,
                                                     textAlignment: .trailing,
-                                                    isUnderlined: true
+                                                    isUnderlined: true,
+                                                    lineLimit: 1,
+                                                    minimumScaleFactor: 0.6
                                                 )
                                                 .frame(width: 50)
                                                 .onTapGesture {
