@@ -21,6 +21,7 @@ enum Sheet: Identifiable, Hashable {
     case connectionTypeSelection
     case appearanceSettings
     case widgetSettings
+    case notificationSettings
 
     var id: Self {
         return self
@@ -37,6 +38,7 @@ enum Sheet: Identifiable, Hashable {
         case .connectionTypeSelection: "connectionTypeSelection"
         case .appearanceSettings: "appearanceSettings"
         case .widgetSettings: "widgetSettings"
+        case .notificationSettings: "notificationSettings"
         }
     }
 }

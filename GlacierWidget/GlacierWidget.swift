@@ -251,7 +251,7 @@ struct GlacierWidget: Widget {
             GlacierWidgetEntryView(entry: entry)
         }
         .configurationDisplayName("Glacier")
-        .description("Monitor and control your Glacier VPN and DNS protection.")
+        .description("Monitor and control your Glacier VPN and Secure DNS protection.")
         .supportedFamilies([.systemSmall, .systemMedium])
     }
 }

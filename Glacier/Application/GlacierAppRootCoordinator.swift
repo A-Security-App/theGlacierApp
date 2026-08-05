@@ -165,6 +165,12 @@ final class GlacierAppRootCoordinator: GlacierRootCoordinator, ObservableObject 
             let viewModel = WifiSetupVM(rootCoordinator: self)
             WifiSetupScreen(viewModel: viewModel)
 
+        case .enableCellular(let viewModel):
+            EnableCellularScreen(viewModel: viewModel)
+
+        case .enableVPN(let viewModel):
+            EnableVPNScreen(viewModel: viewModel)
+
         case .managePhoneNumbers:
             let viewModel = ManagePhoneNumbersVM(rootCoordinator: self)
             ManagePhoneNumbersScreen(viewModel: viewModel)
@@ -242,6 +248,10 @@ final class GlacierAppRootCoordinator: GlacierRootCoordinator, ObservableObject 
         case .widgetSettings:
             let viewModel = WidgetSettingsVM()
             WidgetSettingsScreen(viewModel: viewModel)
+
+        case .notificationSettings:
+            let viewModel = NotificationSettingsVM()
+            NotificationSettingsScreen(viewModel: viewModel)
         }
     }
 }

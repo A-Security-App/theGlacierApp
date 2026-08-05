@@ -18,6 +18,13 @@ protocol UserLoginViewModel: UserAuthenticationViewModel {
     var emailValidationError: String? { get set }
     var passwordValidationError: String? { get set }
     var passwordResetCoordinator: any GlacierCoordinator { get set }
+
+    /// True once Cognito has accepted the password and is waiting on the code
+    /// emailed by the `web-login-challenge` Lambda.
+    var isAwaitingVerificationCode: Bool { get set }
+
+    /// The masked address the code went to, as reported by Cognito.
+    var verificationCodeDestination: String? { get set }
     
     init(
         rootCoodinator: any GlacierRootCoordinator,
@@ -26,6 +33,12 @@ protocol UserLoginViewModel: UserAuthenticationViewModel {
     )
     
     func presentPasswordResetScreen()
+
+    @MainActor
+    func submitVerificationCode(_ code: String)
+
+    @MainActor
+    func cancelVerificationCodeEntry()
 }
 
 /**
@@ -66,6 +79,9 @@ final class UserLoginVM: UserLoginViewModel, ObservableObject {
     
     @Published var isContinueButtonEnabled: Bool = false
     @Published var userAccount: UserAccount?
+
+    @Published var isAwaitingVerificationCode: Bool = false
+    @Published var verificationCodeDestination: String?
     
     // MARK: - Private properties
     
@@ -154,9 +170,58 @@ final class UserLoginVM: UserLoginViewModel, ObservableObject {
         guard let coordinator = passwordResetCoordinator as? PasswordResetCoordinator else { return }
         coordinator.presentScreen(.passwordReset)
     }
+
+    @MainActor
+    func submitVerificationCode(_ code: String) {
+        Task {
+            do {
+                presentProgressIndicator()
+                let challengeResult = try await authenticationService.confirmSignIn(challengeResponse: code)
+
+                // `isSignedIn` is derived from `.done`, so this one check covers
+                // both. Any other step means the challenge was not satisfied.
+                guard let result = challengeResult,
+                      case .done = result.nextStep else {
+                    // A wrong code ends the Cognito challenge session, so there is
+                    // nothing left to answer. The user has to sign in again to be
+                    // sent a new one.
+                    dismissProgressIndicator()
+                    resetVerificationCodeEntry()
+                    presentAlertWith(
+                        title: .errorText,
+                        description: NSLocalizedString(
+                            "That code didn't work. Log in again to get a new one.",
+                            comment: "User login screen wrong email code"
+                        )
+                    )
+                    return
+                }
+
+                await completeSignIn()
+            } catch let error as AuthError {
+                dismissProgressIndicator()
+                resetVerificationCodeEntry()
+                presentAlertWith(title: .errorText, description: error.errorDescription)
+            }
+        }
+    }
+
+    @MainActor
+    func cancelVerificationCodeEntry() {
+        resetVerificationCodeEntry()
+    }
     
     // MARK: - Private methods
-    
+
+    /// Back to the password step with the challenge cleared. The password goes
+    /// too: the next attempt opens a new Cognito session and runs SRP again.
+    @MainActor
+    private func resetVerificationCodeEntry() {
+        isAwaitingVerificationCode = false
+        verificationCodeDestination = nil
+        password = ""
+    }
+
     @MainActor
     private func loginUser() {
         Task {
@@ -167,27 +232,34 @@ final class UserLoginVM: UserLoginViewModel, ObservableObject {
 
             do {
                 presentProgressIndicator()
-                let signInResult = try await authenticationService.signIn(with: email, password: password)
+                let signInResult = try await authenticationService.signIn(
+                    with: email,
+                    password: password,
+                    flow: .emailCodeChallenge
+                )
 
-                guard let result = signInResult,
-                      case .done = result.nextStep else {
+                guard let result = signInResult else {
                     dismissProgressIndicator()
                     presentAlertWith(title: .errorText, description: errorDescription)
                     return
                 }
 
-                // fetchAttributes creates the GlacierAccount DB record on a fresh install
-                // and sets the access token on TwilioBackendManager. Both are required
-                // before resolveSubscriptionStatus — without them, getGlacierAccount()
-                // returns nil and the backend subscription check exits immediately.
-                // Keep the progress indicator visible throughout.
-                await AWSAcctManager.sharedMgr().fetchAttributes()
-                await GlacierApplicationDelegate.appDelegate.resolveSubscriptionStatus()
-                dismissProgressIndicator()
+                switch result.nextStep {
+                case .done:
+                    await completeSignIn()
 
-                UserDefaultsService.shared.set(true, for: \.isUserLoggedIn)
-                setRootScreen(UserOnboardingScreen.shouldShowUserOnboarding ? .userOnboarding : .main)
-                dismissSheet()
+                case .confirmSignInWithCustomChallenge(let additionalInfo):
+                    // The Lambda reports the address it mailed, already masked,
+                    // in the public challenge parameters. Amplify hands those
+                    // back here so the screen can name it.
+                    dismissProgressIndicator()
+                    verificationCodeDestination = additionalInfo?["destination"]
+                    isAwaitingVerificationCode = true
+
+                default:
+                    dismissProgressIndicator()
+                    presentAlertWith(title: .errorText, description: errorDescription)
+                }
             } catch let error as AuthError {
                 dismissProgressIndicator()
                 presentAlertWith(
@@ -196,6 +268,26 @@ final class UserLoginVM: UserLoginViewModel, ObservableObject {
                 )
             }
         }
+    }
+
+    /// Shared by the sign-in that finishes on the password and the one that
+    /// finishes on the emailed code.
+    @MainActor
+    private func completeSignIn() async {
+        // fetchAttributes creates the GlacierAccount DB record on a fresh install
+        // and sets the access token on TwilioBackendManager. Both are required
+        // before resolveSubscriptionStatus — without them, getGlacierAccount()
+        // returns nil and the backend subscription check exits immediately.
+        // Keep the progress indicator visible throughout.
+        await AWSAcctManager.sharedMgr().fetchAttributes()
+        await GlacierApplicationDelegate.appDelegate.resolveSubscriptionStatus()
+        dismissProgressIndicator()
+
+        isAwaitingVerificationCode = false
+        verificationCodeDestination = nil
+        UserDefaultsService.shared.set(true, for: \.isUserLoggedIn)
+        setRootScreen(UserOnboardingScreen.shouldShowUserOnboarding ? .userOnboarding : .main)
+        dismissSheet()
     }
 
     /// Amplify wraps Cognito service errors inside `AuthError.underlyingError`;

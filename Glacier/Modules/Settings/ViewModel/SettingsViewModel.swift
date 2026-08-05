@@ -16,13 +16,13 @@ import UIKit
 protocol SettingsViewModel: GlacierViewModelWithRootCoordinator {
     var userEmail: String? { get }
     var isDarkModeEnabled: Bool { get set }
-    var isRebootReminderEnabled: Bool { get set }
     var shouldShowVPNSettingsOption: Bool { get }
     var shouldShowResetPasswordOption: Bool { get }
 
     func presentVPNSettingsScreen()
     func presentAppearanceSettingsScreen()
     func presentWidgetSettingsScreen()
+    func presentNotificationSettingsScreen()
     func presentResetPasswordScreen()
     func dismissResetPasswordScreen()
 
@@ -45,20 +45,6 @@ final class SettingsVM: SettingsViewModel, ObservableObject {
     @Published var shouldShowVPNSettingsOption: Bool = false
     @Published var shouldShowResetPasswordOption: Bool = false
 
-    /// Backs the Reboot Reminder toggle. Persisted and reflected to the scheduled
-    /// notification. The initial value is set in `init` (which does not trigger
-    /// `didSet`), so toggling in the UI is the only path that re-schedules.
-    @Published var isRebootReminderEnabled: Bool = true {
-        didSet {
-            UserDefaultsService.shared.set(isRebootReminderEnabled, for: \.isRebootReminderEnabled)
-            if isRebootReminderEnabled {
-                GlacierApplicationDelegate.appDelegate.scheduleWeeklyRebootReminder()
-            } else {
-                GlacierApplicationDelegate.appDelegate.cancelWeeklyRebootReminder()
-            }
-        }
-    }
-
     // MARK: - Private properties
 
     var rootCoordinator: any GlacierRootCoordinator
@@ -67,7 +53,6 @@ final class SettingsVM: SettingsViewModel, ObservableObject {
 
     init(rootCoordinator: any GlacierRootCoordinator) {
         self.rootCoordinator = rootCoordinator
-        self.isRebootReminderEnabled = UserDefaultsService.shared.get(for: \.isRebootReminderEnabled) ?? true
         getUserDetails()
     }
     
@@ -83,6 +68,10 @@ final class SettingsVM: SettingsViewModel, ObservableObject {
 
     func presentWidgetSettingsScreen() {
         presentSheet(.widgetSettings)
+    }
+
+    func presentNotificationSettingsScreen() {
+        presentSheet(.notificationSettings)
     }
 
     func presentResetPasswordScreen() {
@@ -166,17 +155,22 @@ final class SettingsVM: SettingsViewModel, ObservableObject {
                             // for an account that no longer exists.
                             self.teardownVPNIfNeeded()
 
-                            let service = AmplifyAuthenticationService()
-                            do {
-                                // Permanently delete the Cognito user. On success Amplify
-                                // also signs the user out locally.
-                                try await service.deleteUser()
-                            } catch {
+                            // Delete the account on the Glacier backend. The backend
+                            // deletes the Cognito user *and* performs the associated
+                            // server-side cleanup (subscription, phone numbers, etc.).
+                            let didDelete = await AccountDeletionManager.shared.deleteAccount()
+                            guard didDelete else {
                                 // The account still exists, so leave local state intact and
                                 // let the user retry instead of stranding them on the login screen.
                                 self.presentAccountDeletionFailurePopup()
                                 return
                             }
+
+                            // The backend deleted the Cognito user, but this device still
+                            // holds a cached Amplify session. Sign out locally to clear it
+                            // before local cleanup so the next login starts clean.
+                            let service = AmplifyAuthenticationService()
+                            _ = await service.signOut()
 
                             // App Store subscriptions can't be cancelled programmatically, so
                             // if the user has an active subscription, offer to open Apple's

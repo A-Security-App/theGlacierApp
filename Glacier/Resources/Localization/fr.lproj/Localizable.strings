@@ -37,8 +37,7 @@
  Sliding Cards
  ***************************/
 "Browse privately, ad-free." = "Naviguez en privé, sans publicités.";
-"VPN and DNS protection for safer browsing—from anywhere." = "Protection VPN et DNS pour une navigation plus sûre — de partout.";
-"Standard" = "Standard";
+"VPN and Secure DNS protection for safer browsing—from anywhere." = "Protection VPN et DNS sécurisé pour une navigation plus sûre — de partout.";
 "Know you're protected." = "Sachez que vous êtes protégé.";
 "Get alerts and recommendations to ensure your device is secure." = "Recevez des alertes et recommandations pour garantir la sécurité de votre appareil.";
 "Make calls privately." = "Passez des appels anonymement.";
@@ -141,16 +140,18 @@
 
 // MARK: - DNS Setup Screen
 "You're in." = "Vous êtes connecté.";
-"Setup DNS." = "Configurer le DNS.";
-"Hides which sites you're visiting.\n\nFaster connection, no ads, and enough privacy for everyday use." = "Masque les sites que vous visitez.\n\nConnexion plus rapide, sans publicités et une confidentialité suffisante pour un usage quotidien.";
+"Setup Secure DNS." = "Configurer le DNS sécurisé.";
+"Hides which sites you're visiting - faster connection, no ads, and enough privacy for everyday use." = "Masque les sites que vous visitez - connexion plus rapide, sans publicités et une confidentialité suffisante pour un usage quotidien.";
 "Enable Glacier DNS in Settings" = "Activer Glacier DNS dans Réglages";
 "In Settings page, navigate to:\n\nGeneral →\nVPN & Device Management →\nDNS →\nGlacier." = "Dans la page Réglages, accédez à :\n\nGénéral →\nVPN et gestion de l'appareil →\nDNS →\nGlacier.";
+"Secure DNS Protection Required" = "Protection DNS sécurisé requise";
+"When your VPN turns off on this trusted network, Secure DNS protection requires our profile to be selected in iOS Settings.\n\nIn Settings page, navigate to:\n\nGeneral →\nVPN & Device Management →\nDNS →\n\nThen select Glacier." = "Lorsque votre VPN se désactive sur ce réseau de confiance, la protection DNS sécurisé nécessite que notre profil soit sélectionné dans les Réglages iOS.\n\nDans la page Réglages, accédez à :\n\nGénéral →\nVPN et gestion de l'appareil →\nDNS →\n\nPuis sélectionnez Glacier.";
 "Something went wrong while adding DNS configuration. Please try again." = "Une erreur s'est produite lors de l'ajout de la configuration DNS. Veuillez réessayer.";
 
 // MARK: - VPN Setup Screen
-"DNS is setup." = "Le DNS est configuré.";
+"Secure DNS is setup." = "Le DNS sécurisé est configuré.";
 "Setup your VPN." = "Configurez votre VPN.";
-"Hides where you're going and everything you do along the way.\n\nIdeal for public Wi-Fi, travel, or untrusted networks.\n\nHeads up — can sometimes slow your connection or limit browsing." = "Masque votre destination et tout ce que vous faites en chemin.\n\nIdéal pour le Wi-Fi public, les voyages ou les réseaux non fiables.\n\nAttention : peut parfois ralentir votre connexion ou limiter la navigation.";
+"Hides where you're going and everything you do along the way - ideal for public Wi-Fi, travel, and other untrusted networks, but can sometimes slow your connection or limit browsing." = "Masque votre destination et tout ce que vous faites en chemin - idéal pour le Wi-Fi public, les voyages et d'autres réseaux non fiables, mais peut parfois ralentir votre connexion ou limiter la navigation.";
 "Something went wrong while adding VPN configuration. Please try again." = "Une erreur s'est produite lors de l'ajout de la configuration VPN. Veuillez réessayer.";
 
 // MARK: - Trusted Network Setup Screen
@@ -202,7 +203,11 @@
 
 // MARK: - Cellular Setup Screen
 "Do you want to enable VPN while on cellular?" = "Voulez-vous activer le VPN en données mobiles ?";
+"Are you sure you want to enable VPN while on cellular?" = "Voulez-vous vraiment activer le VPN en données mobiles ?";
+"Are you sure you want to enable VPN?" = "Voulez-vous vraiment activer le VPN ?";
+"Heads up - can slow or limit your connection to some websites and apps.\n\nRecommended on untrusted networks like public Wi-Fi.\n\nEnable anyway." = "Attention : peut ralentir ou limiter votre connexion à certains sites et applications.\n\nRecommandé sur les réseaux non fiables comme le Wi-Fi public.\n\nActiver quand même.";
 "VPN on." = "VPN activé.";
+"Heads up - can slow or limit your connection to some websites and apps.\n\nGlacier recommends leaving VPN off while on cellular for most situations." = "Attention : peut ralentir ou limiter votre connexion à certains sites et applications.\n\nGlacier recommande de laisser le VPN désactivé en données mobiles dans la plupart des situations.";
 "Heads up - can slow or limit your connection to some websites and apps.\n\nGlacier recommends leaving VPN off while on cellular for most situations. You can still enable later in settings.\n\nEnable anyway." = "Attention : peut ralentir ou limiter votre connexion à certains sites et applications.\n\nGlacier recommande de laisser le VPN désactivé en données mobiles dans la plupart des situations. Vous pouvez toujours l'activer plus tard dans les réglages.\n\nActiver quand même.";
 
 // MARK: - Wifi Setup Screen
@@ -227,7 +232,7 @@
 
 "All clear. \nNo issues found." = "Tout va bien. \nAucun problème détecté.";
 "Your system may be at risk." = "Votre système pourrait être en danger.";
-"Connect to DNS to block malicious sites and trackers." = "Connectez-vous au DNS pour bloquer les sites malveillants et les traceurs.";
+"Connect to Secure DNS to block malicious sites and trackers." = "Connectez-vous au DNS sécurisé pour bloquer les sites malveillants et les traceurs.";
 "Your system shows signs of being jailbroken." = "Votre système présente des signes de jailbreak.";
 "This app appears to be running in a modified or analyzed environment." = "Cette application semble fonctionner dans un environnement modifié ou analysé.";
 "Unusual network activity or modification tools have been identified." = "Une activité réseau inhabituelle ou des outils de modification ont été détectés.";
@@ -239,7 +244,7 @@
 // MARK: - Secured Connection Status
 
 "Connected" = "Connecté";
-"Disconnected from DNS" = "Déconnecté du DNS";
+"Disconnected from Secure DNS" = "Déconnecté du DNS sécurisé";
 "Connect" = "Connecter";
 "Disconnect" = "Déconnecter";
 "Something went wrong while connecting to Glacier DNS.\n\nPlease check that Glacier DNS is selected in:\n\nSettings →\nGeneral →\nVPN & Device Management →\nDNS" = "Une erreur s'est produite lors de la connexion à Glacier DNS.\n\nVérifiez que Glacier DNS est sélectionné dans :\n\nRéglages →\nGénéral →\nVPN et gestion de l'appareil →\nDNS";
@@ -249,10 +254,8 @@
 // MARK: - Secured Connection Type
 
 "Choose protection" = "Choisissez la protection";
-"Standard" = "Standard";
-"For everyday use. Faster connection, no ads, and best for most situations." = "Pour un usage quotidien. Connexion plus rapide, sans publicités et idéale pour la plupart des situations.";
-"Extra Protection" = "Protection renforcée";
-"Ideal for public Wi-Fi, travel, and other untrusted networks. Can limit browsing or slow connection." = "Idéal pour le Wi-Fi public, les voyages et les réseaux non fiables. Peut limiter la navigation ou ralentir la connexion.";
+"Everyday" = "Quotidien";
+"Travel" = "Voyage";
 
 // MARK: - Device Security Status
 

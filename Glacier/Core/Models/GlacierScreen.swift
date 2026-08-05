@@ -22,6 +22,8 @@ enum GlacierScreen: Identifiable, Hashable {
     case wifiSettings
     case cellularSetup
     case wifiSetup
+    case enableCellular(EnableCellularVM)
+    case enableVPN(EnableVPNVM)
     case managePhoneNumbers
     case phoneCall(PhoneCallVM)
     case voicemailDetails(VoicemailRecord)
@@ -37,6 +39,10 @@ enum GlacierScreen: Identifiable, Hashable {
         case .wifiSettings: return "wifiSettings"
         case .cellularSetup: return "cellularSetup"
         case .wifiSetup: return "wifiSetup"
+        case .enableCellular(let viewModel):
+            return "enableCellular_\(ObjectIdentifier(viewModel))"
+        case .enableVPN(let viewModel):
+            return "enableVPN_\(ObjectIdentifier(viewModel))"
         case .managePhoneNumbers: return "managePhoneNumbers"
         case .phoneCall(let viewModel):
             return "phoneCall_\(ObjectIdentifier(viewModel))"
@@ -56,6 +62,8 @@ enum GlacierScreen: Identifiable, Hashable {
         case .wifiSettings: return "wifiSettings"
         case .cellularSetup: return "cellularSetup"
         case .wifiSetup: return "wifiSetup"
+        case .enableCellular(_): return "enableCellular"
+        case .enableVPN(_): return "enableVPN"
         case .managePhoneNumbers: return "managePhoneNumbers"
         case .phoneCall(_): return "phoneCall"
         case .voicemailDetails(_): return "voicemailDetails"

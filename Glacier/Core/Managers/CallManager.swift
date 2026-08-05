@@ -341,6 +341,7 @@ extension CallManager : CXProviderDelegate {
 
     public func provider(_ provider: CXProvider, didActivate audioSession: AVAudioSession) {
         Log.calls.info("didActivateAudioSession:")
+        logAudioState("didActivate")
         if let curcall = self.currentCall {
             Log.calls.info("didActivateAudioSession isVoice:")
             self.tvoaudioDevice.isEnabled = true
@@ -349,6 +350,7 @@ extension CallManager : CXProviderDelegate {
 
     public func provider(_ provider: CXProvider, didDeactivate audioSession: AVAudioSession) {
         Log.calls.info("Twilio provider:didDeactivateAudioSession:")
+        logAudioState("didDeactivate")
         self.tvoaudioDevice.isEnabled = false
         self.audioSession = nil
         CallManager.configureDefaultAudioSession()
@@ -561,6 +563,86 @@ extension CallManager {
         Log.calls.debug("Current audio route: \(audioSession.currentRoute)")
     }
 
+    // MARK: - Audio recovery & diagnostics
+
+    /// [#2] Ensure the shared AVAudioSession can actually capture the microphone
+    /// for a call. Returns true only if it had to intervene.
+    ///
+    /// In the normal path provider(_:didActivate:) elevates the session and Twilio
+    /// puts it in .playAndRecord, so this is a no-op. But if didActivate never fired
+    /// (known CallKit omission after a prior call), the session can still be in the
+    /// .playback category left by configureDefaultAudioSession on the last teardown,
+    /// which has no input — a connected call with no audio. Re-assert the call
+    /// configuration in that case.
+    @discardableResult
+    func ensureCallAudioSessionRecordCapable() -> Bool {
+        let session = AVAudioSession.sharedInstance()
+        let recordCapable = (session.category == .playAndRecord) && session.isInputAvailable
+        if recordCapable { return false }
+
+        Log.calls.notice("ensureCallAudioSession: not record-capable (category=\(session.category.rawValue, privacy: .public) inputAvailable=\(session.isInputAvailable, privacy: .public)) — reasserting call audio config")
+        do {
+            try session.setCategory(.playAndRecord, mode: .voiceChat, options: [.allowBluetooth])
+            try session.setActive(true, options: [])
+        } catch {
+            Log.calls.error("ensureCallAudioSession: failed to reassert call audio session: \(error.localizedDescription, privacy: .public)")
+            return false
+        }
+        logAudioState("ensureCallAudioSession(after)")
+        return true
+    }
+
+    /// [#3] Snapshot the audio session + Twilio audio-device state to the log.
+    /// Cheap and synchronous — safe to call at any lifecycle transition.
+    func logAudioState(_ context: String) {
+        let session = AVAudioSession.sharedInstance()
+        let inputs = session.currentRoute.inputs.map { $0.portType.rawValue }.joined(separator: ",")
+        let outputs = session.currentRoute.outputs.map { $0.portType.rawValue }.joined(separator: ",")
+        let perm: String
+        switch session.recordPermission {
+        case .granted: perm = "granted"
+        case .denied: perm = "denied"
+        case .undetermined: perm = "undetermined"
+        @unknown default: perm = "unknown"
+        }
+        Log.calls.notice("audioState[\(context, privacy: .public)] devEnabled=\(self.tvoaudioDevice.isEnabled, privacy: .public) category=\(session.category.rawValue, privacy: .public) mode=\(session.mode.rawValue, privacy: .public) inputAvailable=\(session.isInputAvailable, privacy: .public) micPerm=\(perm, privacy: .public) in=[\(inputs, privacy: .public)] out=[\(outputs, privacy: .public)]")
+    }
+
+    /// [#3] A few seconds after connect, sample media stats once to confirm audio
+    /// is really flowing. Skipped if the call already ended.
+    func scheduleCallStatsSnapshot(for call: Call) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) { [weak self, weak call] in
+            guard let self = self, let call = call, call.state == .connected else { return }
+            self.logCallStats("t+3s", call: call)
+        }
+    }
+
+    /// [#3] Sum per-direction audio bytes/packets and log them. Read the result as:
+    ///   local sent == 0            -> client isn't capturing/sending (session/mic)
+    ///   local sent > 0, remote == 0 -> nothing coming back (Twilio media / carrier leg)
+    ///   both > 0 but still silent  -> route/output problem, not transport
+    /// NOTE: the Twilio getStats closure signature and StatsReport property names
+    /// vary by SDK version — verify these compile against the linked SDK.
+    func logCallStats(_ context: String, call: Call) {
+        call.getStats { reports in
+            var localBytesSent: UInt = 0, localPacketsSent: UInt = 0, localLevel = 0
+            var remoteBytesRecv: UInt = 0, remotePacketsRecv: UInt = 0, remoteLevel = 0
+            for report in reports {
+                for s in report.localAudioTrackStats {
+                    localBytesSent += UInt(s.bytesSent)
+                    localPacketsSent += UInt(s.packetsSent)
+                    localLevel = max(localLevel, Int(s.audioLevel))
+                }
+                for s in report.remoteAudioTrackStats {
+                    remoteBytesRecv += UInt(s.bytesReceived)
+                    remotePacketsRecv += UInt(s.packetsReceived)
+                    remoteLevel = max(remoteLevel, Int(s.audioLevel))
+                }
+            }
+            Log.calls.notice("callStats[\(context, privacy: .public)] localSent bytes=\(localBytesSent, privacy: .public) pkts=\(localPacketsSent, privacy: .public) inLevel=\(localLevel, privacy: .public) | remoteRecv bytes=\(remoteBytesRecv, privacy: .public) pkts=\(remotePacketsRecv, privacy: .public) outLevel=\(remoteLevel, privacy: .public)")
+        }
+    }
+
     func performStartCallAction(uuid: UUID, receiver: String?) {
         let callHandle = CXHandle(type: .generic, value: receiver ?? "")
         let startCallAction = CXStartCallAction(call: uuid, handle: callHandle)
@@ -678,6 +760,11 @@ extension CallManager {
         
         let session = AVAudioSession.sharedInstance()
         let newRoute = session.currentRoute
+        // [#3] Only snapshot during a live call, to keep this out of the log noise
+        // when routes change with no call in progress.
+        if isCallActive() {
+            logAudioState("routeChange")
+        }
         if (newRoute.outputs.count > 0) {
             let route = newRoute.outputs[0].portType
             if ((route == AVAudioSession.Port.bluetoothA2DP || route == AVAudioSession.Port.bluetoothHFP)) {
@@ -774,15 +861,19 @@ extension CallManager {
     }
     
     func playSound(soundUrl: URL) {
-        do {
-            player = try AVAudioPlayer(contentsOf: soundUrl, fileTypeHint: AVFileType.wav.rawValue)
-        } catch _ {
-            return // if it doesn't exist, don't play it
+        // Creating the player, prepareToPlay(), and play() all do synchronous IPC to
+        // mediaserverd and can hang the main thread, so run the whole thing off it.
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            let newPlayer: AVAudioPlayer
+            do {
+                newPlayer = try AVAudioPlayer(contentsOf: soundUrl, fileTypeHint: AVFileType.wav.rawValue)
+            } catch _ {
+                return // if it doesn't exist, don't play it
+            }
+            self?.player = newPlayer
+            newPlayer.prepareToPlay()
+            newPlayer.play()
         }
-
-        guard let player = player else { return }
-
-        player.play()
     }
     
     func stopSound() {
@@ -1119,6 +1210,21 @@ extension CallManager: CallDelegate {
         Log.calls.notice("CallManager callDidConnect uuid=\(call.uuid?.uuidString ?? "nil", privacy: .public)")
         activeCall = call
 
+        // [#3] Snapshot the audio state at the exact moment the media leg is up,
+        // so a silent-but-connected call leaves evidence in Console/TestFlight.
+        logAudioState("callDidConnect")
+
+        // [#2] Make sure the shared AVAudioSession is in a record-capable call
+        // configuration BEFORE starting call audio. Enabling the Twilio audio
+        // device (below) is not sufficient on its own: if provider(_:didActivate:)
+        // never fired (the known CallKit omission on a call following an earlier
+        // one), the session can still be sitting in the .playback category left by
+        // the previous call's teardown (configureDefaultAudioSession) — a category
+        // with NO microphone input, so the call connects but is silent. Re-assert
+        // .playAndRecord/.voiceChat here. This is a no-op in the normal path where
+        // didActivate already elevated the session, so it only rescues the break.
+        ensureCallAudioSessionRecordCapable()
+
         // Belt-and-suspenders audio enable. Call audio is normally turned on in
         // provider(_:didActivate:), but iOS intermittently fails to call that
         // delegate for a VoIP call that follows an earlier call in the same app
@@ -1133,6 +1239,10 @@ extension CallManager: CallDelegate {
             Log.calls.notice("callDidConnect: enabling audio device (didActivate may not have fired)")
         }
         self.tvoaudioDevice.isEnabled = true
+
+        // [#3] A few seconds in, sample media stats to prove whether audio is
+        // actually flowing in each direction (see logCallStats for how to read it).
+        scheduleCallStatsSnapshot(for: call)
 
         // Fulfill any pending incoming-call answer action (no-op for outgoing)
         currentCall?.answerCallAction?.fulfill(withDateConnected: Date())
@@ -1187,7 +1297,31 @@ extension CallManager: CallDelegate {
     }
 
     public func callDidReceiveQualityWarnings(call: Call, currentWarnings: Set<NSNumber>, previousWarnings: Set<NSNumber>) {
-        // Quality-warning handling can be added later
+        // [#3] Log every quality warning the SDK raises/clears. Unmapped codes are
+        // logged with their raw value rather than dropped, so a warning we don't
+        // have a name for (the report's "constant output -> Unknown warning" gap)
+        // still shows up as warn(N) instead of vanishing.
+        let raised = currentWarnings.subtracting(previousWarnings)
+        let cleared = previousWarnings.subtracting(currentWarnings)
+        let fmt: (Set<NSNumber>) -> String = { set in
+            set.map { CallManager.qualityWarningName($0) }.sorted().joined(separator: ",")
+        }
+        Log.calls.notice("qualityWarnings raised=[\(fmt(raised), privacy: .public)] cleared=[\(fmt(cleared), privacy: .public)] current=[\(fmt(currentWarnings), privacy: .public)]")
+    }
+
+    /// Best-effort human label for a Twilio Call quality-warning raw value.
+    /// NOTE: verify these raw values against the Twilio Voice SDK version in use;
+    /// the default case keeps unknown codes visible regardless, so diagnostics do
+    /// not depend on the mapping being complete.
+    static func qualityWarningName(_ n: NSNumber) -> String {
+        switch n.uintValue {
+        case 1: return "highRtt"
+        case 2: return "highJitter"
+        case 3: return "highPacketsLostFraction"
+        case 4: return "lowMos"
+        case 5: return "constantAudioInputLevel"
+        default: return "warn(\(n.uintValue))"
+        }
     }
 }
 

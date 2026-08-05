@@ -182,6 +182,11 @@ extension GlacierViewModelWithRootCoordinator {
         let saved = dnsController.loadSavedConfiguration()
         guard !saved.isEnabled, saved.urlString != nil else { return }
         UserDefaults(suiteName: kGlacierGroup)?.set(SecuredConnectionType.dns.rawValue, forKey: kLastConnectionTypeKey)
+        // `apply` persists `isEnabled` asynchronously (well after we navigate to Main), so the first
+        // Home screen scan can't tell from the saved flag that DNS was just enabled. Leave a one-shot
+        // marker so that scan runs a retry-until-verified probe and rides out the DoT activation
+        // latency instead of settling on a spurious "Disconnected". Consumed in `HomeVM.refreshStatus`.
+        UserDefaultsService.shared.set(true, for: \.dnsActivationPendingFromOnboarding)
         dnsController.apply(configuration: DnsOverTlsConfiguration(urlString: saved.urlString, isEnabled: true)) { _ in }
     }
 }

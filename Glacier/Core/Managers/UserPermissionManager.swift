@@ -10,6 +10,7 @@ import Foundation
 import CoreLocation
 import Contacts
 import UserNotifications
+import UIKit
 
 /*
  UserPermissionManaging defines requirements for user permission managers.
@@ -134,16 +135,22 @@ final class UserPermissionManager: NSObject, UserPermissionManaging {
         center.getNotificationSettings { settings in
             switch settings.authorizationStatus {
             case .notDetermined:
-                center.requestAuthorization(options: [.alert, .sound, .badge]) { granted, _ in
-                    let state: UserPermissionState = granted ? .granted : .denied
-                    self.update(state, for: .notifications)
+                // Only surface the system prompt while the app is foregrounded, so it never
+                // appears over another app (e.g. iOS Settings while the user is selecting
+                // Glacier DNS during onboarding). If we're not active yet, wait for the app
+                // to become active, then request.
+                self.requestAuthorizationWhenActive {
+                    center.requestAuthorization(options: [.alert, .sound, .badge]) { granted, _ in
+                        let state: UserPermissionState = granted ? .granted : .denied
+                        self.update(state, for: .notifications)
 
-                    if granted {
-                        GlacierApplicationDelegate.appDelegate.scheduleWeeklyRebootReminder()
-                    }
+                        if granted {
+                            GlacierApplicationDelegate.appDelegate.scheduleWeeklyRebootReminder()
+                        }
 
-                    DispatchQueue.main.async {
-                        completion(granted)
+                        DispatchQueue.main.async {
+                            completion(granted)
+                        }
                     }
                 }
 
@@ -169,7 +176,30 @@ final class UserPermissionManager: NSObject, UserPermissionManaging {
     }
     
     // MARK: - Private methods
-    
+
+    /// Runs `work` on the main thread while the app is active. If the app is already active it
+    /// runs immediately; otherwise it waits for the next `didBecomeActive`. This keeps system
+    /// permission prompts from being presented while the app is backgrounded.
+    private func requestAuthorizationWhenActive(_ work: @escaping () -> Void) {
+        DispatchQueue.main.async {
+            if UIApplication.shared.applicationState == .active {
+                work()
+            } else {
+                var token: NSObjectProtocol?
+                token = NotificationCenter.default.addObserver(
+                    forName: UIApplication.didBecomeActiveNotification,
+                    object: nil,
+                    queue: .main
+                ) { _ in
+                    if let token {
+                        NotificationCenter.default.removeObserver(token)
+                    }
+                    work()
+                }
+            }
+        }
+    }
+
     private func getUserPermissionStates() {
         if let locationPermission: String = UserDefaultsService.shared.get(for: \.userLocationPermission),
            let locationPermissionState = UserPermissionState(rawValue: locationPermission) {

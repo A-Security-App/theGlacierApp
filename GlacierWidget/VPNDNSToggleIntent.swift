@@ -10,8 +10,8 @@ import WidgetKit
 
 struct VPNDNSToggleIntent: AppIntent {
 
-    static var title: LocalizedStringResource = "Toggle VPN/DNS"
-    static var description = IntentDescription("Toggle Glacier VPN or DNS protection on or off.")
+    static var title: LocalizedStringResource = "Toggle VPN/Secure DNS"
+    static var description = IntentDescription("Toggle Glacier VPN or Secure DNS protection on or off.")
 
     /// Require the device to be unlocked (passcode / Touch ID / Face ID) before this
     /// intent can run. Without this the policy defaults to `.alwaysAllowed`, which lets

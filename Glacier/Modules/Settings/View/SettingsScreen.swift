@@ -137,22 +137,24 @@ struct SettingsScreen<ViewModel: SettingsViewModel & ObservableObject>: View {
                     GlacierViewContainer {
                         HStack(alignment: .center) {
                             GlacierLabel(
-                                text: NSLocalizedString("Reboot Reminder", comment: "Settings screen reboot reminder title"),
+                                text: NSLocalizedString("Notifications", comment: "Settings screen notifications"),
                                 font: .bodyThick,
-                                textAlignment: .leading,
-                                lineLimit: 1,
-                                minimumScaleFactor: 0.7
+                                textAlignment: .leading
                             )
-                            .layoutPriority(1)
 
                             Spacer()
 
-                            Toggle(isOn: $viewModel.isRebootReminderEnabled, label: { Text("") })
-                                .labelsHidden()
-                                .fixedSize()
-                                .toggleStyle(SwitchToggleStyle(tint: .green50))
+                            GlacierImage(
+                                name: .constant("right-arrow-small-icon"),
+                                width: 16,
+                                height: 16,
+                                shouldAdaptToColorSchemeChange: true
+                            )
                         }
                         .padding(.vertical, 6)
+                    }
+                    .onTapGesture {
+                        viewModel.presentNotificationSettingsScreen()
                     }
 
                     GlacierViewContainer {

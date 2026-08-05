@@ -295,11 +295,11 @@ final class WiFiSettingsVM: WiFiSettingsViewModel, ObservableObject {
     private func presentDoTWarningPopup(for networkName: String) {
         let popupConfiguration = PopupConfiguration(
             title: NSLocalizedString(
-                "DNS Protection Required",
+                "Secure DNS Protection Required",
                 comment: "Trusted network DNS warning popup title"
             ),
             description: NSLocalizedString(
-                "When your VPN turns off on this trusted network, DNS protection requires our profile to be selected in iOS Settings.\n\nIn Settings page, navigate to:\n\nGeneral →\nVPN & Device Management →\nDNS →\n\nThen select Glacier.",
+                "When your VPN turns off on this trusted network, Secure DNS protection requires our profile to be selected in iOS Settings.\n\nIn Settings page, navigate to:\n\nGeneral →\nVPN & Device Management →\nDNS →\n\nThen select Glacier.",
                 comment: "Trusted network DNS warning popup description"
             ),
             buttons: [
