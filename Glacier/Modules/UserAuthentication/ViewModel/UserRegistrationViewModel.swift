@@ -361,7 +361,15 @@ final class UserRegistrationVM: UserRegistrationViewModel, ObservableObject {
                 // this device. `signIn` clears such a stale session itself (it
                 // recovers from Amplify's `.invalidState`), so no pre-sign-out is
                 // needed here.
-                let signInResult = try await authenticationService.signIn(with: email, password: password)
+                // `.passwordOnly` on purpose. The user has just typed a code out
+                // of their inbox to confirm this account; asking for the email
+                // challenge here would mail them a second one straight away, and
+                // this sign-in expects `isSignedIn` rather than a challenge step.
+                let signInResult = try await authenticationService.signIn(
+                    with: email,
+                    password: password,
+                    flow: .passwordOnly
+                )
                 dismissProgressIndicator()
                 
                 guard let result = signInResult, result.isSignedIn else {

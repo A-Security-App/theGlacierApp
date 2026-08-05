@@ -102,6 +102,12 @@ final class HomeVM: HomeViewModel, ObservableObject {
     /// prompt and the final verdict don't both fire it (and it doesn't re-appear after
     /// the user has dismissed it).
     private var didPromptDNSSetupDuringVerification = false
+    /// True while the first security scan is deliberately held open waiting on the initial DNS
+    /// verification. When DNS is enabled but not yet verified as the live resolver (e.g. right
+    /// after onboarding), we keep the scanning gradient up rather than settle the card on an
+    /// at-risk / "connect to DNS" verdict that would flip to All clear a moment later once the
+    /// probe returns. Released by `finishInitialDNSGatedScan()`.
+    private var isAwaitingInitialDNSVerification = false
 
     // MARK: - Initializer
     
@@ -122,7 +128,60 @@ final class HomeVM: HomeViewModel, ObservableObject {
     func refreshStatus() {
         scanDeviceForSecuritySettings()
         showBlockedTrackerAnalytics()
-        securityCenter.doDNSCheck()
+        var dnsEnabled = dnsController.loadSavedConfiguration().isEnabled
+
+        // When DNS was just enabled at the end of onboarding, `apply` persists `isEnabled`
+        // asynchronously — after we've already navigated to Main and this first scan runs — so the
+        // saved flag can still read `false` here (most visible now that onboarding can go straight
+        // from DNS setup to Main). `connectDNSIfSetUpDuringOnboarding` leaves a one-shot marker so we
+        // still treat DNS as enabled and ride out the activation latency with the retrying probe
+        // below, instead of settling on a spurious "Disconnected" until the next foreground.
+        if UserDefaultsService.shared.get(for: \.dnsActivationPendingFromOnboarding) ?? false {
+            UserDefaultsService.shared.remove(for: \.dnsActivationPendingFromOnboarding)
+            dnsEnabled = true
+        }
+
+        // Post-onboarding, DNS is enabled but the DoT profile can take a few seconds to become
+        // the live system resolver, and the enabling `.dnsOverTlsConfigurationDidChange`
+        // notification fires during onboarding — before HomeVM exists to observe it — so the
+        // retry-budgeted verification never runs for the first appearance on its own.
+        //
+        // If DNS is enabled but not yet verified, hold the scanning gradient open until the
+        // verification returns (or a safety timeout elapses) instead of letting the ~1s analytics
+        // timer settle the card on an at-risk / "connect to DNS" verdict that would flip to All
+        // clear a moment later. A retrying probe rides out the activation latency; the scan is
+        // kept open in `markDeviceSercurityStatusRefreshAsCompleted()` until we hear back.
+        if isScanningDevice && dnsEnabled && !securityCenter.isDoTVerifiedActive {
+            isAwaitingInitialDNSVerification = true
+            securityCenter.doDNSCheck(retryUntilVerified: true) { [weak self] _ in
+                DispatchQueue.main.async { self?.finishInitialDNSGatedScan() }
+            }
+            // Safety net: never hold the gradient longer than this, even if the probe's
+            // completion is delayed (it normally fires within the retry budget, ~9s).
+            DispatchQueue.main.asyncAfter(deadline: .now() + 12) { [weak self] in
+                self?.finishInitialDNSGatedScan()
+            }
+        } else {
+            // Already verified, or DNS is off (user skipped it — showing the "connect to DNS"
+            // verdict is correct). A single probe keeps the normal cold-start behaviour.
+            securityCenter.doDNSCheck(retryUntilVerified: dnsEnabled)
+        }
+    }
+
+    /// Ends the initial DNS-gated scan: recompute the verdict from the now-known DNS state, then
+    /// drop the scanning gradient so it animates straight to the resolved (All clear / at-risk)
+    /// state. Guarded so exactly one of {verification completion, safety timeout} performs it.
+    private func finishInitialDNSGatedScan() {
+        guard isAwaitingInitialDNSVerification else { return }
+        isAwaitingInitialDNSVerification = false
+        // Recompute from the resolved DNS state first (the success path already refreshed via
+        // dnsStatusUpdated; this also covers the paths that don't call the delegate), then end
+        // the scan on a later run-loop tick so the verdict is applied before the gradient settles.
+        checkSecuredConnectionStatus()
+        scanDeviceForSecurityIssues(skipAnalyticsRefresh: true)
+        DispatchQueue.main.async { [weak self] in
+            self?.markDeviceSercurityStatusRefreshAsCompleted()
+        }
     }
     
     func refreshDeviceSecurityStatus() {
@@ -449,10 +508,17 @@ final class HomeVM: HomeViewModel, ObservableObject {
     }
     
     private func markDeviceSercurityStatusRefreshAsCompleted() {
+        // While waiting on the initial DNS verification, keep the scanning gradient up so the
+        // card doesn't flash an at-risk verdict before DNS resolves. `finishInitialDNSGatedScan()`
+        // ends the scan once the answer (or the safety timeout) is in.
+        if isAwaitingInitialDNSVerification {
+            return
+        }
+
         if self.isScanningDevice {
             self.isScanningDevice = false
         }
-        
+
         if !self.isFirstDeviceScanCompleted {
             self.isFirstDeviceScanCompleted = true
         }
@@ -510,7 +576,7 @@ final class HomeVM: HomeViewModel, ObservableObject {
                 self.isUserDeviceSecured = false
                 self.securityStatusText = systemAtRiskText
                 self.securityIssueText = NSLocalizedString(
-                    "Connect to DNS to block malicious sites and trackers.",
+                    "Connect to Secure DNS to block malicious sites and trackers.",
                     comment: "Home screen connect to DNS to block trackers"
                 )
             } else {
@@ -576,7 +642,7 @@ final class HomeVM: HomeViewModel, ObservableObject {
                 self.activeConnectionLabel = SecuredConnectionType.dns.label
                 self.writeActiveConnectionType(.dns)
             } else {
-                self.connectionStatusText = NSLocalizedString("Disconnected from DNS", comment: "Home screen disconnected from DNS text")
+                self.connectionStatusText = NSLocalizedString("Disconnected from Secure DNS", comment: "Home screen disconnected from DNS text")
                 self.activeConnectionLabel = nil
                 self.writeActiveConnectionType(nil)
             }
@@ -648,11 +714,15 @@ final class HomeVM: HomeViewModel, ObservableObject {
                 presentAddVPNConfirmationPrompt()
                 return
             }
-            recordLastConnectionType(.vpn)
             if needsFirstTimeVPNSetup {
+                recordLastConnectionType(.vpn)
                 enableVPNWithWiFiOnDemandAndPresentSetup()
             } else {
-                toggleVPNConnection(true)
+                // Not first-time: confirm before enabling VPN.
+                presentEnableVPNConfirmation(onEnable: { [weak self] in
+                    self?.recordLastConnectionType(.vpn)
+                    self?.toggleVPNConnection(true)
+                })
             }
         }
     }
@@ -1038,6 +1108,18 @@ extension HomeVM {
         // Tunnel already has on-demand rules → user is already set up; mark complete.
         UserDefaultsService.shared.set(true, for: \.hasCompletedVPNFirstTimeSetup)
         return false
+    }
+
+    // Shown when VPN is enabled from the Choose protection screen after the first-time VPN
+    // mini-setup (Cellular/Wi-Fi setup) has already been completed. On cancel we simply don't
+    // enable — there's no optimistic UI to revert here.
+    private func presentEnableVPNConfirmation(onEnable: @escaping () -> Void) {
+        let viewModel = EnableVPNVM(
+            rootCoordinator: rootCoordinator,
+            onEnable: onEnable,
+            onCancel: {}
+        )
+        presentScreen(.enableVPN(viewModel))
     }
 
     private func enableVPNWithWiFiOnDemandAndPresentSetup() {

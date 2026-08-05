@@ -60,8 +60,7 @@ final class VPNSettingsVM: VPNSettingsViewModel, ObservableObject {
                 if needsFirstTimeVPNSetup {
                     enableVPNWithWiFiOnDemandAndPresentSetup()
                 } else {
-                    beginVPNOperation()
-                    toggleVPNConnection(true)
+                    presentEnableVPNConfirmation()
                 }
             } else {
                 beginVPNOperation()
@@ -401,35 +400,51 @@ final class VPNSettingsVM: VPNSettingsViewModel, ObservableObject {
     }
 
     private func presentCellularVPNConfirmation() {
-        let configuration = PopupConfiguration(
-            title: NSLocalizedString("Are you sure?", comment: "Cellular VPN confirmation popup title"),
-            description: NSLocalizedString(
-                "Glacier recommends leaving VPN off while on cellular for best performance.",
-                comment: "Cellular VPN confirmation popup description"
-            ),
-            buttons: [
-                PopupButton(
-                    style: .tertiary,
-                    title: NSLocalizedString("Cancel", comment: "Cancel button title"),
-                    onTap: {
-                        self.dismissPopup()
-                        self.isVPNSettingsUpdateInProgress = true
-                        self.shouldActivateOnCellular = false
-                        self.isVPNSettingsUpdateInProgress = false
-                    }
-                ),
-                PopupButton(
-                    style: .primary,
-                    title: NSLocalizedString("Enable", comment: "Enable cellular VPN button title"),
-                    onTap: {
-                        self.dismissPopup()
-                        self.beginVPNOperation()
-                        self.updateVPNActivation(for: .cellular, isEnabled: true)
-                    }
-                )
-            ]
+        //Glacier recommends leaving VPN off while on cellular for best performance.
+        let viewModel = EnableCellularVM(
+            rootCoordinator: rootCoordinator,
+            onEnable: { [weak self] in
+                guard let self else { return }
+                self.beginVPNOperation()
+                self.updateVPNActivation(for: .cellular, isEnabled: true)
+            },
+            onCancel: { [weak self] in
+                guard let self else { return }
+                self.isVPNSettingsUpdateInProgress = true
+                self.shouldActivateOnCellular = false
+                self.isVPNSettingsUpdateInProgress = false
+            }
         )
-        presentPopup(with: configuration)
+        // Presented from the toggle's `didSet`; defer so we don't mutate navigation
+        // state during a SwiftUI view update.
+        DispatchQueue.main.async { [weak self] in
+            self?.presentScreen(.enableCellular(viewModel))
+        }
+    }
+
+    // Shown when VPN is enabled from the settings slider after the first-time VPN mini-setup
+    // (Cellular/Wi-Fi setup) has already been completed. First-time enables still go through
+    // `enableVPNWithWiFiOnDemandAndPresentSetup()` instead.
+    private func presentEnableVPNConfirmation() {
+        let viewModel = EnableVPNVM(
+            rootCoordinator: rootCoordinator,
+            onEnable: { [weak self] in
+                guard let self else { return }
+                self.beginVPNOperation()
+                self.toggleVPNConnection(true)
+            },
+            onCancel: { [weak self] in
+                guard let self else { return }
+                self.isVPNSettingsUpdateInProgress = true
+                self.isConnectedToVPN = false
+                self.isVPNSettingsUpdateInProgress = false
+            }
+        )
+        // Presented from the slider's `didSet`; defer so we don't mutate navigation
+        // state during a SwiftUI view update.
+        DispatchQueue.main.async { [weak self] in
+            self?.presentScreen(.enableVPN(viewModel))
+        }
     }
 
     private func updateVPNActivation(for interface: NEOnDemandRuleInterfaceType, isEnabled: Bool) {

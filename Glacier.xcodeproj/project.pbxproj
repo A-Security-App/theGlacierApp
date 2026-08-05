@@ -18,13 +18,22 @@
 		A1BC45672F48E700006EDC42 /* WifiSetupScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1BC45662F48E700006EDC42 /* WifiSetupScreen.swift */; };
 		A1BC45692F48E700006EDC42 /* CellularSetupViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1BC45682F48E700006EDC42 /* CellularSetupViewModel.swift */; };
 		A1BC456B2F48E700006EDC42 /* WifiSetupViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1BC456A2F48E700006EDC42 /* WifiSetupViewModel.swift */; };
+		A1EC10012F48E700006EDC42 /* EnableCellularScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1EC10022F48E700006EDC42 /* EnableCellularScreen.swift */; };
+		A1EC10032F48E700006EDC42 /* EnableCellularViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1EC10042F48E700006EDC42 /* EnableCellularViewModel.swift */; };
+		A1EC10052F48E700006EDC42 /* EnableVPNScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1EC10062F48E700006EDC42 /* EnableVPNScreen.swift */; };
+		A1EC10072F48E700006EDC42 /* EnableVPNViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1EC10082F48E700006EDC42 /* EnableVPNViewModel.swift */; };
 		AC10000000000000000000BA /* GlacierWidgetBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC10000000000000000000B5 /* GlacierWidgetBundle.swift */; };
 		AC10000000000000000000BB /* GlacierWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC10000000000000000000B6 /* GlacierWidget.swift */; };
 		AC10000000000000000000BC /* VPNDNSToggleIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC10000000000000000000B7 /* VPNDNSToggleIntent.swift */; };
 		AC10000000000000000000C0 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AC10000000000000000000C1 /* Assets.xcassets */; };
+		AF0000000000000000000001 /* NotificationSettingsScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF0000000000000000000002 /* NotificationSettingsScreen.swift */; };
+		AF0000000000000000000003 /* NotificationSettingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF0000000000000000000004 /* NotificationSettingsViewModel.swift */; };
+		AF0000000000000000000005 /* PrivacyReportManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF0000000000000000000006 /* PrivacyReportManager.swift */; };
+		AF0000000000000000000007 /* AccountDeletionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF0000000000000000000008 /* AccountDeletionManager.swift */; };
 		B00000000000000000000001 /* DeepLinkTargetTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F00000000000000000000001 /* DeepLinkTargetTests.swift */; };
 		B00000000000000000000002 /* UserPasswordValidationChecklistTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F00000000000000000000002 /* UserPasswordValidationChecklistTests.swift */; };
 		B00000000000000000000003 /* GlacierDateFormatterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F00000000000000000000003 /* GlacierDateFormatterTests.swift */; };
+		B00000000000000000000004 /* UserLoginEmailCodeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F00000000000000000000004 /* UserLoginEmailCodeTests.swift */; };
 		B244424C164EF95A6767F3D2 /* Pods_GlacierPods_Glacier.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B6E27707A6E6D4DC8104C83B /* Pods_GlacierPods_Glacier.framework */; };
 		C100F10F2F49C1390071513B /* VPNActivationOverWiFiPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = C100F10E2F49C1390071513B /* VPNActivationOverWiFiPolicy.swift */; };
 		C100F1112F4A25770071513B /* TrustedNetwork.swift in Sources */ = {isa = PBXBuildFile; fileRef = C100F1102F4A25770071513B /* TrustedNetwork.swift */; };
@@ -325,6 +334,10 @@
 		A1BC45662F48E700006EDC42 /* WifiSetupScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WifiSetupScreen.swift; sourceTree = "<group>"; };
 		A1BC45682F48E700006EDC42 /* CellularSetupViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CellularSetupViewModel.swift; sourceTree = "<group>"; };
 		A1BC456A2F48E700006EDC42 /* WifiSetupViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WifiSetupViewModel.swift; sourceTree = "<group>"; };
+		A1EC10022F48E700006EDC42 /* EnableCellularScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnableCellularScreen.swift; sourceTree = "<group>"; };
+		A1EC10042F48E700006EDC42 /* EnableCellularViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnableCellularViewModel.swift; sourceTree = "<group>"; };
+		A1EC10062F48E700006EDC42 /* EnableVPNScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnableVPNScreen.swift; sourceTree = "<group>"; };
+		A1EC10082F48E700006EDC42 /* EnableVPNViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnableVPNViewModel.swift; sourceTree = "<group>"; };
 		AC10000000000000000000AF /* GlacierWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = GlacierWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		AC10000000000000000000B5 /* GlacierWidgetBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlacierWidgetBundle.swift; sourceTree = "<group>"; };
 		AC10000000000000000000B6 /* GlacierWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlacierWidget.swift; sourceTree = "<group>"; };
@@ -333,6 +346,10 @@
 		AC10000000000000000000B9 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		AC10000000000000000000C1 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		AD2B2E1CC8B60D5767D666B6 /* Pods-GlacierTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-GlacierTests.release.xcconfig"; path = "Pods/Target Support Files/Pods-GlacierTests/Pods-GlacierTests.release.xcconfig"; sourceTree = "<group>"; };
+		AF0000000000000000000002 /* NotificationSettingsScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationSettingsScreen.swift; sourceTree = "<group>"; };
+		AF0000000000000000000004 /* NotificationSettingsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationSettingsViewModel.swift; sourceTree = "<group>"; };
+		AF0000000000000000000006 /* PrivacyReportManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacyReportManager.swift; sourceTree = "<group>"; };
+		AF0000000000000000000008 /* AccountDeletionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountDeletionManager.swift; sourceTree = "<group>"; };
 		B6E27707A6E6D4DC8104C83B /* Pods_GlacierPods_Glacier.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_GlacierPods_Glacier.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		B7D2A5A361F42812631E47D6 /* Pods-GlacierTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-GlacierTests.debug.xcconfig"; path = "Pods/Target Support Files/Pods-GlacierTests/Pods-GlacierTests.debug.xcconfig"; sourceTree = "<group>"; };
 		BA0CE93AB55D56648C2AF9B0 /* Pods-GlacierPods-Glacier.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-GlacierPods-Glacier.debug.xcconfig"; path = "Pods/Target Support Files/Pods-GlacierPods-Glacier/Pods-GlacierPods-Glacier.debug.xcconfig"; sourceTree = "<group>"; };
@@ -548,6 +565,7 @@
 		F00000000000000000000001 /* DeepLinkTargetTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeepLinkTargetTests.swift; sourceTree = "<group>"; };
 		F00000000000000000000002 /* UserPasswordValidationChecklistTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserPasswordValidationChecklistTests.swift; sourceTree = "<group>"; };
 		F00000000000000000000003 /* GlacierDateFormatterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlacierDateFormatterTests.swift; sourceTree = "<group>"; };
+		F00000000000000000000004 /* UserLoginEmailCodeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserLoginEmailCodeTests.swift; sourceTree = "<group>"; };
 		F1D9ED03FE1944E8BBC805B2 /* nl */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = nl; path = nl.lproj/Localizable.strings; sourceTree = "<group>"; };
 		F529323B2C78C0E8003EAE92 /* NetworkExtension.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = NetworkExtension.framework; path = System/Library/Frameworks/NetworkExtension.framework; sourceTree = SDKROOT; };
 		F529324A2C78D5B7003EAE92 /* libwg-go.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = "libwg-go.a"; path = "Glacier/Scripts/libwg-go.a"; sourceTree = "<group>"; };
@@ -659,6 +677,7 @@
 				F00000000000000000000001 /* DeepLinkTargetTests.swift */,
 				F00000000000000000000002 /* UserPasswordValidationChecklistTests.swift */,
 				F00000000000000000000003 /* GlacierDateFormatterTests.swift */,
+				F00000000000000000000004 /* UserLoginEmailCodeTests.swift */,
 				2FFA452E8AE63489185CCAA6 /* GlacierJailbreakChecksTests.swift */,
 			);
 			path = GlacierTests;
@@ -1028,6 +1047,8 @@
 			children = (
 				C14DA1E32F12A562003D40CB /* Persistance */,
 				C14DA1E42F12A562003D40CB /* AWSAcctManager.swift */,
+				AF0000000000000000000006 /* PrivacyReportManager.swift */,
+				AF0000000000000000000008 /* AccountDeletionManager.swift */,
 				C14DA1F22F12A562003D40CB /* TwilioBackendManager.swift */,
 				C14DA1E52F12A562003D40CB /* CallManager.swift */,
 				C14DA1EE2F12A562003D40CB /* SecurityCenter.swift */,
@@ -1256,8 +1277,11 @@
 				C18745602F48E6DF006EDC42 /* VPNSettingsViewModel.swift */,
 				C18745622F48E822006EDC42 /* WiFiSettingsViewModel.swift */,
 				A1BC45682F48E700006EDC42 /* CellularSetupViewModel.swift */,
+				A1EC10042F48E700006EDC42 /* EnableCellularViewModel.swift */,
+				A1EC10082F48E700006EDC42 /* EnableVPNViewModel.swift */,
 				A1BC456A2F48E700006EDC42 /* WifiSetupViewModel.swift */,
 				C133A6322F56FBD10025A952 /* AppearanceSettingsViewModel.swift */,
+				AF0000000000000000000004 /* NotificationSettingsViewModel.swift */,
 				5A682009216C17DA5D7DA84E /* WidgetSettingsViewModel.swift */,
 			);
 			path = ViewModel;
@@ -1476,8 +1500,11 @@
 				C187455C2F48E6C0006EDC42 /* VPNSettingsScreen.swift */,
 				C187455E2F48E6CE006EDC42 /* WiFiSettingsScreen.swift */,
 				A1BC45642F48E700006EDC42 /* CellularSetupScreen.swift */,
+				A1EC10022F48E700006EDC42 /* EnableCellularScreen.swift */,
+				A1EC10062F48E700006EDC42 /* EnableVPNScreen.swift */,
 				A1BC45662F48E700006EDC42 /* WifiSetupScreen.swift */,
 				C133A6302F56FBC00025A952 /* AppearanceSettingsScreen.swift */,
+				AF0000000000000000000002 /* NotificationSettingsScreen.swift */,
 				2F7F0CC69311A87C3D420299 /* WidgetSettingsScreen.swift */,
 			);
 			path = View;
@@ -1956,6 +1983,7 @@
 				B00000000000000000000001 /* DeepLinkTargetTests.swift in Sources */,
 				B00000000000000000000002 /* UserPasswordValidationChecklistTests.swift in Sources */,
 				B00000000000000000000003 /* GlacierDateFormatterTests.swift in Sources */,
+				B00000000000000000000004 /* UserLoginEmailCodeTests.swift in Sources */,
 				F2DE36DE44E908551C60DAAA /* GlacierJailbreakChecksTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -2025,6 +2053,8 @@
 				C14DA1F82F12A562003D40CB /* SubscriptionAccessCoordinator.swift in Sources */,
 				C18745632F48E822006EDC42 /* WiFiSettingsViewModel.swift in Sources */,
 				A1BC45692F48E700006EDC42 /* CellularSetupViewModel.swift in Sources */,
+				A1EC10032F48E700006EDC42 /* EnableCellularViewModel.swift in Sources */,
+				A1EC10072F48E700006EDC42 /* EnableVPNViewModel.swift in Sources */,
 				A1BC456B2F48E700006EDC42 /* WifiSetupViewModel.swift in Sources */,
 				C14DA1FA2F12A562003D40CB /* DBSchemaCoordinator.swift in Sources */,
 				C19A34302F1AB213000B3543 /* DNSSetupScreen.swift in Sources */,
@@ -2146,6 +2176,10 @@
 				C14DA18B2F12A190003D40CB /* TunnelImporter.swift in Sources */,
 				C1E23EF62F1FFA3100332C51 /* UserAuthenticationHomeViewModel.swift in Sources */,
 				C133A6312F56FBC00025A952 /* AppearanceSettingsScreen.swift in Sources */,
+				AF0000000000000000000001 /* NotificationSettingsScreen.swift in Sources */,
+				AF0000000000000000000003 /* NotificationSettingsViewModel.swift in Sources */,
+				AF0000000000000000000005 /* PrivacyReportManager.swift in Sources */,
+				AF0000000000000000000007 /* AccountDeletionManager.swift in Sources */,
 				1FC1B4FD9AB5CA2A3E9E4509 /* WidgetSettingsScreen.swift in Sources */,
 				C18745372F4392F7006EDC42 /* DeviceSecuritySetting.swift in Sources */,
 				C147C6702F1D453000298689 /* GlacierBackground.swift in Sources */,
@@ -2166,6 +2200,8 @@
 				C14DA19C2F12A190003D40CB /* WireGuardAppError.swift in Sources */,
 				C187455F2F48E6CE006EDC42 /* WiFiSettingsScreen.swift in Sources */,
 				A1BC45652F48E700006EDC42 /* CellularSetupScreen.swift in Sources */,
+				A1EC10012F48E700006EDC42 /* EnableCellularScreen.swift in Sources */,
+				A1EC10052F48E700006EDC42 /* EnableVPNScreen.swift in Sources */,
 				A1BC45672F48E700006EDC42 /* WifiSetupScreen.swift in Sources */,
 				C13B0F182F4E069100C4EE79 /* PhoneScreen.swift in Sources */,
 				C1CD7A392F29091D0094BED6 /* UserLoginViewModel.swift in Sources */,
@@ -2258,7 +2294,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 41;
+				CURRENT_PROJECT_VERSION = 50;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = UG8VC96NZF;
 				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
@@ -2285,7 +2321,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/Glacier/Includes-Simulator",
 				);
-				MARKETING_VERSION = 1.0.4;
+				MARKETING_VERSION = 1.0.6;
 				PRODUCT_BUNDLE_IDENTIFIER = com.theglacierapp.Glacier;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE = "";
@@ -2877,7 +2913,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 41;
+				CURRENT_PROJECT_VERSION = 50;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = UG8VC96NZF;
 				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
@@ -2910,7 +2946,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/Glacier/Includes-Simulator",
 				);
-				MARKETING_VERSION = 1.0.4;
+				MARKETING_VERSION = 1.0.6;
 				PRODUCT_BUNDLE_IDENTIFIER = com.theglacierapp.Glacier;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE = "";
@@ -2942,7 +2978,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 41;
+				CURRENT_PROJECT_VERSION = 50;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = UG8VC96NZF;
 				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
@@ -2969,7 +3005,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/Glacier/Includes-Simulator",
 				);
-				MARKETING_VERSION = 1.0.4;
+				MARKETING_VERSION = 1.0.6;
 				PRODUCT_BUNDLE_IDENTIFIER = com.theglacierapp.Glacier;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE = "";

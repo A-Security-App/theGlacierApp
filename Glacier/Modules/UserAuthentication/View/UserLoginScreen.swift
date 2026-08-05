@@ -24,13 +24,35 @@ struct UserLoginScreen<ViewModel: UserLoginViewModel & ObservableObject, Coordin
     
     @StateObject private var viewModel: ViewModel
     @StateObject private var passwordResetCoordinator: Coordinator
-    
+
+    @State private var verificationCode: String = ""
+    @FocusState private var isVerificationCodeFieldFocused: Bool
+
     private var subHeaderText: String {
-        if viewModel.shouldShowPasswordTextField {
+        if viewModel.isAwaitingVerificationCode {
+            verificationCodeSubHeaderText
+        } else if viewModel.shouldShowPasswordTextField {
             NSLocalizedString("Enter your password.", comment: "User login screen sub header password")
         } else {
             NSLocalizedString("Enter your email.", comment: "User login screen sub header email")
         }
+    }
+
+    private var verificationCodeSubHeaderText: String {
+        guard let destination = viewModel.verificationCodeDestination,
+              !destination.isEmpty else {
+            return NSLocalizedString(
+                "Enter the 6-digit code we sent to your email.",
+                comment: "User login screen sub header email code"
+            )
+        }
+        return String(
+            format: NSLocalizedString(
+                "Enter the 6-digit code we sent to %@.",
+                comment: "User login screen sub header email code with destination"
+            ),
+            destination
+        )
     }
     
     // MARK: - Initializer
@@ -68,66 +90,70 @@ struct UserLoginScreen<ViewModel: UserLoginViewModel & ObservableObject, Coordin
                     }
                     .padding(.top, 24)
                     
-                    GlacierTextField(
-                        placeholder: NSLocalizedString("Email", comment: "User login screen email place holder"),
-                        text: $viewModel.email
-                    )
-                    .padding(.top, 24)
-                    
-                    if viewModel.shouldShowPasswordTextField {
+                    if viewModel.isAwaitingVerificationCode {
+                        verificationCodeSection
+                    } else {
                         GlacierTextField(
-                            placeholder: NSLocalizedString("Password", comment: "User login screen password place holder"),
-                            isSecured: true,
-                            text: $viewModel.password,
-                            error: $viewModel.passwordValidationError,
-                            state: $viewModel.passwordTextFieldState
-                        )
-                    }
-                    
-                    VStack(alignment: .leading, spacing: 16) {
-                        GlacierButton(
-                            style: .secondary,
-                            title: NSLocalizedString("Continue", comment: "Continue button title"),
-                            isEnabled: $viewModel.isContinueButtonEnabled,
-                            action: {
-                                UIApplication.shared.dismissKeyboard()
-                                viewModel.signInWithEmail()
-                            }
-                        )
-                        
-                        GlacierLabelButton(
-                            text: NSLocalizedString("Forgot password?", comment: "User login screen forgot password button title"),
-                            font: .bodyThick,
-                            alignment: .leading,
-                            isEnabled: .constant(true),
-                            action: {
-                                viewModel.presentPasswordResetScreen()
-                            }
-                        )
-                    }
-                    
-                    if !viewModel.shouldShowPasswordTextField {
-                        GlacierLineSeparator(label: NSLocalizedString("or", comment: "Or text"))
-                            .padding(.top, 24)
-                        
-                        GlacierButton(
-                            style: .tertiary,
-                            title: NSLocalizedString("Continue with Google", comment: "User login screen Google auth button title"),
-                            icon: "google-logo",
-                            action: {
-                                viewModel.signInWith(.google)
-                            }
+                            placeholder: NSLocalizedString("Email", comment: "User login screen email place holder"),
+                            text: $viewModel.email
                         )
                         .padding(.top, 24)
+                    
+                        if viewModel.shouldShowPasswordTextField {
+                            GlacierTextField(
+                                placeholder: NSLocalizedString("Password", comment: "User login screen password place holder"),
+                                isSecured: true,
+                                text: $viewModel.password,
+                                error: $viewModel.passwordValidationError,
+                                state: $viewModel.passwordTextFieldState
+                            )
+                        }
+                    
+                        VStack(alignment: .leading, spacing: 16) {
+                            GlacierButton(
+                                style: .secondary,
+                                title: NSLocalizedString("Continue", comment: "Continue button title"),
+                                isEnabled: $viewModel.isContinueButtonEnabled,
+                                action: {
+                                    UIApplication.shared.dismissKeyboard()
+                                    viewModel.signInWithEmail()
+                                }
+                            )
                         
-                        GlacierButton(
-                            style: .tertiary,
-                            title: NSLocalizedString("Continue with Apple", comment: "User login screen Apple auth button title"),
-                            icon: "apple-logo",
-                            action: {
-                                viewModel.signInWith(.apple)
-                            }
-                        )
+                            GlacierLabelButton(
+                                text: NSLocalizedString("Forgot password?", comment: "User login screen forgot password button title"),
+                                font: .bodyThick,
+                                alignment: .leading,
+                                isEnabled: .constant(true),
+                                action: {
+                                    viewModel.presentPasswordResetScreen()
+                                }
+                            )
+                        }
+                    
+                        if !viewModel.shouldShowPasswordTextField {
+                            GlacierLineSeparator(label: NSLocalizedString("or", comment: "Or text"))
+                                .padding(.top, 24)
+                        
+                            GlacierButton(
+                                style: .tertiary,
+                                title: NSLocalizedString("Continue with Google", comment: "User login screen Google auth button title"),
+                                icon: "google-logo",
+                                action: {
+                                    viewModel.signInWith(.google)
+                                }
+                            )
+                            .padding(.top, 24)
+                        
+                            GlacierButton(
+                                style: .tertiary,
+                                title: NSLocalizedString("Continue with Apple", comment: "User login screen Apple auth button title"),
+                                icon: "apple-logo",
+                                action: {
+                                    viewModel.signInWith(.apple)
+                                }
+                            )
+                        }
                     }
                     
                     Spacer()
@@ -167,6 +193,87 @@ struct UserLoginScreen<ViewModel: UserLoginViewModel & ObservableObject, Coordin
                             }
                         }
                     }
+            }
+        }
+    }
+
+    // MARK: - Email code entry
+
+    private var verificationCodeSection: some View {
+        VStack(spacing: 16) {
+            ZStack {
+                TextField("", text: $verificationCode)
+                    .keyboardType(.numberPad)
+                    .focused($isVerificationCodeFieldFocused)
+                    .opacity(0)
+                    .frame(width: 1, height: 1)
+                    .onChange(of: verificationCode) { newValue in
+                        let filtered = String(newValue.filter { $0.isNumber }.prefix(6))
+                        if filtered != verificationCode {
+                            verificationCode = filtered
+                        }
+                        if filtered.count == 6 {
+                            isVerificationCodeFieldFocused = false
+                            viewModel.submitVerificationCode(filtered)
+                        }
+                    }
+
+                HStack(spacing: 8) {
+                    ForEach(0..<6, id: \.self) { index in
+                        verificationCodeDigitBox(at: index)
+                    }
+                }
+                .onTapGesture {
+                    isVerificationCodeFieldFocused = true
+                }
+            }
+
+            GlacierLabel(
+                text: NSLocalizedString(
+                    "Tip: Make sure to check your inbox and spam folders.",
+                    comment: "User login screen email code tip"
+                ),
+                font: .headerTwo,
+                textAlignment: .center,
+                customTextColor: .constant(.grey60)
+            )
+
+            GlacierLabelButton(
+                text: NSLocalizedString(
+                    "Log in with a different account",
+                    comment: "User login screen cancel email code button title"
+                ),
+                font: .bodyThick,
+                action: {
+                    viewModel.cancelVerificationCodeEntry()
+                }
+            )
+        }
+        .padding(.top, 24)
+        .onAppear {
+            isVerificationCodeFieldFocused = true
+        }
+        // A rejected code sends the user back to the password step. Clear the
+        // boxes so a new attempt does not start half filled.
+        .onChange(of: viewModel.isAwaitingVerificationCode) { isAwaiting in
+            if !isAwaiting {
+                verificationCode = ""
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func verificationCodeDigitBox(at index: Int) -> some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color.grey90)
+                .frame(width: 40, height: 54)
+
+            if index < verificationCode.count {
+                let charIndex = verificationCode.index(verificationCode.startIndex, offsetBy: index)
+                Text(String(verificationCode[charIndex]))
+                    .font(.system(size: 22, weight: .medium))
+                    .foregroundColor(.white)
             }
         }
     }

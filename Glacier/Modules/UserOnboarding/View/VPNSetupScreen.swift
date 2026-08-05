@@ -42,7 +42,7 @@ struct VPNSetupScreen<ViewModel: VPNSetupViewModel>: View {
                 GlacierViewContainer(shouldReverseColor: true, darkColor: .grey95, lightColor: .white) {
                     VStack(alignment: .leading, spacing: 16) {
                         GlacierLabel(
-                            text: NSLocalizedString("DNS is setup.", comment: "VPN setup screen header"),
+                            text: NSLocalizedString("Secure DNS is setup.", comment: "VPN setup screen header"),
                             font: .headerOne,
                             customTextColor: .constant(.grey50)
                         )

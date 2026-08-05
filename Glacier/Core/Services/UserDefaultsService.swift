@@ -65,6 +65,12 @@ final class UserDefaultsService: LocalStorageService {
         /// Set to `true` when the user completes DNS setup during onboarding (taps "Open Settings").
         /// Consumed once at the end of onboarding to enable DNS if VPN was not also set up.
         var didCompleteDNSSetupDuringOnboarding: String { "didCompleteDNSSetupDuringOnboarding" }
+        /// Set to `true` when DNS is enabled at the end of onboarding (see
+        /// `connectDNSIfSetUpDuringOnboarding`). `apply` persists `isEnabled` asynchronously — after
+        /// we've navigated to Main — so the first Home screen scan can't rely on the saved flag to
+        /// know DNS was just enabled. Consumed once in `HomeVM.refreshStatus` to force a
+        /// retry-until-verified DNS probe that rides out the DoT activation latency.
+        var dnsActivationPendingFromOnboarding: String { "dnsActivationPendingFromOnboarding" }
         
         var isUserOnboardingCompleted: String { "isUserOnboardingCompleted" }
         var inProgressUserOnboardingScreen: String { "inProgressUserOnboardingScreen" }
@@ -84,6 +90,8 @@ final class UserDefaultsService: LocalStorageService {
         var vpnActivationOverWiFiPolicy: String { "vpnActivationOverWiFiPolicy" }
         /// Whether the weekly "time to reboot" reminder is enabled. Absent = on by default.
         var isRebootReminderEnabled: String { "isRebootReminderEnabled" }
+        /// Whether the Weekly Privacy Report email is enabled. Absent = on by default.
+        var isWeeklyPrivacyReportEnabled: String { "isWeeklyPrivacyReportEnabled" }
         
         // User permissions
         var pushNotificationsPermission: String { "pushNotificationsPermission" }

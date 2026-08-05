@@ -80,7 +80,15 @@ final class DNSSetupVM: DNSSetupViewModel {
     }
     
     func presentVPNSetupView() {
-        setOnboardingScreen(.vpnSetup)
+        // NOTE: VPN setup has been removed from the onboarding flow. The VPN mini-setup now
+        // runs later, when the user enables VPN from VPN settings or the Choose protection
+        // screen. So once DNS setup completes we skip straight to phone-number onboarding —
+        // the same destination the Skip paths funnel through — bypassing both .vpnSetup and
+        // .trustedNetworksSetup (trusted networks is VPN-dependent and part of that later
+        // mini-setup). VPNSetupScreen/VPNSetupVM are intentionally kept in the project.
+        // To restore the VPN step here, replace the line below with:
+        //     setOnboardingScreen(.vpnSetup)
+        navigateToPhoneNumberOnboarding()
     }
     
     func skip() {

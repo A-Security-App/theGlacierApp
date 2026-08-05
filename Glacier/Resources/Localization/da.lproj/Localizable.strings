@@ -37,8 +37,7 @@
  Sliding Cards
  ***************************/
 "Browse privately, ad-free." = "Surf privat, uden reklamer.";
-"VPN and DNS protection for safer browsing—from anywhere." = "VPN- og DNS-beskyttelse til sikrere browsing – fra hvor som helst.";
-"Standard" = "Standard";
+"VPN and Secure DNS protection for safer browsing—from anywhere." = "VPN- og sikker DNS-beskyttelse til sikrere browsing – fra hvor som helst.";
 "Know you're protected." = "Vid at du er beskyttet.";
 "Get alerts and recommendations to ensure your device is secure." = "Modtag advarsler og anbefalinger for at sikre, at din enhed er sikker.";
 "Make calls privately." = "Ring anonymt.";
@@ -141,16 +140,18 @@
 
 // MARK: - DNS Setup Screen
 "You're in." = "Du er med.";
-"Setup DNS." = "Konfigurer DNS.";
-"Hides which sites you're visiting.\n\nFaster connection, no ads, and enough privacy for everyday use." = "Skjuler hvilke websteder du besøger.\n\nHurtigere forbindelse, ingen reklamer og tilstrækkelig privathed til daglig brug.";
+"Setup Secure DNS." = "Konfigurer sikker DNS.";
+"Hides which sites you're visiting - faster connection, no ads, and enough privacy for everyday use." = "Skjuler hvilke websteder du besøger - hurtigere forbindelse, ingen reklamer og tilstrækkelig privathed til daglig brug.";
 "Enable Glacier DNS in Settings" = "Aktiver Glacier DNS i Indstillinger";
 "In Settings page, navigate to:\n\nGeneral →\nVPN & Device Management →\nDNS →\nGlacier." = "På siden Indstillinger, naviger til:\n\nGenerelt →\nVPN og enhedsstyring →\nDNS →\nGlacier.";
+"Secure DNS Protection Required" = "Sikker DNS-beskyttelse kræves";
+"When your VPN turns off on this trusted network, Secure DNS protection requires our profile to be selected in iOS Settings.\n\nIn Settings page, navigate to:\n\nGeneral →\nVPN & Device Management →\nDNS →\n\nThen select Glacier." = "Når VPN slås fra på dette betroede netværk, kræver sikker DNS-beskyttelse, at vores profil er valgt i iOS-indstillingerne.\n\nPå siden Indstillinger, naviger til:\n\nGenerelt →\nVPN og enhedsstyring →\nDNS →\n\nVælg derefter Glacier.";
 "Something went wrong while adding DNS configuration. Please try again." = "Noget gik galt under tilføjelse af DNS-konfigurationen. Prøv venligst igen.";
 
 // MARK: - VPN Setup Screen
-"DNS is setup." = "DNS er konfigureret.";
+"Secure DNS is setup." = "Sikker DNS er konfigureret.";
 "Setup your VPN." = "Konfigurer din VPN.";
-"Hides where you're going and everything you do along the way.\n\nIdeal for public Wi-Fi, travel, or untrusted networks.\n\nHeads up — can sometimes slow your connection or limit browsing." = "Skjuler hvor du går hen og alt hvad du gør undervejs.\n\nIdeal til offentlig Wi-Fi, rejser eller ikke-betroede netværk.\n\nBemærk: Kan nogle gange reducere din forbindelsesstyrke eller begrænse browsing.";
+"Hides where you're going and everything you do along the way - ideal for public Wi-Fi, travel, and other untrusted networks, but can sometimes slow your connection or limit browsing." = "Skjuler hvor du går hen og alt hvad du gør undervejs - ideelt til offentlig Wi-Fi, rejser og andre ikke-betroede netværk, men kan nogle gange reducere din forbindelsesstyrke eller begrænse browsing.";
 "Something went wrong while adding VPN configuration. Please try again." = "Noget gik galt under tilføjelse af VPN-konfigurationen. Prøv venligst igen.";
 
 // MARK: - Trusted Network Setup Screen
@@ -202,7 +203,11 @@
 
 // MARK: - Cellular Setup Screen
 "Do you want to enable VPN while on cellular?" = "Vil du aktivere VPN, mens du bruger mobildata?";
+"Are you sure you want to enable VPN while on cellular?" = "Er du sikker på, at du vil aktivere VPN, mens du bruger mobildata?";
+"Are you sure you want to enable VPN?" = "Er du sikker på, at du vil aktivere VPN?";
+"Heads up - can slow or limit your connection to some websites and apps.\n\nRecommended on untrusted networks like public Wi-Fi.\n\nEnable anyway." = "Bemærk: Kan reducere eller begrænse din forbindelse til nogle websteder og apps.\n\nAnbefales på ikke-betroede netværk som offentlig Wi-Fi.\n\nAktiver alligevel.";
 "VPN on." = "VPN til.";
+"Heads up - can slow or limit your connection to some websites and apps.\n\nGlacier recommends leaving VPN off while on cellular for most situations." = "Bemærk: Kan reducere eller begrænse din forbindelse til nogle websteder og apps.\n\nGlacier anbefaler at lade VPN være slukket ved mobildata i de fleste situationer.";
 "Heads up - can slow or limit your connection to some websites and apps.\n\nGlacier recommends leaving VPN off while on cellular for most situations. You can still enable later in settings.\n\nEnable anyway." = "Bemærk: Kan reducere eller begrænse din forbindelse til nogle websteder og apps.\n\nGlacier anbefaler at lade VPN være slukket ved mobildata i de fleste situationer. Du kan stadig aktivere det senere i indstillinger.\n\nAktiver alligevel.";
 
 // MARK: - Wifi Setup Screen
@@ -227,7 +232,7 @@
 
 "All clear. \nNo issues found." = "Alt klart. \nIngen problemer fundet.";
 "Your system may be at risk." = "Dit system kan være i fare.";
-"Connect to DNS to block malicious sites and trackers." = "Opret forbindelse til DNS for at blokere skadelige websteder og sporere.";
+"Connect to Secure DNS to block malicious sites and trackers." = "Opret forbindelse til sikker DNS for at blokere skadelige websteder og sporere.";
 "Your system shows signs of being jailbroken." = "Dit system viser tegn på at være jailbreaket.";
 "This app appears to be running in a modified or analyzed environment." = "Denne app ser ud til at køre i et modificeret eller analyseret miljø.";
 "Unusual network activity or modification tools have been identified." = "Usædvanlig netværksaktivitet eller modifikationsværktøjer er blevet opdaget.";
@@ -239,7 +244,7 @@
 // MARK: - Secured Connection Status
 
 "Connected" = "Tilsluttet";
-"Disconnected from DNS" = "Afbrudt fra DNS";
+"Disconnected from Secure DNS" = "Afbrudt fra sikker DNS";
 "Connect" = "Opret forbindelse";
 "Disconnect" = "Afbryd forbindelse";
 "Something went wrong while connecting to Glacier DNS.\n\nPlease check that Glacier DNS is selected in:\n\nSettings →\nGeneral →\nVPN & Device Management →\nDNS" = "Noget gik galt under tilslutning til Glacier DNS.\n\nKontroller at Glacier DNS er valgt i:\n\nIndstillinger →\nGenerelt →\nVPN og enhedsstyring →\nDNS";
@@ -249,10 +254,8 @@
 // MARK: - Secured Connection Type
 
 "Choose protection" = "Vælg beskyttelse";
-"Standard" = "Standard";
-"For everyday use. Faster connection, no ads, and best for most situations." = "Til daglig brug. Hurtigere forbindelse, ingen reklamer og bedst til de fleste situationer.";
-"Extra Protection" = "Ekstra beskyttelse";
-"Ideal for public Wi-Fi, travel, and other untrusted networks. Can limit browsing or slow connection." = "Ideelt til offentlig Wi-Fi, rejser og andre ikke-betroede netværk. Kan begrænse browsing eller reducere forbindelsen.";
+"Everyday" = "Hverdag";
+"Travel" = "Rejse";
 
 // MARK: - Device Security Status
 

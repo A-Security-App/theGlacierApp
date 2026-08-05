@@ -41,7 +41,7 @@ public extension Color {
     // MARK: - Ember
     static let ember = Color("ember")
     static let ember10 = Color("ember10")
-    static let ember25 = Color("ember10")
+    static let ember25 = Color("ember25")
     static let ember50 = Color("ember50")
 
     // MARK: - Blue

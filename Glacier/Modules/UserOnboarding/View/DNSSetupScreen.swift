@@ -48,7 +48,7 @@ struct DNSSetupScreen<ViewModel: DNSSetupViewModel>: View {
                         .padding(.top, 8)
                         
                         GlacierLabel(
-                            text: NSLocalizedString("Setup DNS.", comment: "DNS setup screen sub header"),
+                            text: NSLocalizedString("Setup Secure DNS.", comment: "DNS setup screen sub header"),
                             font: .headerOne,
                             shouldReverseColor: true
                         )

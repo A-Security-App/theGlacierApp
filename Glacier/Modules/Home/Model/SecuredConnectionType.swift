@@ -22,11 +22,11 @@ enum SecuredConnectionType: String, CaseIterable, Hashable {
     var title: String {
         switch self {
         case .dns: NSLocalizedString(
-            "Standard",
+            "Everyday",
             comment: "Secured connection type DNS title"
         )
         case .vpn: NSLocalizedString(
-            "Extra Protection",
+            "Travel",
             comment: "Secured connection type VPN title"
         )
         }
