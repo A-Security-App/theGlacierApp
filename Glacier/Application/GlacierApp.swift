@@ -84,6 +84,14 @@ struct GlacierApp: App {
                     GlacierNotificationProperties.confirmationCode: confirmationCode
                 ]
             )
+        case .loginSecurityApp(let confirmationCode):
+            NotificationCenter.default.post(
+                name: .loginCodeLinkClicked,
+                object: nil,
+                userInfo: [
+                    GlacierNotificationProperties.confirmationCode: confirmationCode
+                ]
+            )
         case .vpnToggle:
             // Legacy iOS 16 widget button — HomeVM observes this and calls handleWidgetToggle()
             NotificationCenter.default.post(name: .widgetVPNDNSToggleRequested, object: nil)

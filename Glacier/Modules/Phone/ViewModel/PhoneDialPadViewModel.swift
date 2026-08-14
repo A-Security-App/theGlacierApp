@@ -84,7 +84,8 @@ final class PhoneDialPadVM: PhoneDialPadViewModel, ObservableObject, PhoneNumber
         guard !phoneNumber.isEmpty else { return }
         phoneNumber.removeLast()
         let raw = phoneNumber.replacingOccurrences(of: allowedCharacters, with: "", options: .regularExpression)
-        formatNumber(with: numberFormatForUSA, number: raw)
+        // Deleting is not entry: don't warn while backspacing through "911".
+        formatNumber(with: numberFormatForUSA, number: raw, warnOnEmergency: false)
         giveHapticFeedback(style: .light)
     }
     
@@ -109,7 +110,19 @@ final class PhoneDialPadVM: PhoneDialPadViewModel, ObservableObject, PhoneNumber
     }
     
     func formatNumber(with mask: String, number: String) {
+        formatNumber(with: mask, number: number, warnOnEmergency: true)
+    }
+
+    private func formatNumber(with mask: String, number: String, warnOnEmergency: Bool) {
         let raw = number.replacingOccurrences(of: allowedCharacters, with: "", options: .regularExpression)
+        defer {
+            // Warn only on active entry (typing/paste), never while deleting back
+            // through "911" — otherwise the alert pops mid-backspace.
+            if warnOnEmergency, CallManager.isEmergencyNumber(phoneNumber) {
+                presentEmergencyServicesUnavailableAlert()
+            }
+        }
+
         if raw.starts(with: "+") {
             // International numbers (e.g. pasted from iOS Recents) shouldn't get
             // the US mask applied — keep the value as-is instead of dropping it.
@@ -158,6 +171,10 @@ final class PhoneDialPadVM: PhoneDialPadViewModel, ObservableObject, PhoneNumber
 extension PhoneDialPadVM {
     
     func startCall() {
+        guard !CallManager.isEmergencyNumber(phoneNumber) else {
+            presentEmergencyServicesUnavailableAlert()
+            return
+        }
         guard !SecurityCenter.isProxyDetected else { return }
         hidePhoneNumberMenu()
         giveHapticFeedback(style: .light)

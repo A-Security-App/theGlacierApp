@@ -416,6 +416,14 @@
 "'%@' is already added as a trusted network." = "'%@' ya está agregada como red de confianza.";
 "Something went wrong while removing '%@' as a trusted network. Please try again." = "Algo salió mal al eliminar '%@' como red de confianza. Por favor, inténtalo de nuevo.";
 
+"Add current network" = "Agregar la red actual";
+"Enter network name" = "Ingresar nombre de red";
+"Add the network you're on now, or enter a network name to trust." = "Agrega la red a la que estás conectado ahora, o ingresa el nombre de una red de confianza.";
+"Network name" = "Nombre de la red";
+"Type the Wi-Fi network name (SSID) you want to trust." = "Escribe el nombre de la red Wi-Fi (SSID) en la que quieres confiar.";
+"Please enter a network name." = "Ingresa un nombre de red.";
+"Next" = "Siguiente";
+
 // MARK: - Widget Settings Screen
 
 "Widget" = "Widget";

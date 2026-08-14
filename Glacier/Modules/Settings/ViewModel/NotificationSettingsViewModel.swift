@@ -18,6 +18,9 @@ protocol NotificationSettingsViewModel: AnyObject {
     var rebootReminderDescription: String { get }
     var weeklyPrivacyReportTitle: String { get }
     var weeklyPrivacyReportDescription: String { get }
+
+    /// Reconciles the Weekly Privacy Report toggle with the backend's value.
+    func refreshFromBackend()
 }
 
 /**
@@ -50,10 +53,17 @@ final class NotificationSettingsVM: NotificationSettingsViewModel, ObservableObj
     /// so simply opening the screen never fires a network call.
     @Published var isWeeklyPrivacyReportEnabled: Bool = true {
         didSet {
+            // A value applied from `refreshFromBackend()` reflects what the server
+            // already has, so it must not be echoed straight back as a write.
+            guard !isApplyingRemoteValue else { return }
             UserDefaultsService.shared.set(isWeeklyPrivacyReportEnabled, for: \.isWeeklyPrivacyReportEnabled)
             PrivacyReportManager.shared.setWeeklyPrivacyReport(enabled: isWeeklyPrivacyReportEnabled)
         }
     }
+
+    /// True while a backend-fetched value is being applied, so the `didSet` above
+    /// updates the UI and local store without re-triggering a PUT to the backend.
+    private var isApplyingRemoteValue = false
 
     let rebootReminderTitle = NSLocalizedString(
         "Reboot Reminder",
@@ -77,5 +87,23 @@ final class NotificationSettingsVM: NotificationSettingsViewModel, ObservableObj
     init() {
         self.isRebootReminderEnabled = UserDefaultsService.shared.get(for: \.isRebootReminderEnabled) ?? true
         self.isWeeklyPrivacyReportEnabled = UserDefaultsService.shared.get(for: \.isWeeklyPrivacyReportEnabled) ?? true
+    }
+
+    // MARK: - Public methods
+
+    /// Reconciles the Weekly Privacy Report toggle with the backend's authoritative
+    /// value. Call when the settings screen appears. No-ops on fetch failure so a
+    /// dropped request never clobbers the last known-good local state.
+    func refreshFromBackend() {
+        PrivacyReportManager.shared.fetchWeeklyPrivacyReport { [weak self] remote in
+            guard let self, let remote else { return }
+            DispatchQueue.main.async {
+                guard self.isWeeklyPrivacyReportEnabled != remote else { return }
+                self.isApplyingRemoteValue = true
+                self.isWeeklyPrivacyReportEnabled = remote
+                self.isApplyingRemoteValue = false
+                UserDefaultsService.shared.set(remote, for: \.isWeeklyPrivacyReportEnabled)
+            }
+        }
     }
 }

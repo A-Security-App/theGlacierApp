@@ -416,6 +416,14 @@
 "'%@' is already added as a trusted network." = "'%@' er allerede tilføjet som betroet netværk.";
 "Something went wrong while removing '%@' as a trusted network. Please try again." = "Noget gik galt under fjernelse af '%@' som betroet netværk. Prøv venligst igen.";
 
+"Add current network" = "Tilføj nuværende netværk";
+"Enter network name" = "Indtast netværksnavn";
+"Add the network you're on now, or enter a network name to trust." = "Tilføj det netværk, du er på nu, eller indtast et netværksnavn, du vil have tillid til.";
+"Network name" = "Netværksnavn";
+"Type the Wi-Fi network name (SSID) you want to trust." = "Indtast navnet på det Wi-Fi-netværk (SSID), du vil have tillid til.";
+"Please enter a network name." = "Indtast et netværksnavn.";
+"Next" = "Næste";
+
 // MARK: - Widget Settings Screen
 
 "Widget" = "Widget";

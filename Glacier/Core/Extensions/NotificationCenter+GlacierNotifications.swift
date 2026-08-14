@@ -20,6 +20,10 @@ extension Notification.Name {
     static let userAccountConfirmed = Notification.Name("userAccountConfirmed")
     static let resetPasswordLinkClicked = Notification.Name("resetPasswordLinkClicked")
     static let userSuccessfullyResetPassword = Notification.Name("userSuccessfullyResetPassword")
+    /// Fired when the login email's auto-fill button is tapped
+    /// (console.theglacierapp.com/login-securityapp?code=…). Only the login
+    /// screen, while parked on the code step, acts on it.
+    static let loginCodeLinkClicked = Notification.Name("loginCodeLinkClicked")
     
     // MARK: - User onboarding
     
@@ -29,6 +33,10 @@ extension Notification.Name {
     /// Fired when an active base subscription transitions to inactive during a foreground
     /// subscription refresh. Observers should enforce the paywall and stop any running VPN.
     static let glacierBaseSubscriptionLapsed = Notification.Name("glacierBaseSubscriptionLapsed")
+    /// Fired by the base-subscription grace nag's "Renew now" button. The root screen presents a
+    /// *dismissible* purchase paywall (unlike the non-dismissible lapse paywall) so the user can
+    /// still back out and keep using the app while protection is preserved during the grace window.
+    static let glacierPresentRenewPaywall = Notification.Name("glacierPresentRenewPaywall")
     
     static let phoneNumberPlanPurchaseVerificationFailed = Notification.Name("phoneNumberPlanPurchaseVerificationFailed")
     static let phoneNumberPlanPurchaseVerified = Notification.Name("phoneNumberPlanPurchaseVerified")

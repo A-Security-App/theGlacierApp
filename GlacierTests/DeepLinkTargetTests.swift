@@ -37,6 +37,18 @@ final class DeepLinkTargetTests: XCTestCase {
         XCTAssertNil(DeepLinkTarget.from(url: url))
     }
 
+    // MARK: - loginSecurityApp
+
+    func testLoginSecurityAppParsesCode() throws {
+        let url = try XCTUnwrap(URL(string: "https://console.theglacierapp.com/login-securityapp?code=123456"))
+        XCTAssertEqual(DeepLinkTarget.from(url: url), .loginSecurityApp(confirmationCode: "123456"))
+    }
+
+    func testLoginSecurityAppReturnsNilWhenCodeMissing() throws {
+        let url = try XCTUnwrap(URL(string: "https://console.theglacierapp.com/login-securityapp"))
+        XCTAssertNil(DeepLinkTarget.from(url: url))
+    }
+
     // MARK: - Widget deep links
 
     func testWidgetDisconnect() throws {

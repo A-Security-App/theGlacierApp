@@ -183,7 +183,7 @@ struct WiFiSettingsScreen<ViewModel: WiFiSettingsViewModel & ObservableObject>: 
                     )
                 ]
                 )
-                .position(x: menuFrame.minX, y: menuFrame.minY - 95)
+                .position(x: menuFrame.minX, y: menuFrame.midY - 95)
             }
         }
         .navigationBarTitleDisplayMode(.inline)

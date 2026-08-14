@@ -92,6 +92,10 @@ final class UserRegistrationVM: UserRegistrationViewModel, ObservableObject {
     
     let rootCoordinator: any GlacierRootCoordinator
     let authenticationService: GlacierAuthenticationService
+    private let postAuthenticationBootstrap: @MainActor () async -> Void
+    private let registrationProgressChanged: @MainActor (Bool) -> Void
+    private let pendingCredentialStore: PendingSignupCredentialAccess
+    private var isRegistrationProgressPresented = false
     /// Prevents duplicate ConfirmSignUp submissions; see confirmAccount(userName:confirmationCode:).
     private var isConfirmationInProgress = false
     
@@ -103,6 +107,34 @@ final class UserRegistrationVM: UserRegistrationViewModel, ObservableObject {
     ) {
         self.rootCoordinator = rootCoodinator
         self.authenticationService = authenticationService
+        self.postAuthenticationBootstrap = {
+            // fetchAttributes creates the GlacierAccount DB record and installs
+            // the backend access token required by the subscription lookup.
+            await AWSAcctManager.sharedMgr().fetchAttributes()
+            await GlacierApplicationDelegate.appDelegate.resolveSubscriptionStatus()
+        }
+        self.registrationProgressChanged = { _ in }
+        self.pendingCredentialStore = .keychain
+    }
+
+    /// Injectable for tests so registration routing can be held until account
+    /// hydration and backend subscription reconciliation have both completed.
+    /// `pendingCredentialStore` is also injectable because the real store uses a
+    /// shared-access-group Keychain that is unavailable under the unit-test run
+    /// (`CODE_SIGNING_ALLOWED=NO` applies no entitlements), so tests supply an
+    /// in-memory implementation instead.
+    init(
+        rootCoodinator: any GlacierRootCoordinator,
+        authenticationService: GlacierAuthenticationService,
+        postAuthenticationBootstrap: @escaping @MainActor () async -> Void,
+        registrationProgressChanged: @escaping @MainActor (Bool) -> Void = { _ in },
+        pendingCredentialStore: PendingSignupCredentialAccess = .keychain
+    ) {
+        self.rootCoordinator = rootCoodinator
+        self.authenticationService = authenticationService
+        self.postAuthenticationBootstrap = postAuthenticationBootstrap
+        self.registrationProgressChanged = registrationProgressChanged
+        self.pendingCredentialStore = pendingCredentialStore
     }
     
     // MARK: - Public methods
@@ -134,9 +166,11 @@ final class UserRegistrationVM: UserRegistrationViewModel, ObservableObject {
                 comment: "User registation screen account creation failure"
             )
             
+            presentRegistrationProgress()
             do {
                 let result = try await authenticationService.signIn(with: authProvider)
                 guard let authResult = result, authResult.isSignedIn else {
+                    dismissRegistrationProgress()
                     presentAlertWith(title: .errorText, description: errorDescription)
                     return
                 }
@@ -146,9 +180,12 @@ final class UserRegistrationVM: UserRegistrationViewModel, ObservableObject {
                 UserDefaultsService.shared.set(true, for: \.isUserLoggedIn)
                 UserDefaultsService.shared.set(authProvider.authProviderName, for: \.hostedUIProvider)
 
+                await postAuthenticationBootstrap()
+                dismissRegistrationProgress()
                 setRootScreen(.userOnboarding)
                 dismissSheet()
             } catch {
+                dismissRegistrationProgress()
                 if cognitoAuthError(from: error) == .userCancelled {
                     return
                 }
@@ -221,11 +258,10 @@ final class UserRegistrationVM: UserRegistrationViewModel, ObservableObject {
             )
             
             do {
-                presentProgressIndicator()
+                presentRegistrationProgress()
                 let result = try await authenticationService.confirmSignUp(for: userName, confirmationCode: confirmationCode)
-                dismissProgressIndicator()
-                
                 guard let authResult = result, authResult.isSignUpComplete else {
+                    dismissRegistrationProgress()
                     isConfirmationInProgress = false
                     presentAlertWith(title: .errorText, description: errorDescription)
                     return
@@ -236,7 +272,6 @@ final class UserRegistrationVM: UserRegistrationViewModel, ObservableObject {
                 
                 autoLoginUserAfterAccountConfirmation()
             } catch {
-                dismissProgressIndicator()
                 isConfirmationInProgress = false
                 
                 // ConfirmSignUp on an account that is already CONFIRMED throws
@@ -249,6 +284,8 @@ final class UserRegistrationVM: UserRegistrationViewModel, ObservableObject {
                     autoLoginUserAfterAccountConfirmation()
                     return
                 }
+
+                dismissRegistrationProgress()
                 
                 if cognitoAuthError(from: error) == .userCancelled {
                     return
@@ -281,11 +318,11 @@ final class UserRegistrationVM: UserRegistrationViewModel, ObservableObject {
             )
             
             do {
-                presentProgressIndicator()
+                presentRegistrationProgress()
                 let signupResult = try await authenticationService.createUserAccount(with: email, password: password)
-                dismissProgressIndicator()
                 
                 guard let result = signupResult else {
+                    dismissRegistrationProgress()
                     presentAlertWith(title: .errorText, description: errorDescription)
                     return
                 }
@@ -296,20 +333,38 @@ final class UserRegistrationVM: UserRegistrationViewModel, ObservableObject {
                     isUserAccountConfirmationPending = true
                  
                     UserDefaultsService.shared.set(email, for: \.userEmail)
-                    PendingSignupCredentialStore.save(password)
+                    pendingCredentialStore.save(password)
                     UserDefaultsService.shared.set(true, for: \.isUserAccountCreated)
                     UserDefaultsService.shared.set(false, for: \.isUserAccountConfirmed)
                     
+                    dismissRegistrationProgress()
                     setRootScreen(.userAccountConfirmation)
                     dismissSheet()
                 case .done:
+                    let signInResult = try? await authenticationService.signIn(
+                        with: email,
+                        password: password,
+                        flow: .passwordOnly
+                    )
+                    guard let signInResult, signInResult.isSignedIn else {
+                        dismissRegistrationProgress()
+                        routeToLoginAfterAccountConfirmation()
+                        return
+                    }
+
+                    UserDefaultsService.shared.set(true, for: \.isUserAccountCreated)
+                    UserDefaultsService.shared.set(true, for: \.isUserAccountConfirmed)
+                    UserDefaultsService.shared.set(true, for: \.isUserLoggedIn)
+                    await postAuthenticationBootstrap()
+                    dismissRegistrationProgress()
                     setRootScreen(.userOnboarding)
                     dismissSheet()
                 default:
+                    dismissRegistrationProgress()
                     break
                 }
             } catch let error as AuthError {
-                dismissProgressIndicator()
+                dismissRegistrationProgress()
                 guard let authError = error.underlyingError as? AWSCognitoAuthError else {
                     presentAlertWith(title: .errorText, description: errorDescription)
                     return
@@ -335,7 +390,7 @@ final class UserRegistrationVM: UserRegistrationViewModel, ObservableObject {
                     presentAlertWith(title: .errorText, description: errorDescription)
                 }
             } catch {
-                dismissProgressIndicator()
+                dismissRegistrationProgress()
                 presentAlertWith(title: .errorText, description: errorDescription)
             }
         }
@@ -344,19 +399,20 @@ final class UserRegistrationVM: UserRegistrationViewModel, ObservableObject {
     @MainActor
     private func autoLoginUserAfterAccountConfirmation() {
         guard let email: String = UserDefaultsService.shared.get(for: \.userEmail),
-              let password = PendingSignupCredentialStore.read(),
+              let password = pendingCredentialStore.read(),
               !password.isEmpty else {
             // No usable stored credentials (verification completed after a
             // relaunch, or the password was already cleared by a previous
             // login). The account is verified — send the user to log in
             // instead of returning silently.
+            dismissRegistrationProgress()
             routeToLoginAfterAccountConfirmation()
             return
         }
         
         Task {
             do {
-                presentProgressIndicator()
+                presentRegistrationProgress()
                 // A session from a previously used account can still exist on
                 // this device. `signIn` clears such a stale session itself (it
                 // recovers from Amplify's `.invalidState`), so no pre-sign-out is
@@ -370,18 +426,19 @@ final class UserRegistrationVM: UserRegistrationViewModel, ObservableObject {
                     password: password,
                     flow: .passwordOnly
                 )
-                dismissProgressIndicator()
-                
                 guard let result = signInResult, result.isSignedIn else {
+                    dismissRegistrationProgress()
                     routeToLoginAfterAccountConfirmation()
                     return
                 }
                 
-                PendingSignupCredentialStore.clear()
+                pendingCredentialStore.clear()
                 UserDefaultsService.shared.set(true, for: \.isUserLoggedIn)
+                await postAuthenticationBootstrap()
+                dismissRegistrationProgress()
                 setRootScreen(.userOnboarding)
             } catch {
-                dismissProgressIndicator()
+                dismissRegistrationProgress()
                 // The account IS confirmed at this point — only the automatic
                 // sign-in failed. Don't report it as a confirmation failure;
                 // let the user log in manually.
@@ -392,7 +449,7 @@ final class UserRegistrationVM: UserRegistrationViewModel, ObservableObject {
     
     @MainActor
     private func routeToLoginAfterAccountConfirmation() {
-        PendingSignupCredentialStore.clear()
+        pendingCredentialStore.clear()
         presentAlertWith(
             title: .successText,
             description: NSLocalizedString(
@@ -401,6 +458,22 @@ final class UserRegistrationVM: UserRegistrationViewModel, ObservableObject {
             )
         )
         setRootScreen(.userAuthentication)
+    }
+
+    @MainActor
+    private func presentRegistrationProgress() {
+        guard !isRegistrationProgressPresented else { return }
+        isRegistrationProgressPresented = true
+        presentProgressIndicator()
+        registrationProgressChanged(true)
+    }
+
+    @MainActor
+    private func dismissRegistrationProgress() {
+        guard isRegistrationProgressPresented else { return }
+        isRegistrationProgressPresented = false
+        dismissProgressIndicator()
+        registrationProgressChanged(false)
     }
     
     /// Amplify wraps Cognito service errors inside `AuthError.underlyingError`;
@@ -413,6 +486,29 @@ final class UserRegistrationVM: UserRegistrationViewModel, ObservableObject {
         }
         return error as? AWSCognitoAuthError
     }
+}
+
+/**
+ Indirection over `PendingSignupCredentialStore` used by `UserRegistrationVM`.
+
+ The production value (`.keychain`) forwards straight to the Keychain-backed store. Tests inject
+ an in-memory implementation instead: the real store uses a shared-access-group Keychain that
+ requires code-signing entitlements, and the unit-test run builds with `CODE_SIGNING_ALLOWED=NO`
+ (no entitlements), so a real `save`/`read` round-trip does not persist under test. Routing the
+ view model's save/read/clear through this seam lets the post-confirmation auto-login path be
+ exercised deterministically without a real Keychain.
+ */
+struct PendingSignupCredentialAccess: Sendable {
+    var save: @Sendable (String) -> Void
+    var read: @Sendable () -> String?
+    var clear: @Sendable () -> Void
+
+    /// Production implementation backed by the Keychain store.
+    static let keychain = PendingSignupCredentialAccess(
+        save: { PendingSignupCredentialStore.save($0) },
+        read: { PendingSignupCredentialStore.read() },
+        clear: { PendingSignupCredentialStore.clear() }
+    )
 }
 
 /**

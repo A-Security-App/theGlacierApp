@@ -416,6 +416,14 @@
 "'%@' is already added as a trusted network." = "'%@' is al toegevoegd als vertrouwd netwerk.";
 "Something went wrong while removing '%@' as a trusted network. Please try again." = "Er is iets misgegaan bij het verwijderen van '%@' als vertrouwd netwerk. Probeer het opnieuw.";
 
+"Add current network" = "Huidig netwerk toevoegen";
+"Enter network name" = "Netwerknaam invoeren";
+"Add the network you're on now, or enter a network name to trust." = "Voeg het netwerk toe waarmee je nu verbonden bent, of voer een netwerknaam in om te vertrouwen.";
+"Network name" = "Netwerknaam";
+"Type the Wi-Fi network name (SSID) you want to trust." = "Voer de naam van het wifi-netwerk (SSID) in dat je wilt vertrouwen.";
+"Please enter a network name." = "Voer een netwerknaam in.";
+"Next" = "Volgende";
+
 // MARK: - Widget Settings Screen
 
 "Widget" = "Widget";

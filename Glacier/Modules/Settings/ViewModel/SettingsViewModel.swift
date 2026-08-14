@@ -108,7 +108,7 @@ final class SettingsVM: SettingsViewModel, ObservableObject {
                             // For Hosted UI (Apple/Google) users, Amplify opens an ASWebAuthenticationSession
                             // for the Cognito sign-out; if that is cancelled or fails, we still clean up
                             // local state so the user always lands on the login screen.
-                            self.teardownVPNIfNeeded()
+                            self.teardownVPNAndDNS()
 
                             let service = AmplifyAuthenticationService()
                             _ = await service.signOut()
@@ -151,9 +151,10 @@ final class SettingsVM: SettingsViewModel, ObservableObject {
                             // since the local account record is cleared during cleanup.
                             let hasActiveSubscription = GlacierAccountModel.getGlacierAccount()?.hasActiveSubscription ?? false
 
-                            // Tear down the VPN before deleting so no tunnel keeps running
-                            // for an account that no longer exists.
-                            self.teardownVPNIfNeeded()
+                            // Tear down and remove the VPN + DoT DNS before deleting so no
+                            // tunnel keeps running and no DNS profile stays installed for an
+                            // account that no longer exists.
+                            self.teardownVPNAndDNS()
 
                             // Delete the account on the Glacier backend. The backend
                             // deletes the Cognito user *and* performs the associated
@@ -346,12 +347,20 @@ final class SettingsVM: SettingsViewModel, ObservableObject {
         shouldShowResetPasswordOption = UserDefaultsService.shared.get(for: \.hostedUIProvider) as String? == nil
     }
     
-    private func teardownVPNIfNeeded() {
-        guard let tunnelMgr = WireGuardManager.shared().tunnelsManager,
-              let tunnel = tunnelMgr.tunnelInOperation() else { return }
-        tunnelMgr.setOnDemandEnabled(false, on: tunnel) { _ in
-            tunnelMgr.startDeactivation(of: tunnel)
-        }
+    /// Turns off *and* fully removes both the VPN tunnel and the DoT DNS profile
+    /// from the device. Used on manual sign-out and account deletion so a
+    /// signed-out (or deleted) account never leaves a tunnel running or a
+    /// system-wide DoT resolver installed — matching what an uninstall does.
+    ///
+    /// Removing an NE profile both stops it and deletes it from system
+    /// preferences, and neither removal requires a user permission prompt
+    /// (only *adding* a profile does). We first signal the live tunnel to stop
+    /// so the data path drops promptly even if profile removal lags, then remove
+    /// the tunnel and DoT profiles.
+    private func teardownVPNAndDNS() {
+        WireGuardManager.shared().turnOffCore()
+        WireGuardManager.shared().removeAllTunnels()
+        DnsOverTlsController.shared.removeDoTProfile()
     }
 
     private func removeUserAddedPhoneNumbersFromDB() {

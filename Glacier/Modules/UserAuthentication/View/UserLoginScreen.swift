@@ -224,7 +224,20 @@ struct UserLoginScreen<ViewModel: UserLoginViewModel & ObservableObject, Coordin
                     }
                 }
                 .onTapGesture {
-                    isVerificationCodeFieldFocused = true
+                    // iPad's number pad has a hide-keyboard key that dismisses the
+                    // keyboard while @FocusState stays true; setting it true again is
+                    // then a no-op and the pad never comes back, leaving the user
+                    // stuck. Bounce focus (false → true next runloop) so SwiftUI
+                    // re-presents it. iPhone's number pad has no such key, so that
+                    // path is left exactly as before.
+                    if isVerificationCodeFieldFocused, UIDevice.current.userInterfaceIdiom == .pad {
+                        isVerificationCodeFieldFocused = false
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                            isVerificationCodeFieldFocused = true
+                        }
+                    } else {
+                        isVerificationCodeFieldFocused = true
+                    }
                 }
             }
 
@@ -259,6 +272,18 @@ struct UserLoginScreen<ViewModel: UserLoginViewModel & ObservableObject, Coordin
             if !isAwaiting {
                 verificationCode = ""
             }
+        }
+        // Auto-fill from the login email's button. This section is only mounted
+        // while a sign-in is parked on the code step, so the emailed code has a
+        // live Cognito session to answer. Writing `verificationCode` reuses the
+        // field's existing filter + auto-submit, so the button and manual typing
+        // run the exact same path — no separate submit, no double submit.
+        .onReceive(NotificationCenter.default.publisher(for: .loginCodeLinkClicked)) { notification in
+            guard viewModel.isAwaitingVerificationCode,
+                  let code = notification.userInfo?[GlacierNotificationProperties.confirmationCode] as? String else {
+                return
+            }
+            verificationCode = String(code.filter { $0.isNumber }.prefix(6))
         }
     }
 

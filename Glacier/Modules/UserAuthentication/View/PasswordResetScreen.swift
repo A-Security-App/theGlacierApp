@@ -213,7 +213,20 @@ struct PasswordResetScreen<ViewModel: PasswordResetViewModel & ObservableObject,
                     }
                 }
                 .onTapGesture {
-                    isOTPFieldFocused = true
+                    // iPad's number pad has a hide-keyboard key that dismisses the
+                    // keyboard while @FocusState stays true; re-setting it true is a
+                    // no-op and the pad never returns, leaving the user stuck. Bounce
+                    // focus (false → true next runloop) so SwiftUI re-presents it.
+                    // iPhone has no hide key, so its path is unchanged. Mirrors the
+                    // fix in UserLoginScreen.
+                    if isOTPFieldFocused, UIDevice.current.userInterfaceIdiom == .pad {
+                        isOTPFieldFocused = false
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                            isOTPFieldFocused = true
+                        }
+                    } else {
+                        isOTPFieldFocused = true
+                    }
                 }
             }
 

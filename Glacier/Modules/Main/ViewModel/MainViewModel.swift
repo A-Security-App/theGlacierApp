@@ -229,6 +229,12 @@ final class MainVM: MainViewModel, ObservableObject {
             return
         }
 
+        let isIncoming = userInfo[GlacierNotificationProperties.isIncomingCall] as? Bool ?? false
+        guard isIncoming || !CallManager.isEmergencyNumber(phoneNumber) else {
+            presentEmergencyServicesUnavailableAlert()
+            return
+        }
+
         var phoneContact: PhoneContact? = ContactsManager.shared.matchContact(for: phoneNumber)
         if phoneContact == nil {
             phoneContact = PhoneContact(
@@ -243,7 +249,6 @@ final class MainVM: MainViewModel, ObservableObject {
             return
         }
 
-        let isIncoming = userInfo[GlacierNotificationProperties.isIncomingCall] as? Bool ?? false
         phoneVM.setIsIncomingCall(isIncoming)
         phoneVM.setPhoneContact(contact)
         presentScreen(.phoneCall(phoneVM))

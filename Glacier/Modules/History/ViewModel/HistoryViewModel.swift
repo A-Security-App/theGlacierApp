@@ -89,6 +89,10 @@ final class HistoryVM: HistoryViewModel, ObservableObject, PhoneNumberMenuCoordi
         hidePhoneNumberMenu()
         
         guard !phoneNumber.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+        guard !CallManager.isEmergencyNumber(phoneNumber) else {
+            presentEmergencyServicesUnavailableAlert()
+            return
+        }
         let popupConfiguration = PopupConfiguration(
             title: nil,
             description: NSLocalizedString("Start call?", comment: "Phone screen call confirmation prompt description"),
