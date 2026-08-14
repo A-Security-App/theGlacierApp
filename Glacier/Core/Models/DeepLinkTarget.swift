@@ -14,6 +14,10 @@ import Foundation
 enum DeepLinkTarget: Equatable {
     case openSecurityApp(userName: String, confirmationCode: String)
     case resetSecurityApp(confirmationCode: String)
+    /// Regular-login email code. Carries only the code: it answers the pending
+    /// Cognito custom-auth session that already knows the user, so no username is
+    /// needed (or wanted) in the link.
+    case loginSecurityApp(confirmationCode: String)
     /// Legacy iOS 16 widget button: glacierapp://vpn/toggle
     case vpnToggle
     /// Widget button — disconnect whatever is currently active: glacierapp://widget/disconnect
@@ -53,6 +57,11 @@ enum DeepLinkTarget: Equatable {
                 return nil
             }
             return .resetSecurityApp(confirmationCode: confirmationCode)
+        case DeepLinkPath.loginSecurityApp.value:
+            guard let confirmationCode = queryItems?.first(where: { $0.name == DeepLinkProperties.code.value })?.value else {
+                return nil
+            }
+            return .loginSecurityApp(confirmationCode: confirmationCode)
         default:
             return nil
         }
@@ -65,11 +74,13 @@ enum DeepLinkTarget: Equatable {
 enum DeepLinkPath: String {
     case openSecurityApp
     case resetSecurityApp
-    
+    case loginSecurityApp
+
     var value: String {
         switch self {
         case .openSecurityApp: return "/open-securityapp"
         case .resetSecurityApp: return "/reset-securityapp"
+        case .loginSecurityApp: return "/login-securityapp"
         }
     }
 }

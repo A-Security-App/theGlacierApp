@@ -81,6 +81,7 @@ struct NotificationSettingsScreen<ViewModel: NotificationSettingsViewModel & Obs
         .presentationDetents([.fraction(0.75), .large])
         .onAppear {
             descriptionTextColor = glacierColorScheme.activeScheme == .light ? .grey60 : .grey40
+            viewModel.refreshFromBackend()
         }
         .onChange(of: glacierColorScheme.activeScheme) { colorScheme in
             descriptionTextColor = colorScheme == .light ? .grey60 : .grey40

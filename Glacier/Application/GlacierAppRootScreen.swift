@@ -79,6 +79,10 @@ struct GlacierAppRootScreen: View {
     /// Set to `true` when `.glacierBaseSubscriptionLapsed` fires while the user is on the main
     /// screen.  Presents a non-dismissible paywall cover until the subscription is restored.
     @State private var showSubscriptionLapsedPaywall = false
+    /// Set to `true` when the base-subscription grace nag's "Renew now" button is tapped. Presents a
+    /// *dismissible* paywall so the user can back out and keep using the app while protection is
+    /// still preserved during the grace window.
+    @State private var showGraceRenewPaywall = false
     /// Guards the one-time background subscription check so it only runs once per launch even if
     /// .userAuthenticationVerified is re-posted (e.g. by MainVM when no account record exists).
     @State private var subscriptionCheckStarted = false
@@ -261,16 +265,29 @@ struct GlacierAppRootScreen: View {
                 let updatedAccount = GlacierAccountModel.getGlacierAccount()
                 let hasSubscription = updatedAccount?.hasActiveSubscription == true
 
-                if !hasSubscription && hadLiveBackendResponse {
-                    // Lapse confirmed by a live backend response — stop VPN and show paywall.
-                    WireGuardManager.shared().turnOffCore()
-                    showSubscriptionLapsedPaywall = true
-                } else if !hasSubscription {
-                    // Network unavailable (e.g. WireGuard tunnel mid-reconnect) — cannot
-                    // distinguish a genuine lapse from a transient outage. Give benefit of the
-                    // doubt so refreshBackendSubscription() sees wasSubscribed=true on the next
-                    // foreground and can detect a genuine lapse if one exists.
-                    updatedAccount?.hasActiveSubscription = true
+                if !hasSubscription {
+                    // Route the launch reading through the base-subscription grace handler. It never
+                    // *starts* a grace window at cold start (there is no reliable in-session
+                    // "was subscribed" signal here) — it only continues one that a prior foreground
+                    // opened, and otherwise enforces. `hadLiveBackendResponse` here is already the
+                    // combined confirmed flag (live backend AND definitive StoreKit) returned by
+                    // resolveSubscriptionStatus().
+                    switch BaseSubscriptionLifecycleHandler.shared.launchDecision(isConfirmedReading: hadLiveBackendResponse) {
+                    case .grace:
+                        // An active grace window is open — preserve protection (VPN/DoT keep running).
+                        updatedAccount?.hasActiveSubscription = true
+                    case .enforce:
+                        // Confirmed lapse, no grace owed. The handler already disabled DoT + cleared
+                        // widget status; stop the VPN and show the non-dismissible paywall.
+                        WireGuardManager.shared().turnOffCore()
+                        showSubscriptionLapsedPaywall = true
+                    case .inconclusive:
+                        // Network unavailable (e.g. WireGuard tunnel mid-reconnect) — cannot
+                        // distinguish a genuine lapse from a transient outage. Give benefit of the
+                        // doubt so refreshBackendSubscription() sees wasSubscribed=true on the next
+                        // foreground and can detect a genuine lapse if one exists.
+                        updatedAccount?.hasActiveSubscription = true
+                    }
                 }
             }
         }
@@ -298,11 +315,20 @@ struct GlacierAppRootScreen: View {
                 showSubscriptionLapsedPaywall = true
             //}
         }
+        // Present a dismissible renew paywall when the grace nag's "Renew now" is tapped.
+        .onReceive(NotificationCenter.default.publisher(for: .glacierPresentRenewPaywall)) { _ in
+            guard isUserAuthenticationVerified else { return }
+            showGraceRenewPaywall = true
+        }
         // Dismiss the lapse paywall once the user successfully restores their subscription.
         // We are always on .main when the lapse paywall is shown (navigated there immediately
         // at startup before the background subscription check), so no screen transition needed.
+        // Also clear any base-subscription grace window and re-enable DoT if enforcement had
+        // disabled it, so restoring returns the user to their prior protection.
         .onReceive(NotificationCenter.default.publisher(for: .glacierPlanPurchaseSuccessful)) { _ in
             showSubscriptionLapsedPaywall = false
+            showGraceRenewPaywall = false
+            BaseSubscriptionLifecycleHandler.shared.handleSubscriptionRestored()
         }
         .fullScreenCover(isPresented: $showSubscriptionLapsedPaywall) {
             let viewModel = GlacierPlanPurchaseVM(
@@ -310,6 +336,24 @@ struct GlacierAppRootScreen: View {
                 service: SKGlacierPlanPurchaseService()
             )
             GlacierPlanPurchaseScreen(viewModel: viewModel, isLapsePaywall: true)
+        }
+        .fullScreenCover(isPresented: $showGraceRenewPaywall) {
+            let viewModel = GlacierPlanPurchaseVM(
+                rootCoodinator: glacierAppCoordinator,
+                service: SKGlacierPlanPurchaseService()
+            )
+            // Dismissible (isLapsePaywall: false) — the user is still within the grace window and
+            // protection is intact, so they may close this and continue using the app. isGraceRenewal
+            // keeps it from recording onboarding progress (which would re-enter purchase on next login).
+            GlacierPlanPurchaseScreen(viewModel: viewModel, isLapsePaywall: false, isGraceRenewal: true)
+        }
+        // Keep the grace nag from popping up over a renew/lapse paywall (e.g. when
+        // applicationDidBecomeActive fires as the StoreKit purchase sheet dismisses mid-renewal).
+        .onChange(of: showGraceRenewPaywall) { _ in
+            BaseSubscriptionLifecycleHandler.shared.setPaywallPresented(showGraceRenewPaywall || showSubscriptionLapsedPaywall)
+        }
+        .onChange(of: showSubscriptionLapsedPaywall) { _ in
+            BaseSubscriptionLifecycleHandler.shared.setPaywallPresented(showGraceRenewPaywall || showSubscriptionLapsedPaywall)
         }
         //.fullScreenCover(isPresented: $showPilotEndedScreen) {
         //    PilotEndedScreen()

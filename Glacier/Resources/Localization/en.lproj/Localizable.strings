@@ -416,6 +416,14 @@
 "'%@' is already added as a trusted network." = "'%@' is already added as a trusted network.";
 "Something went wrong while removing '%@' as a trusted network. Please try again." = "Something went wrong while removing '%@' as a trusted network. Please try again.";
 
+"Add current network" = "Add current network";
+"Enter network name" = "Enter network name";
+"Add the network you're on now, or enter a network name to trust." = "Add the network you're on now, or enter a network name to trust.";
+"Network name" = "Network name";
+"Type the Wi-Fi network name (SSID) you want to trust." = "Type the Wi-Fi network name (SSID) you want to trust.";
+"Please enter a network name." = "Please enter a network name.";
+"Next" = "Next";
+
 // MARK: - Widget Settings Screen
 
 "Widget" = "Widget";

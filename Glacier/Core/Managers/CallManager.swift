@@ -34,8 +34,20 @@ public enum SpeakerChoice : UInt {
  */
 public class CallManager : NSObject {
     private static let shared = CallManager()
+    private static let emergencyNumber = "911"
     
     public static let CallManagerErrorDomain = "CallManagerErrorDomain"
+
+    static var emergencyServicesUnavailableMessage: String {
+        NSLocalizedString(
+            "Emergency Services are not available through Glacier.",
+            comment: "Emergency services unavailable warning"
+        )
+    }
+
+    static func isEmergencyNumber(_ phoneNumber: String) -> Bool {
+        cleanPhoneNumber(phoneNumber) == emergencyNumber
+    }
 
     let kCachedDeviceToken = "CachedDeviceToken"
     let kCachedBindingDate = "CachedBindingDate"
@@ -177,6 +189,10 @@ public class CallManager : NSObject {
     }
     
     func makeVoiceCall(_ contact:PhoneContact) {//receiver: String, name: String) {
+        guard !Self.isEmergencyNumber(contact.phoneNumber) else {
+            Log.calls.warning("Call blocked: emergency services are unavailable")
+            return
+        }
         guard !SecurityCenter.isProxyDetected else {
             Log.calls.warning("Call blocked: proxy detected")
             return
@@ -278,6 +294,7 @@ public class CallManager : NSObject {
     static func formatDialString(_ phoneNumber: String) -> String? {
         let trimmed = phoneNumber.trimmingCharacters(in: .whitespacesAndNewlines)
         guard trimmed.isEmpty == false else { return nil }
+        guard !isEmergencyNumber(trimmed) else { return nil }
 
         if trimmed.hasPrefix("+") {
             let digitsOnly = trimmed.replacingOccurrences(of: "[^0-9]", with: "", options: .regularExpression)
@@ -662,6 +679,12 @@ extension CallManager {
     
     func performMakeVoiceCall(uuid: UUID, contact: PhoneContact, completionHandler: @escaping (Bool) -> Void) {
         //Log.calls.notice("Placing call to=\(self.currentCall?.receiver ?? "nil") from=\(self.currentCall?.caller ?? "EMPTY")")
+        guard let receiver = self.currentCall?.receiver,
+              !Self.isEmergencyNumber(receiver) else {
+            Log.calls.warning("Twilio call blocked: emergency services are unavailable")
+            completionHandler(false)
+            return
+        }
         guard let accessToken = self.callToken else {
             completionHandler(false)
             return
@@ -670,7 +693,7 @@ extension CallManager {
         callKitCompletionCallback = completionHandler
 
         let connectOptions = ConnectOptions(accessToken: accessToken) { builder in
-            builder.params = ["to": self.currentCall?.receiver ?? "",
+            builder.params = ["to": receiver,
                               "from": self.currentCall?.caller ?? ""]
             builder.uuid = uuid
         }

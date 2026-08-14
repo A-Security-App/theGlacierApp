@@ -190,6 +190,7 @@ public class GlacierApplicationDelegate: UIResponder, UIApplicationDelegate {
         GlacierApplicationDelegate.setLastInteractionDate(Date())
         batteryStateDidChange(nil)
         PhoneSubscriptionLifecycleHandler.shared.handleAppDidBecomeActive()
+        BaseSubscriptionLifecycleHandler.shared.handleAppDidBecomeActive()
         didReceiveWillEnterForeground = false
         enteringForeground = false
     }

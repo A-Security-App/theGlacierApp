@@ -110,6 +110,10 @@ final class ContactsVM: ContactsViewModel, ObservableObject, PhoneNumberMenuCoor
     
     func startCall(with contact: PhoneContact) {
         hidePhoneNumberMenu()
+        guard !CallManager.isEmergencyNumber(contact.phoneNumber) else {
+            presentEmergencyServicesUnavailableAlert()
+            return
+        }
         let userPhoneNumbers = TwilioBackendManager.sharedMgr().getExistingAccounts()
         guard !userPhoneNumbers.isEmpty else {
             presentAlertForAddingPhoneNumber()

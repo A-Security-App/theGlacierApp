@@ -32,6 +32,9 @@ struct WifiSetupScreen<ViewModel: WifiSetupViewModel>: View {
                 .ignoresSafeArea()
 
             VStack(alignment: .leading, spacing: 20) {
+                Button {
+                    viewModel.addCurrentWifiAsTrusted()
+                } label: {
                 GlacierViewContainer(shouldReverseColor: true, darkColor: .grey95, lightColor: .white) {
                     VStack(alignment: .leading, spacing: 16) {
                         GlacierLabel(
@@ -67,10 +70,14 @@ struct WifiSetupScreen<ViewModel: WifiSetupViewModel>: View {
                             GlacierImageButton(name: "right-arrow-icon", imageWidth: 16, imageHeight: 16, backgroundOpacity: 0, shouldReverseColor: true) {
                                 viewModel.addCurrentWifiAsTrusted()
                             }
+                            .allowsHitTesting(false)
                         }
                         .opacity(visibleIndices.contains(2) ? 1 : 0)
                     }
                 }
+                }
+                .buttonStyle(.plain)
+                .contentShape(Rectangle())
                 .padding(.top, 40)
 
                 GlacierButton(style: .tertiary, title: NSLocalizedString("Skip for Now", comment: "Skip button title")) {

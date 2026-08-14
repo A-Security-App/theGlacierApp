@@ -156,6 +156,13 @@ extension GlacierViewModelWithRootCoordinator {
         )
         appRootCoordinator.presentPopup(with: popupConfiguration)
     }
+
+    func presentEmergencyServicesUnavailableAlert() {
+        presentAlertWith(
+            title: nil,
+            description: CallManager.emergencyServicesUnavailableMessage
+        )
+    }
     
     func presentProgressIndicator() {
         guard let appRootCoordinator = rootCoordinator as? GlacierAppRootCoordinator else {

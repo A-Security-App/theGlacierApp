@@ -414,3 +414,10 @@
 "Trust Network" = "Faire confiance au réseau";
 "'%@' is already added as a trusted network." = "'%@' est déjà ajouté comme réseau de confiance.";
 "Something went wrong while removing '%@' as a trusted network. Please try again." = "Une erreur s'est produite lors de la suppression de '%@' comme réseau de confiance. Veuillez réessayer.";
+"Add current network" = "Ajouter le réseau actuel";
+"Enter network name" = "Saisir le nom du réseau";
+"Add the network you're on now, or enter a network name to trust." = "Ajoutez le réseau auquel vous êtes connecté, ou saisissez le nom d'un réseau à approuver.";
+"Network name" = "Nom du réseau";
+"Type the Wi-Fi network name (SSID) you want to trust." = "Saisissez le nom du réseau Wi-Fi (SSID) que vous souhaitez approuver.";
+"Please enter a network name." = "Veuillez saisir un nom de réseau.";
+"Next" = "Suivant";

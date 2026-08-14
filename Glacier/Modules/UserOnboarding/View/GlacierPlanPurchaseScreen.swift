@@ -28,12 +28,18 @@ struct GlacierPlanPurchaseScreen<ViewModel: GlacierPlanPurchaseViewModel & Obser
     /// The close button and the onboarding-progress UserDefaults write are suppressed so that
     /// the user must subscribe (or restore) to dismiss the paywall.
     private let isLapsePaywall: Bool
+    /// When `true` the screen is shown mid-session from the base-subscription *grace* nag. It is
+    /// dismissible (the user is still within the grace window and protection is intact), but like the
+    /// lapse paywall it must NOT record onboarding progress — otherwise the onboarding coordinator
+    /// would re-enter the purchase screen on the next login.
+    private let isGraceRenewal: Bool
 
     // MARK: - Initializer
 
-    init(viewModel: ViewModel, isLapsePaywall: Bool = false) {
+    init(viewModel: ViewModel, isLapsePaywall: Bool = false, isGraceRenewal: Bool = false) {
         self._viewModel = StateObject(wrappedValue: viewModel)
         self.isLapsePaywall = isLapsePaywall
+        self.isGraceRenewal = isGraceRenewal
     }
     
     // MARK: - UI/UX
@@ -148,10 +154,11 @@ struct GlacierPlanPurchaseScreen<ViewModel: GlacierPlanPurchaseViewModel & Obser
                 }
             }
             .onFirstAppear {
-                if !isLapsePaywall {
+                if !isLapsePaywall && !isGraceRenewal {
                     // Only track onboarding progress during the initial onboarding flow.
-                    // When shown as the lapse paywall (mid-session), skip this write so that
-                    // UserOnboardingCoordinator does not re-enter the purchase screen on next login.
+                    // When shown mid-session (lapse paywall or grace-renewal paywall), skip this
+                    // write so that UserOnboardingCoordinator does not re-enter the purchase screen
+                    // on the next login.
                     UserDefaultsService.shared.set(Sheet.glacierPlanPurchase.name, for: \.inProgressUserOnboardingScreen)
                 }
                 viewModel.loadAvailablePlans()

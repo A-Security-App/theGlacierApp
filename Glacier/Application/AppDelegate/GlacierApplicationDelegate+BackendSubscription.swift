@@ -69,10 +69,19 @@ extension GlacierApplicationDelegate {
             // value does not prevent lapse detection. Skip when a purchase just completed —
             // the purchase notification already set the flag correctly, and a redundant StoreKit
             // re-check here can race against currentEntitlements propagation and clear it.
+            // Capture the base plan's definitiveness (was the entitlement enumeration a real result,
+            // or a 5-second timeout?). Base-plan expiration enforcement / teardown must never act off
+            // a timeout — for an IAP-only subscriber the backend always returns subscribed=false, so
+            // StoreKit is the only real signal. Previously this bool was discarded for the base plan.
+            var baseStoreKitWasDefinitive = false
             if !justPurchased {
                 account?.hasActiveSubscription = false
                 let basePlanService = SKGlacierPlanPurchaseService()
-                await basePlanService.refreshEntitlements()
+                baseStoreKitWasDefinitive = await basePlanService.refreshEntitlements()
+            } else {
+                // A purchase just completed this session — the verified transaction is authoritative,
+                // so treat the base StoreKit read as definitively confirmed for this cycle.
+                baseStoreKitWasDefinitive = true
             }
 
             // Mirror the same pattern for the phone plan. Apple StoreKit is the authoritative
@@ -80,10 +89,13 @@ extension GlacierApplicationDelegate {
             // subscription status), so we must re-check it here the same way we re-check the
             // base plan — otherwise a stale `true` from a prior session persists indefinitely
             // and a lapsed phone subscription is never detected on foreground transitions.
+            // Capture the phone plan's definitiveness (was the entitlement enumeration a real
+            // result, or a 5-second timeout?). A downgrade must never be acted on off a timeout.
+            var phoneStoreKitWasDefinitive = false
             if !phoneJustPurchased {
                 account?.hasActivePhoneNumberSubscription = false
                 let phonePlanService = SKGlacierPhoneNumberPlanPurchaseService()
-                await phonePlanService.refreshEntitlements()
+                phoneStoreKitWasDefinitive = await phonePlanService.refreshEntitlements()
             }
 
             let hadLiveBackendResponse = await queryAndApplyBackendSubscription()
@@ -103,14 +115,48 @@ extension GlacierApplicationDelegate {
             // fire destructive actions (tunnel removal, phone number release) against an active
             // subscriber who simply had a bad network moment.
             let isNowSubscribed = account?.hasActiveSubscription == true
-            Log.general.notice("[BackendSubscription] refreshBackendSubscription: isNowSubscribed=\(isNowSubscribed) hadLiveBackendResponse=\(hadLiveBackendResponse)")
-            if wasSubscribed && !isNowSubscribed && !justPurchased && !phoneJustPurchased && hadLiveBackendResponse {
-                Log.general.notice("[BackendSubscription] refreshBackendSubscription: posting glacierBaseSubscriptionLapsed")
-                DispatchQueue.main.async {
-                    NotificationCenter.default.post(name: .glacierBaseSubscriptionLapsed, object: nil)
+            // A base-plan reading is only "confirmed" when BOTH the backend gave a live response AND
+            // StoreKit gave a definitive (non-timeout) answer. Either gap means we cannot declare a
+            // lapse: for an IAP-only subscriber the backend always returns subscribed=false, so a live
+            // backend response alone carries no signal, and a StoreKit timeout is indistinguishable
+            // from a confirmed-empty result.
+            let baseReadingConfirmed = hadLiveBackendResponse && baseStoreKitWasDefinitive
+            Log.general.notice("[BackendSubscription] refreshBackendSubscription: isNowSubscribed=\(isNowSubscribed) hadLiveBackendResponse=\(hadLiveBackendResponse) baseStoreKitWasDefinitive=\(baseStoreKitWasDefinitive)")
+            // Gate only on the BASE just-purchased flag. The phone plan is an independent
+            // subscription: a phone-plan purchase/renewal (which in sandbox auto-renews every few
+            // minutes and re-arms phoneJustPurchased) must not suppress base-plan lapse detection —
+            // doing so left an expired base subscription with no grace nag / paywall while the phone
+            // plan was active.
+            if wasSubscribed && !isNowSubscribed && !justPurchased {
+                if baseReadingConfirmed {
+                    // Confirmed expiration. Route through the grace handler (Model A + short grace):
+                    // it preserves protection (VPN/DoT) during the grace window and only tears down +
+                    // paywalls once the window elapses.
+                    switch BaseSubscriptionLifecycleHandler.shared.evaluateExpiration() {
+                    case .grace:
+                        // Preserve protection while the grace window is open.
+                        account?.hasActiveSubscription = true
+                        Log.general.notice("[BackendSubscription] base expiry within grace — protection preserved")
+                    case .enforce:
+                        // Handler already disabled DoT + cleared widget status; stop VPN + show paywall.
+                        Log.general.notice("[BackendSubscription] base grace elapsed — posting glacierBaseSubscriptionLapsed")
+                        DispatchQueue.main.async {
+                            NotificationCenter.default.post(name: .glacierBaseSubscriptionLapsed, object: nil)
+                        }
+                    case .inconclusive:
+                        // Unreachable while baseReadingConfirmed == true; stay safe with benefit of doubt.
+                        account?.hasActiveSubscription = true
+                    }
+                } else {
+                    // Not a confirmed reading (StoreKit timeout / cached backend). Never act on a blip:
+                    // give benefit of the doubt so a genuine lapse is caught on the next confirmed cycle.
+                    account?.hasActiveSubscription = true
+                    Log.general.notice("[BackendSubscription] base not-subscribed but reading unconfirmed — benefit of the doubt (hadLiveBackendResponse=\(hadLiveBackendResponse) baseStoreKitWasDefinitive=\(baseStoreKitWasDefinitive))")
                 }
-            } else if !isNowSubscribed {
-                Log.general.notice("[BackendSubscription] refreshBackendSubscription: not subscribed but lapse notification suppressed (wasSubscribed=\(wasSubscribed) justPurchased=\(justPurchased) phoneJustPurchased=\(phoneJustPurchased) hadLiveBackendResponse=\(hadLiveBackendResponse))")
+            } else if isNowSubscribed && baseReadingConfirmed {
+                // Confirmed still-subscribed (renewed, or Apple billing grace recovered): clear any
+                // open grace window and re-enable DoT if a prior enforcement had disabled it.
+                BaseSubscriptionLifecycleHandler.shared.handleSubscriptionActive()
             }
 
             // Detect phone plan active → inactive transition and notify SubscriptionAccessCoordinator.
@@ -120,6 +166,21 @@ extension GlacierApplicationDelegate {
             let phoneIsNowSubscribed = account?.hasActivePhoneNumberSubscription == true
             if phoneWasSubscribed && !phoneIsNowSubscribed && !phoneJustPurchased {
                 SubscriptionAccessCoordinator.shared.handleSubscriptionStatusChange(isSubscribed: false)
+            }
+
+            // Detect a *partial* downgrade: the user still holds a phone subscription (>= 1 line)
+            // but their tier dropped below the number of numbers they currently hold. Only act on
+            // a confirmed reading — a live backend response AND a definitive (non-timeout) StoreKit
+            // read, and not a just-completed purchase — so a transient network/timeout blip can
+            // never trigger number removal. The reconciled allowedNumbers is the max() of the Apple
+            // and backend tiers, so it only drops once *both* sources agree the tier is lower.
+            if phoneIsNowSubscribed {
+                let allowedNumbers = GlacierPhoneNumberSubscriptionPlan.activePlan?.maxPhoneNumbers ?? 1
+                let isConfirmedReading = hadLiveBackendResponse && phoneStoreKitWasDefinitive && !phoneJustPurchased
+                PhoneSubscriptionLifecycleHandler.shared.evaluatePhoneSubscriptionDowngrade(
+                    allowedNumbers: allowedNumbers,
+                    isConfirmedReading: isConfirmedReading
+                )
             }
         }
     }

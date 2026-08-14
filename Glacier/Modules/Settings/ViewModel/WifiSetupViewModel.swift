@@ -46,27 +46,26 @@ final class WifiSetupVM: NSObject, WifiSetupViewModel, ObservableObject {
     // MARK: - Public methods
 
     func addCurrentWifiAsTrusted() {
+        // Adapt the options to context: offer the current-network shortcut only
+        // when on Wi-Fi and that network isn't already trusted; otherwise (off
+        // Wi-Fi, SSID unavailable, or already trusted) go straight to manual
+        // entry so this step is still usable when we can't read the SSID.
         NEHotspotNetwork.fetchCurrent { [weak self] hotspotNetwork in
             guard let self else { return }
-            guard let network = hotspotNetwork else {
-                DispatchQueue.main.async {
-                    let isWifi = WifiSetupVM.isCurrentlyOnWiFi()
-                    let message = isWifi
-                        ? NSLocalizedString(
-                            "Something went wrong while fetching your network details. Please try again.",
-                            comment: "Wifi setup screen unable to fetch SSID"
-                          )
-                        : NSLocalizedString(
-                            "You are not currently using Wi-Fi and can try again later when connected to your Wi-Fi network.",
-                            comment: "Wifi setup screen not connected to Wi-Fi"
-                          )
-                    let title: String = isWifi ? .errorText : .wifiText
-                    self.presentAlertWith(title: title, description: message)
-                }
-                return
-            }
             DispatchQueue.main.async {
-                self.presentConfirmationPopup(for: network.ssid)
+                let currentSSID = hotspotNetwork?.ssid
+                let alreadyTrusted: Bool = {
+                    guard let currentSSID else { return false }
+                    return self.currentTrustedSSIDs().contains {
+                        $0.caseInsensitiveCompare(currentSSID) == .orderedSame
+                    }
+                }()
+
+                if let currentSSID, !alreadyTrusted {
+                    self.presentAddTrustedNetworkChooserPopup(currentSSID: currentSSID)
+                } else {
+                    self.presentManualSSIDEntryPopup()
+                }
             }
         }
     }
@@ -77,12 +76,99 @@ final class WifiSetupVM: NSObject, WifiSetupViewModel, ObservableObject {
 
     // MARK: - Private methods
 
-    private static func isCurrentlyOnWiFi() -> Bool {
-        let monitor = NWPathMonitor(requiredInterfaceType: .wifi)
-        monitor.start(queue: .global())
-        let onWiFi = monitor.currentPath.status == .satisfied
-        monitor.cancel()
-        return onWiFi
+    /// Returns the SSIDs already stored as trusted networks on the tunnel.
+    private func currentTrustedSSIDs() -> [String] {
+        guard let tunnelMgr = wireGuardManager.tunnelsManager,
+              let tunnel = tunnelMgr.tunnel(named: currentInstalledRegion) else {
+            return []
+        }
+        return ActivateOnDemandViewModel(tunnel: tunnel).selectedSSIDs
+    }
+
+    /// Chooser shown when the device is on a Wi-Fi network that isn't already
+    /// trusted: add the current network with one tap, or type a network name.
+    private func presentAddTrustedNetworkChooserPopup(currentSSID: String) {
+        let popupConfiguration = PopupConfiguration(
+            title: NSLocalizedString("Add trusted network", comment: "WiFi settings screen add trusted networks button title"),
+            description: NSLocalizedString(
+                "Add the network you're on now, or enter a network name to trust.",
+                comment: "Add trusted network chooser popup description"
+            ),
+            buttons: [
+                PopupButton(
+                    style: .primary,
+                    title: NSLocalizedString("Add current network", comment: "Add the currently connected Wi-Fi network button title"),
+                    onTap: {
+                        self.dismissPopup()
+                        self.presentConfirmationPopup(for: currentSSID)
+                    }
+                ),
+                PopupButton(
+                    style: .tertiary,
+                    title: NSLocalizedString("Enter network name", comment: "Manually enter a Wi-Fi network name button title"),
+                    onTap: {
+                        self.dismissPopup()
+                        self.presentManualSSIDEntryPopup()
+                    }
+                ),
+                PopupButton(
+                    style: .tertiary,
+                    title: NSLocalizedString("Cancel", comment: "Cancel button title"),
+                    onTap: {
+                        self.dismissPopup()
+                    }
+                )
+            ],
+            buttonsAlignment: .vertical
+        )
+        presentPopup(with: popupConfiguration)
+    }
+
+    /// Prompts the user to type an SSID, then routes the trimmed, non-empty
+    /// value into the same confirmation flow used for the current network.
+    private func presentManualSSIDEntryPopup() {
+        var enteredSSID = ""
+        let inputTextConfiguration = PopupInputTextConfiguration(
+            placeholder: NSLocalizedString("Network name", comment: "Manual SSID entry text field placeholder"),
+            onInputTextChange: { text in enteredSSID = text }
+        )
+        let popupConfiguration = PopupConfiguration(
+            title: NSLocalizedString("Enter network name", comment: "Manually enter a Wi-Fi network name button title"),
+            description: NSLocalizedString(
+                "Type the Wi-Fi network name (SSID) you want to trust.",
+                comment: "Manual SSID entry popup description"
+            ),
+            inputTextConfiguration: inputTextConfiguration,
+            buttons: [
+                PopupButton(
+                    style: .tertiary,
+                    title: NSLocalizedString("Cancel", comment: "Cancel button title"),
+                    onTap: {
+                        self.dismissPopup()
+                    }
+                ),
+                PopupButton(
+                    style: .primary,
+                    title: NSLocalizedString("Next", comment: "Continue to trusted-network confirmation button title"),
+                    onTap: {
+                        let ssid = enteredSSID.trimmingCharacters(in: .whitespacesAndNewlines)
+                        self.dismissPopup()
+                        guard !ssid.isEmpty else {
+                            self.presentAlertWith(
+                                title: nil,
+                                description: NSLocalizedString(
+                                    "Please enter a network name.",
+                                    comment: "Empty SSID validation message"
+                                )
+                            )
+                            return
+                        }
+                        self.presentConfirmationPopup(for: ssid)
+                    }
+                )
+            ]
+        )
+        presentPopup(with: popupConfiguration)
     }
 
     private func presentConfirmationPopup(for networkName: String) {
@@ -123,7 +209,11 @@ final class WifiSetupVM: NSObject, WifiSetupViewModel, ObservableObject {
         let model = ActivateOnDemandViewModel(tunnel: tunnel)
         model.isWiFiInterfaceEnabled = true
         model.ssidOption = .exceptSpecificSSIDs
-        model.selectedSSIDs = [networkName]
+        // Append (with dedup) rather than replace, so adding a second network
+        // doesn't overwrite one that was already trusted.
+        if !model.selectedSSIDs.contains(where: { $0.caseInsensitiveCompare(networkName) == .orderedSame }) {
+            model.selectedSSIDs.append(networkName)
+        }
 
         let onDemandOption = model.toOnDemandOption()
         tunnelMgr.modify(tunnel: tunnel, tunnelConfiguration: tunnelConfig, onDemandOption: onDemandOption) { [weak self] error in
