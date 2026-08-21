@@ -109,7 +109,23 @@ final class DNSSetupVM: DNSSetupViewModel {
                 self.dismissProgressIndicator()
             }
             
-            guard let profile = dnsProfile else { return }
+            // No profile available (the account isn't provisioned yet, or the fetch failed).
+            // `getDNSProfile` no longer substitutes the shared backup profile, because a device
+            // pinned to it never re-fetches and reports zero blocked trackers forever. Tell the
+            // user instead of silently leaving the step half-done: nothing is stored, and
+            // `didCompleteDNSSetupDuringOnboarding` stays unset so the step can be retried.
+            guard let profile = dnsProfile else {
+                DispatchQueue.main.async {
+                    self.presentAlertWith(
+                        title: .errorText,
+                        description: NSLocalizedString(
+                            "We couldn't finish setting up Secure DNS right now. Try again in a minute, or skip this step and turn it on later in Settings.",
+                            comment: "DNS setup screen missing DNS profile error"
+                        )
+                    )
+                }
+                return
+            }
             var finalProfile = profile
             if !profile.hasPrefix("tls://"), profile.contains(SecurityCenter.DNS_BACKUP) {
                 if let deviceID = self.getShortDeviceID(length: 12) {

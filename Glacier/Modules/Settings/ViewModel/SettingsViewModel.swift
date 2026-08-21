@@ -361,6 +361,11 @@ final class SettingsVM: SettingsViewModel, ObservableObject {
         WireGuardManager.shared().turnOffCore()
         WireGuardManager.shared().removeAllTunnels()
         DnsOverTlsController.shared.removeDoTProfile()
+        // The cached profile id belongs to the account that just signed out. Leaving it behind
+        // would let the next user's DNS fall back to — or be healed onto — someone else's
+        // profile, putting their queries in that account's logs.
+        UserDefaultsService.shared.remove(for: \.lastKnownDNSProfileID)
+        UserDefaultsService.shared.remove(for: \.lastDNSProfileHealAttempt)
     }
 
     private func removeUserAddedPhoneNumbersFromDB() {

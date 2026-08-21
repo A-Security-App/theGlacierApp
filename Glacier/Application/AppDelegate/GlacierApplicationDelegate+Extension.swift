@@ -12,6 +12,7 @@ import MBProgressHUD //ALF IOSM-498
 import GRDB
 import Amplify
 import AWSCognitoAuthPlugin
+import AWSPluginsCore
 import SwiftUI
 import IOSSecuritySuite
 public enum GlacierNotificationType {
@@ -44,11 +45,35 @@ extension GlacierNotificationType: RawRepresentable {
     public typealias RawValue = String
 }
 public extension GlacierApplicationDelegate {
-    // Guards the one-time posting of .userAuthenticationVerified at startup.
-    // Static so it persists for the process lifetime (setupAmplify runs once per launch).
-    // Internal (not private) so applicationWillEnterForeground in GlacierApplicationDelegate.swift
-    // can check whether auth was deferred during a background launch.
+    // Guards the one-time posting of an *authoritative* .userAuthenticationVerified at
+    // startup. Static so it persists for the process lifetime (setupAmplify runs once per
+    // launch). Internal (not private) so applicationWillEnterForeground in
+    // GlacierApplicationDelegate.swift can check whether auth was deferred during a
+    // background launch.
     static var authVerificationPosted = false
+    /// Guards the one-time posting of a *provisional* verdict — the launch watchdog and the
+    /// not-configured / proxy guards, which answer from cache so the splash can dismiss
+    /// without waiting on the network. Tracked separately from `authVerificationPosted` so a
+    /// guess never consumes the slot reserved for the real answer: before this split, a
+    /// watchdog firing during a stalled Cognito lookup locked the login screen in for the
+    /// whole launch and the correct result that arrived moments later was discarded.
+    static var provisionalVerdictPosted = false
+    /// `true` while a `tryFetchSession()` is running. Because a provisional post no longer
+    /// sets `authVerificationPosted`, `applicationWillEnterForeground` would otherwise start
+    /// a fresh session fetch on every foreground until an authoritative verdict lands —
+    /// stacking overlapping Cognito calls on exactly the bad networks where the first one is
+    /// still hung.
+    static var authFetchInFlight = false
+    /// `true` while a sign-in request is actually on the wire. Set by
+    /// `AmplifyAuthenticationService` around every Amplify sign-in / confirm-sign-in call. A
+    /// late authoritative verdict must not re-route the app out from under a submit. Written
+    /// from the sign-in task and read on the main actor, so access is lock-guarded.
+    static var isSignInInFlight: Bool {
+        get { signInFlightLock.withLock { _isSignInInFlight } }
+        set { signInFlightLock.withLock { _isSignInInFlight = newValue } }
+    }
+    private static var _isSignInInFlight = false
+    private static let signInFlightLock = NSLock()
     private static let authVerificationLock = NSLock()
 
     /// Set to `true` when the self-heal branch below writes `isUserLoggedIn` back
@@ -70,7 +95,7 @@ public extension GlacierApplicationDelegate {
         DispatchQueue.main.asyncAfter(deadline: .now() + 10.0) { [weak self] in
             guard let self = self else { return }
             let cached = UserDefaultsService.shared.get(for: \.isUserLoggedIn) ?? false
-            self.postAuthVerifiedOnce(signedIn: cached)
+            self.postAuthVerified(signedIn: cached, authoritative: false)
         }
         if UIApplication.shared.isProtectedDataAvailable {
             Task {
@@ -102,8 +127,26 @@ public extension GlacierApplicationDelegate {
         }
     }
     func tryFetchSession() async {
+        // Only one session fetch at a time. applicationWillEnterForeground re-runs this
+        // until an authoritative verdict is posted, so without this guard a user
+        // backgrounding and foregrounding on a stalled network would stack overlapping
+        // Cognito calls.
+        Self.authVerificationLock.lock()
+        if Self.authFetchInFlight {
+            Self.authVerificationLock.unlock()
+            Log.auth.debug("[GlacierAuth] tryFetchSession skipped — a session fetch is already in flight")
+            return
+        }
+        Self.authFetchInFlight = true
+        Self.authVerificationLock.unlock()
+        defer {
+            Self.authVerificationLock.lock()
+            Self.authFetchInFlight = false
+            Self.authVerificationLock.unlock()
+        }
+
         // presentLoginOnFailure: false — navigation is driven exclusively by the
-        // .userAuthenticationVerified notification via postAuthVerifiedOnce, not by
+        // .userAuthenticationVerified notification via postAuthVerified, not by
         // AWSAcctManager.login(). Safe today (login() is a no-op) and future-proofs
         // against login() being re-enabled while the watchdog is still pending.
         //
@@ -112,11 +155,17 @@ public extension GlacierApplicationDelegate {
         // Amplify.Auth.fetchAuthSession() without a configured Auth category triggers
         // Amplify's Fatal.preconditionFailure — the crash seen in build 134.
         guard amplifyIsConfigured else {
-            postAuthVerifiedOnce(signedIn: UserDefaultsService.shared.get(for: \.isUserLoggedIn) ?? false)
+            postAuthVerified(
+                signedIn: UserDefaultsService.shared.get(for: \.isUserLoggedIn) ?? false,
+                authoritative: false
+            )
             return
         }
         guard !SecurityCenter.isProxyDetected else {
-            postAuthVerifiedOnce(signedIn: UserDefaultsService.shared.get(for: \.isUserLoggedIn) ?? false)
+            postAuthVerified(
+                signedIn: UserDefaultsService.shared.get(for: \.isUserLoggedIn) ?? false,
+                authoritative: false
+            )
             return
         }
         // Snapshot local-install state BEFORE fetchCurrentAuthSession, which can
@@ -165,7 +214,7 @@ public extension GlacierApplicationDelegate {
                 AWSAcctManager.sharedMgr().updateUI(forSignInStatus: false)
                 UserDefaultsService.shared.remove(for: \.isUserLoggedIn)
                 UserDefaultsService.shared.set(true, for: \.hasCompletedFirstLaunch)
-                postAuthVerifiedOnce(signedIn: false)
+                postAuthVerified(signedIn: false, authoritative: true, canDowngrade: true)
                 return
             }
             // Trustworthy launch with either no session or a legitimate existing
@@ -200,13 +249,83 @@ public extension GlacierApplicationDelegate {
             let probeSkipPhoneSelection = UserDefaultsService.shared.get(for: \.didSkipPhoneNumberSelectionDuringOnboarding) ?? false
             Log.auth.notice("[GlacierAuth] tryFetchSession: Amplify confirmed valid but isUserLoggedIn was absent — marking cache poisoned. onboardingCompleted=\(probeOnboardingCompleted ? 1 : 0) skipPurchase=\(probeSkipPhonePurchase ? 1 : 0) skipSelection=\(probeSkipPhoneSelection ? 1 : 0)")
         }
-        postAuthVerifiedOnce(signedIn: signedIn)
+        // canDowngrade: false — `signedIn` here is `amplifySignedIn || cachedLoggedIn`, so a
+        // `false` can be produced purely by a failed network call. It may correct the routing
+        // towards signed-in, but it must never sign out a user who has, for example, logged in
+        // manually while this fetch was hung.
+        postAuthVerified(signedIn: signedIn, authoritative: true, canDowngrade: false)
+
+        // Runs after the verdict is posted so it can never delay routing.
+        await migrateOffIdentityPoolCredentialsIfNeeded(signedIn: signedIn)
     }
-    private func postAuthVerifiedOnce(signedIn: Bool) {
+
+    /// Converts credentials minted by a build that still declared the Cognito identity pool
+    /// into the `userPoolOnly` shape the current configuration expects.
+    ///
+    /// Amplify keys the refresh path off the *stored* credential shape, not the current
+    /// configuration. A device holding `userPoolAndIdentityPool` credentials whose user pool
+    /// tokens are still mid-life takes the "just refresh the AWS credentials" branch, which
+    /// now hits `FetchSessionError.noIdentityPool` — and because the resulting error state
+    /// feeds back into the same branch, every authenticated call fails until the tokens
+    /// expire on their own, across relaunches. A forced refresh takes the token-refresh
+    /// branch regardless of token validity, which rewrites the stored credentials and ends
+    /// the window immediately.
+    ///
+    /// Runs at most once per install, and only commits the flag when the session comes back
+    /// with usable tokens — a refresh that fails on a bad network is simply retried on the
+    /// next launch.
+    private func migrateOffIdentityPoolCredentialsIfNeeded(signedIn: Bool) async {
+        guard UserDefaultsService.shared.get(for: \.didMigrateOffIdentityPoolCredentials) != true,
+              amplifyIsConfigured else {
+            return
+        }
+        guard signedIn else {
+            // No session to migrate. Any future sign-in mints user-pool-only credentials
+            // because the identity pool is no longer configured.
+            UserDefaultsService.shared.set(true, for: \.didMigrateOffIdentityPoolCredentials)
+            return
+        }
+        do {
+            let session = try await Amplify.Auth.fetchAuthSession(options: .forceRefresh())
+            guard session.isSignedIn else {
+                UserDefaultsService.shared.set(true, for: \.didMigrateOffIdentityPoolCredentials)
+                return
+            }
+            // A session can return successfully while every token accessor fails — that is
+            // exactly the broken state this migration exists to clear — so confirm the tokens
+            // resolved before recording it as done.
+            if let cognitoSession = session as? AWSAuthCognitoSession,
+               case .failure(let error) = cognitoSession.getCognitoTokens() {
+                Log.auth.notice("[GlacierAuth] identity-pool credential migration: forced refresh returned no usable tokens (\(error)) — retrying next launch")
+                return
+            }
+            UserDefaultsService.shared.set(true, for: \.didMigrateOffIdentityPoolCredentials)
+            Log.auth.notice("[GlacierAuth] identity-pool credential migration: stored credentials rewritten as user-pool-only")
+        } catch {
+            Log.auth.notice("[GlacierAuth] identity-pool credential migration: forced refresh failed (\(error)) — retrying next launch")
+        }
+    }
+    /// Posts the auth routing verdict.
+    ///
+    /// - Parameters:
+    ///   - authoritative: `true` for a verdict derived from an actual session check,
+    ///     `false` for a cached placeholder posted so the splash can dismiss without waiting
+    ///     on the network. One of each may be posted per launch: the placeholder dismisses
+    ///     the splash, the authoritative verdict corrects it if the guess was wrong. An
+    ///     authoritative verdict is never suppressed by a preceding placeholder.
+    ///   - canDowngrade: whether this verdict is allowed to route an already-signed-in
+    ///     screen back to login. Only pass `true` with real evidence the user is signed
+    ///     out; a verdict that merely failed to reach the network must not be able to
+    ///     discard a session established since it was requested.
+    private func postAuthVerified(signedIn: Bool, authoritative: Bool, canDowngrade: Bool = false) {
         Self.authVerificationLock.lock()
         defer { Self.authVerificationLock.unlock() }
         guard !Self.authVerificationPosted else {
-            Log.auth.debug("[GlacierAuth] postAuthVerifiedOnce suppressed duplicate (signedIn=\(signedIn ? 1 : 0)) — already posted this launch")
+            Log.auth.debug("[GlacierAuth] postAuthVerified suppressed (signedIn=\(signedIn ? 1 : 0), authoritative=\(authoritative ? 1 : 0)) — authoritative verdict already posted this launch")
+            return
+        }
+        if !authoritative, Self.provisionalVerdictPosted {
+            Log.auth.debug("[GlacierAuth] postAuthVerified suppressed duplicate provisional verdict (signedIn=\(signedIn ? 1 : 0))")
             return
         }
         // Don't commit the auth routing decision during a background launch (e.g. the
@@ -216,15 +335,23 @@ public extension GlacierApplicationDelegate {
         // Returning without setting authVerificationPosted leaves the lock open so the
         // foreground path gets a fresh, authoritative result.
         guard UIApplication.shared.applicationState != .background else {
-            Log.auth.debug("[GlacierAuth] postAuthVerifiedOnce deferred — app is in background (signedIn=\(signedIn ? 1 : 0))")
+            Log.auth.debug("[GlacierAuth] postAuthVerified deferred — app is in background (signedIn=\(signedIn ? 1 : 0))")
             return
         }
-        Self.authVerificationPosted = true
-        Log.auth.notice("[GlacierAuth] postAuthVerifiedOnce posting signedIn=\(signedIn ? 1 : 0)")
+        if authoritative {
+            Self.authVerificationPosted = true
+        } else {
+            Self.provisionalVerdictPosted = true
+        }
+        Log.auth.notice("[GlacierAuth] postAuthVerified posting signedIn=\(signedIn ? 1 : 0) authoritative=\(authoritative ? 1 : 0) canDowngrade=\(canDowngrade ? 1 : 0)")
         NotificationCenter.default.post(
             name: .userAuthenticationVerified,
             object: nil,
-            userInfo: [GlacierNotificationProperties.isAuthSessionValid: signedIn]
+            userInfo: [
+                GlacierNotificationProperties.isAuthSessionValid: signedIn,
+                GlacierNotificationProperties.isAuthVerdictProvisional: !authoritative,
+                GlacierNotificationProperties.authVerdictCanDowngrade: canDowngrade
+            ]
         )
     }
     func configureAmplifyIfNeeded() async {

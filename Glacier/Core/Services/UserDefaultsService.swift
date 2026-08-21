@@ -45,6 +45,24 @@ final class UserDefaultsService: LocalStorageService {
         /// Stores the Amplify AuthProvider used for the current session (e.g. "apple", "google").
         /// Nil/absent means the user signed in with email/password (not Hosted UI).
         var hostedUIProvider: String { "hostedUIProvider" }
+        /// The `profile_id` from the most recent successful `users/get`. `getDNSProfile` reuses
+        /// it when a later fetch fails, so a transient error reuses the user's real DNS profile
+        /// instead of the shared backup one (which pins the device to a profile that isn't
+        /// theirs and reports zero blocked trackers forever). Never holds the backup id.
+        var lastKnownDNSProfileID: String { "lastKnownDNSProfileID" }
+        /// When `DNSProfileHealer` last tried to repoint a device off the shared backup DNS
+        /// profile. Rate-limits retries for a device that is still pinned because its account
+        /// has no profile yet; a healed device stops qualifying, so this stops being read.
+        var lastDNSProfileHealAttempt: String { "lastDNSProfileHealAttempt" }
+        /// Set once the stored Amplify credentials have been converted from the old
+        /// `userPoolAndIdentityPool` shape to `userPoolOnly`. The identity pool was removed
+        /// from amplifyconfiguration.json, but credentials minted by an earlier build still
+        /// name it, and Amplify branches on the *stored* shape: while the user pool tokens
+        /// are still mid-life it routes straight to the identity-pool leg, which now fails
+        /// with `noIdentityPool` and takes every authenticated call down with it until the
+        /// tokens expire. A one-time forced refresh rewrites the shape and ends that window.
+        /// Remove this once no install can still be carrying pre-removal credentials.
+        var didMigrateOffIdentityPoolCredentials: String { "didMigrateOffIdentityPoolCredentials" }
         
         // User onboarding module
         var isUserSubscribedToGlacierPlan: String { "isUserSubscribedToGlacierPlan" }

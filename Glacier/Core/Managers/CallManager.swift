@@ -386,6 +386,18 @@ extension CallManager : CXProviderDelegate {
          */
 
         callKitProvider.reportOutgoingCall(with: action.callUUID, startedConnectingAt: nil)
+
+        // Outgoing calls never get a CXCallUpdate of their own (only reportIncomingCall
+        // builds one), so CallKit assumes they don't take DTMF and greys out the keypad in
+        // the system call UI. Report an update saying otherwise. Holding stays off here:
+        // PhoneCallVM.holdCall(_:) is a no-op, so advertising it would add a dead button.
+        let outgoingCallUpdate = CXCallUpdate()
+        outgoingCallUpdate.supportsDTMF = true
+        outgoingCallUpdate.supportsHolding = false
+        outgoingCallUpdate.supportsGrouping = false
+        outgoingCallUpdate.supportsUngrouping = false
+        outgoingCallUpdate.hasVideo = false
+        callKitProvider.reportCall(with: action.callUUID, updated: outgoingCallUpdate)
         
 
             
@@ -512,6 +524,23 @@ extension CallManager : CXProviderDelegate {
             action.fail()
         }*/
         
+        action.fulfill()
+    }
+
+    public func provider(_ provider: CXProvider, perform action: CXPlayDTMFCallAction) {
+        Log.calls.info("Twilio provider:performPlayDTMFCallAction:")
+
+        // Digits tapped on the *system* call UI's keypad arrive here. The in-app keypad
+        // goes straight to dialedDigit(_:) instead, so there is no double-send.
+        guard let call = activeCall, call.uuid == action.callUUID else {
+            Log.calls.error("Cannot play DTMF, no matching active call.")
+            action.fail()
+            return
+        }
+
+        // sendDigits() takes the whole string, so a multi-digit payload (a pasted
+        // extension, for instance) goes out in one call rather than a tone at a time.
+        call.sendDigits(action.digits)
         action.fulfill()
     }
 

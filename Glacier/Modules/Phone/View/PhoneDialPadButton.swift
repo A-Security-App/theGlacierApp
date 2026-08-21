@@ -30,6 +30,14 @@ struct PhoneDialPadButton: View {
     private let spaceBWTitleAndSubTitle: CGFloat
     private let action: () -> Void
     private var longPressAction: (() -> Void)? = nil
+    /**
+     Optional colors that pin the button to a fixed appearance instead of following the
+     active color scheme. Used by the in-call keypad, which sits on a permanently dark
+     call screen and so must stay dark even while the app is in light mode.
+     Both default to `nil`, preserving the scheme-driven dialer appearance.
+     */
+    private let fixedBackgroundColor: Color?
+    private let fixedForegroundColor: Color?
 
     // MARK: - Initializer
 
@@ -41,6 +49,8 @@ struct PhoneDialPadButton: View {
         titleFontSize: CGFloat = 34,
         subTitleFontSize: CGFloat = 10,
         spaceBWTitleAndSubTitle: CGFloat = 2,
+        fixedBackgroundColor: Color? = nil,
+        fixedForegroundColor: Color? = nil,
         action: @escaping () -> Void,
         longPressAction: (() -> Void)? = nil
     ) {
@@ -51,6 +61,8 @@ struct PhoneDialPadButton: View {
         self.titleFontSize = titleFontSize
         self.subTitleFontSize = subTitleFontSize
         self.spaceBWTitleAndSubTitle = spaceBWTitleAndSubTitle
+        self.fixedBackgroundColor = fixedBackgroundColor
+        self.fixedForegroundColor = fixedForegroundColor
         self.action = action
         self.longPressAction = longPressAction
     }
@@ -73,21 +85,24 @@ struct PhoneDialPadButton: View {
                         if let titleText = title {
                             GlacierLabel(
                                 text: titleText,
-                                font: .neueHassGroteskFont(ofSize: titleFontSize)
+                                font: .neueHassGroteskFont(ofSize: titleFontSize),
+                                customTextColor: .constant(fixedForegroundColor)
                             )
                         } else if let iconName = icon {
                             GlacierImage(
                                 name: .constant(iconName),
                                 width: 20,
                                 height: 20,
-                                shouldAdaptToColorSchemeChange: true
+                                shouldAdaptToColorSchemeChange: fixedForegroundColor == nil,
+                                customTintColor: .constant(fixedForegroundColor)
                             )
                         }
                         
                         if let subTitleText = subTitle {
                             GlacierLabel(
                                 text: subTitleText,
-                                font: .neueHassGroteskThickFont(ofSize: subTitleFontSize)
+                                font: .neueHassGroteskThickFont(ofSize: subTitleFontSize),
+                                customTextColor: .constant(fixedForegroundColor)
                             )
                         }
                     }
@@ -120,7 +135,7 @@ struct PhoneDialPadButton: View {
     // MARK: - Private methods
     
     private func setupColors(for scheme: ColorScheme) {
-        backgroundColor = scheme == .dark ? .grey70 : .grey30
+        backgroundColor = fixedBackgroundColor ?? (scheme == .dark ? .grey70 : .grey30)
     }
 }
 

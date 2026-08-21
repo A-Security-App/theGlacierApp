@@ -30,6 +30,8 @@
 		AF0000000000000000000003 /* NotificationSettingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF0000000000000000000004 /* NotificationSettingsViewModel.swift */; };
 		AF0000000000000000000005 /* PrivacyReportManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF0000000000000000000006 /* PrivacyReportManager.swift */; };
 		AF0000000000000000000007 /* AccountDeletionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF0000000000000000000008 /* AccountDeletionManager.swift */; };
+		AF0000000000000000000101 /* DNSProfileHealer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF0000000000000000000102 /* DNSProfileHealer.swift */; };
+		AF10DE0000000000000000B1 /* RemovePhoneNumbersView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF10DE0000000000000000A1 /* RemovePhoneNumbersView.swift */; };
 		B00000000000000000000001 /* DeepLinkTargetTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F00000000000000000000001 /* DeepLinkTargetTests.swift */; };
 		B00000000000000000000002 /* UserPasswordValidationChecklistTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F00000000000000000000002 /* UserPasswordValidationChecklistTests.swift */; };
 		B00000000000000000000003 /* GlacierDateFormatterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F00000000000000000000003 /* GlacierDateFormatterTests.swift */; };
@@ -75,7 +77,6 @@
 		C13B0F292F4F8AA300C4EE79 /* PhoneNumberMenuView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C13B0F282F4F8AA300C4EE79 /* PhoneNumberMenuView.swift */; };
 		C13B0F2B2F4F8ABF00C4EE79 /* PhoneNumberMenuViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C13B0F2A2F4F8ABF00C4EE79 /* PhoneNumberMenuViewModel.swift */; };
 		C13B0F2D2F501D3D00C4EE79 /* PhoneNumberMenuItemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C13B0F2C2F501D3D00C4EE79 /* PhoneNumberMenuItemView.swift */; };
-		AF10DE0000000000000000B1 /* RemovePhoneNumbersView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF10DE0000000000000000A1 /* RemovePhoneNumbersView.swift */; };
 		C13B0F2F2F504A8000C4EE79 /* PhoneNumberGradientAvatar.swift in Sources */ = {isa = PBXBuildFile; fileRef = C13B0F2E2F504A8000C4EE79 /* PhoneNumberGradientAvatar.swift */; };
 		C13B0F3B2F50D01200C4EE79 /* ManagePhoneNumbersScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = C13B0F3A2F50D01200C4EE79 /* ManagePhoneNumbersScreen.swift */; };
 		C13B0F3D2F50D02D00C4EE79 /* ManagePhoneNumbersViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C13B0F3C2F50D02D00C4EE79 /* ManagePhoneNumbersViewModel.swift */; };
@@ -353,6 +354,8 @@
 		AF0000000000000000000004 /* NotificationSettingsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationSettingsViewModel.swift; sourceTree = "<group>"; };
 		AF0000000000000000000006 /* PrivacyReportManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacyReportManager.swift; sourceTree = "<group>"; };
 		AF0000000000000000000008 /* AccountDeletionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountDeletionManager.swift; sourceTree = "<group>"; };
+		AF0000000000000000000102 /* DNSProfileHealer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DNSProfileHealer.swift; sourceTree = "<group>"; };
+		AF10DE0000000000000000A1 /* RemovePhoneNumbersView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemovePhoneNumbersView.swift; sourceTree = "<group>"; };
 		B6E27707A6E6D4DC8104C83B /* Pods_GlacierPods_Glacier.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_GlacierPods_Glacier.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		B7D2A5A361F42812631E47D6 /* Pods-GlacierTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-GlacierTests.debug.xcconfig"; path = "Pods/Target Support Files/Pods-GlacierTests/Pods-GlacierTests.debug.xcconfig"; sourceTree = "<group>"; };
 		BA0CE93AB55D56648C2AF9B0 /* Pods-GlacierPods-Glacier.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-GlacierPods-Glacier.debug.xcconfig"; path = "Pods/Target Support Files/Pods-GlacierPods-Glacier/Pods-GlacierPods-Glacier.debug.xcconfig"; sourceTree = "<group>"; };
@@ -396,7 +399,6 @@
 		C13B0F282F4F8AA300C4EE79 /* PhoneNumberMenuView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhoneNumberMenuView.swift; sourceTree = "<group>"; };
 		C13B0F2A2F4F8ABF00C4EE79 /* PhoneNumberMenuViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhoneNumberMenuViewModel.swift; sourceTree = "<group>"; };
 		C13B0F2C2F501D3D00C4EE79 /* PhoneNumberMenuItemView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhoneNumberMenuItemView.swift; sourceTree = "<group>"; };
-		AF10DE0000000000000000A1 /* RemovePhoneNumbersView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemovePhoneNumbersView.swift; sourceTree = "<group>"; };
 		C13B0F2E2F504A8000C4EE79 /* PhoneNumberGradientAvatar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhoneNumberGradientAvatar.swift; sourceTree = "<group>"; };
 		C13B0F3A2F50D01200C4EE79 /* ManagePhoneNumbersScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ManagePhoneNumbersScreen.swift; sourceTree = "<group>"; };
 		C13B0F3C2F50D02D00C4EE79 /* ManagePhoneNumbersViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ManagePhoneNumbersViewModel.swift; sourceTree = "<group>"; };
@@ -1056,6 +1058,7 @@
 				C14DA1E32F12A562003D40CB /* Persistance */,
 				C14DA1E42F12A562003D40CB /* AWSAcctManager.swift */,
 				AF0000000000000000000006 /* PrivacyReportManager.swift */,
+				AF0000000000000000000102 /* DNSProfileHealer.swift */,
 				AF0000000000000000000008 /* AccountDeletionManager.swift */,
 				C14DA1F22F12A562003D40CB /* TwilioBackendManager.swift */,
 				C14DA1E52F12A562003D40CB /* CallManager.swift */,
@@ -2190,6 +2193,7 @@
 				AF0000000000000000000001 /* NotificationSettingsScreen.swift in Sources */,
 				AF0000000000000000000003 /* NotificationSettingsViewModel.swift in Sources */,
 				AF0000000000000000000005 /* PrivacyReportManager.swift in Sources */,
+				AF0000000000000000000101 /* DNSProfileHealer.swift in Sources */,
 				AF0000000000000000000007 /* AccountDeletionManager.swift in Sources */,
 				1FC1B4FD9AB5CA2A3E9E4509 /* WidgetSettingsScreen.swift in Sources */,
 				C18745372F4392F7006EDC42 /* DeviceSecuritySetting.swift in Sources */,
@@ -2306,7 +2310,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 57;
+				CURRENT_PROJECT_VERSION = 67;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = UG8VC96NZF;
 				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
@@ -2333,7 +2337,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/Glacier/Includes-Simulator",
 				);
-				MARKETING_VERSION = 1.0.7;
+				MARKETING_VERSION = 1.0.8;
 				PRODUCT_BUNDLE_IDENTIFIER = com.theglacierapp.Glacier;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE = "";
@@ -2925,7 +2929,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 57;
+				CURRENT_PROJECT_VERSION = 67;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = UG8VC96NZF;
 				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
@@ -2958,7 +2962,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/Glacier/Includes-Simulator",
 				);
-				MARKETING_VERSION = 1.0.7;
+				MARKETING_VERSION = 1.0.8;
 				PRODUCT_BUNDLE_IDENTIFIER = com.theglacierapp.Glacier;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE = "";
@@ -2990,7 +2994,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 57;
+				CURRENT_PROJECT_VERSION = 67;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = UG8VC96NZF;
 				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
@@ -3017,7 +3021,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/Glacier/Includes-Simulator",
 				);
-				MARKETING_VERSION = 1.0.7;
+				MARKETING_VERSION = 1.0.8;
 				PRODUCT_BUNDLE_IDENTIFIER = com.theglacierapp.Glacier;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE = "";

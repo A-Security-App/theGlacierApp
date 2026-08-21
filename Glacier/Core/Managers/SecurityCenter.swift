@@ -100,6 +100,10 @@ open class SecurityCenter: NSObject {
     private var lastDnsAnalyticsQueryDate: Date?
     private let dnsAnalyticsQueryLock = DispatchQueue(label: "com.theglacierapp.securitycenter.dnsAnalyticsQueryLock")
     private static let dnsAnalyticsThrottleInterval: TimeInterval = 5
+    /// `users/get` both reports and provisions the user's DNS profile, so an account that has
+    /// none yet often has one by the second call. Retry briefly before falling back.
+    private static let dnsProfileMaxAttempts = 2
+    private static let dnsProfileRetryDelay: TimeInterval = 2
     private var needVersions = false
     
     //IOSM#48
@@ -294,35 +298,55 @@ open class SecurityCenter: NSObject {
         return false
     }
     
-    public func queryForDNSAnalytics(completionHandler: ((Bool) -> Void)? = nil) {
+    /// - Parameter context: Name of the calling function, filled in automatically. Several paths
+    ///   ask for the count and most of them can be silently discarded by the throttle below, so
+    ///   the logs have to say which caller each outcome belongs to.
+    /// - Parameter bypassThrottle: Skips the duplicate-suppression window for a caller that means
+    ///   to sample again deliberately (the foreground refresh's second sample). The throttle exists
+    ///   to collapse the burst of callers that all ask in the same instant, not to stop an
+    ///   intentional follow-up a couple of seconds later. The timestamp is still recorded, so later
+    ///   incidental callers are throttled against this query as usual.
+    public func queryForDNSAnalytics(context: String = #function,
+                                     bypassThrottle: Bool = false,
+                                     completionHandler: ((Bool) -> Void)? = nil) {
         guard !SecurityCenter.isProxyDetected else {
+            Log.general.notice("DNS analytics: skipped for \(context, privacy: .public) — proxy detected")
             completionHandler?(false);
             return
         }
         
-        let shouldThrottle = dnsAnalyticsQueryLock.sync { () -> Bool in
+        let throttledFor = dnsAnalyticsQueryLock.sync { () -> TimeInterval? in
             let now = Date()
-            if let lastQueryDate = lastDnsAnalyticsQueryDate,
+            if !bypassThrottle,
+               let lastQueryDate = lastDnsAnalyticsQueryDate,
                now.timeIntervalSince(lastQueryDate) < Self.dnsAnalyticsThrottleInterval {
-                return true
+                return now.timeIntervalSince(lastQueryDate)
             }
 
             lastDnsAnalyticsQueryDate = now
-            return false
+            return nil
         }
 
-        if shouldThrottle {
+        if let throttledFor {
+            Log.general.notice("DNS analytics: throttled for \(context, privacy: .public) — \(String(format: "%.1f", throttledFor), privacy: .public)s since the last query")
             completionHandler?(false)
             return
         }
         
         Task { [weak self] in
-            guard let self, let headers = await GlacierAPIHeaders.authHeaders() else {
+            guard let self else {
+                completionHandler?(false)
+                return
+            }
+            guard let headers = await GlacierAPIHeaders.authHeaders() else {
+                Log.general.notice("DNS analytics: no auth headers for \(context, privacy: .public) — not querying")
                 completionHandler?(false)
                 return
             }
 
-            self.sessionManager.request(self.getDNSAnalytics(), method: .get, encoding: URLEncoding.default, headers: headers)
+            let requestURL = self.getDNSAnalytics()
+            Log.general.notice("DNS analytics: requesting for \(context, privacy: .public) \(URLComponents(string: requestURL)?.query ?? "", privacy: .public)")
+            self.sessionManager.request(requestURL, method: .get, encoding: URLEncoding.default, headers: headers)
                 .validate()
                 .responseData(queue: self.internalQueue) { response in
                     switch response.result {
@@ -346,17 +370,22 @@ open class SecurityCenter: NSObject {
 
                                 if let blocked = status["blockedQueries"] as? Int {
                                     didCallDelegateToUpdate = true
+                                    Log.general.notice("DNS analytics: count=\(blocked, privacy: .public) for \(context, privacy: .public) — delegate \(self.dnsStatusDelegate == nil ? "MISSING" : "notified", privacy: .public)")
                                     self.dnsStatusDelegate?.dnsAnalyticsUpdated(blocked)
                                 }
                             }
                         }
                         
                         if !didCallDelegateToUpdate {
-                            completionHandler?(false)
+                            Log.general.notice("DNS analytics: response for \(context, privacy: .public) carried no blockedQueries")
                         }
+                        // Report success too. This used to call back only when the response carried
+                        // no usable count, so every *successful* refresh was reported to the caller
+                        // as a failure and the caller's success branch was unreachable.
+                        completionHandler?(didCallDelegateToUpdate)
                         return
                     case .failure(let error):
-                        Log.general.error("Error getting DNS analytics: \(error)")
+                        Log.general.error("Error getting DNS analytics for \(context, privacy: .public): \(error)")
                         completionHandler?(false)
                         return
                     }
@@ -385,40 +414,131 @@ open class SecurityCenter: NSObject {
         return WireGuardManager.shared().tunnelsManager?.isTunnelConnected() ?? false
     }
     
-    public func getDNSProfile(completion: @escaping (_ dnsProfile: String?) -> ()) {
+    /// Fetches the signed-in user's DNS profile and hands back a `tls://` DoT URL for it.
+    ///
+    /// Fails closed. When the account has no `profile_id` yet, or the request can't be made,
+    /// this returns the last profile id successfully fetched on this device and otherwise
+    /// `nil` — never the shared backup profile. Substituting the backup looked harmless
+    /// (it resolves and filters) but the result is stored permanently and never re-fetched,
+    /// so the device queries a profile that isn't the user's: their tracker count stays at
+    /// zero and their own blocklist settings never apply. Callers must treat `nil` as "no
+    /// profile yet" and leave DNS unconfigured rather than substituting a default of their own.
+    ///
+    /// `users/get` is also what provisions a profile server-side, so a `200` carrying no
+    /// `profile_id` is often followed by a real id a moment later — hence the retry.
+    ///
+    /// - Parameter allowCachedFallback: Pass `false` to require a profile the server just confirmed
+    ///   for the signed-in user. The cached id is a per-install value, so on a device that has
+    ///   changed accounts it may belong to the previous user — fine as a stopgap that keeps DNS
+    ///   working, not fine as the basis for repointing a profile (see `DNSProfileHealer`).
+    public func getDNSProfile(allowCachedFallback: Bool = true,
+                              completion: @escaping (_ dnsProfile: String?) -> ()) {
+        fetchDNSProfile(attemptsRemaining: SecurityCenter.dnsProfileMaxAttempts,
+                        allowCachedFallback: allowCachedFallback,
+                        completion: completion)
+    }
+
+    private func fetchDNSProfile(attemptsRemaining: Int,
+                                 allowCachedFallback: Bool,
+                                 completion: @escaping (_ dnsProfile: String?) -> ()) {
         guard !SecurityCenter.isProxyDetected else { completion(nil); return }
         Task { [weak self] in
-            guard let self else { return }
-            guard let headers = await GlacierAPIHeaders.authHeaders() else { return }
-            
+            guard let self else { completion(nil); return }
+            guard let headers = await GlacierAPIHeaders.authHeaders() else {
+                // No usable session right now (Amplify not configured yet, or the session
+                // fetch timed out). Nothing to retry against, so fall back immediately —
+                // and always call back, or callers showing a progress indicator hang.
+                self.completeWithLastKnownProfile(allowCachedFallback: allowCachedFallback,
+                                                 completion: completion)
+                return
+            }
+
             self.sessionManager.request(SecurityCenter.DNS_PROFILE_ENDPOINT, method: .get, encoding: URLEncoding.default, headers: headers)
                 .validate()
                 .responseData(queue: self.internalQueue) { response in
                     switch response.result {
                     case .success(let data):
-                        var dnsprofile:String? = nil
-                        let parsed: Any?
-                        do {
-                            parsed = try JSONSerialization.jsonObject(with: data, options: .allowFragments)
-                        } catch {
-                            Log.general.error("Failed to parse DNS profile JSON: \(error)")
-                            parsed = nil
+                        guard let profileID = SecurityCenter.parseDNSProfileID(from: data) else {
+                            self.retryOrCompleteWithLastKnownProfile(attemptsRemaining: attemptsRemaining,
+                                                                     allowCachedFallback: allowCachedFallback,
+                                                                     completion: completion)
+                            return
                         }
-                        if let json = parsed as? Dictionary<String,Any>,
-                           let jdata = json["data"] as? Dictionary<String,Any> {
-                            let dnsid = jdata["profile_id"] as? String ?? "62b3da"
-                            dnsprofile = "tls://" + dnsid + SecurityCenter.DNS_ENDPOINT
-                        }
-                        completion(dnsprofile)
+                        UserDefaultsService.shared.set(profileID, for: \.lastKnownDNSProfileID)
+                        completion("tls://" + profileID + SecurityCenter.DNS_ENDPOINT)
                         return
                     case .failure(let error):
                         Log.general.error("Error getting DNS Profile: \(error)")
-                        let urlString = "\(SecurityCenter.DNS_BACKUP)\(SecurityCenter.DNS_ENDPOINT)"
-                        completion(urlString)
+                        self.retryOrCompleteWithLastKnownProfile(attemptsRemaining: attemptsRemaining,
+                                                                 allowCachedFallback: allowCachedFallback,
+                                                                 completion: completion)
                         return
                     }
                 }
         }
+    }
+
+    private func retryOrCompleteWithLastKnownProfile(attemptsRemaining: Int,
+                                                     allowCachedFallback: Bool,
+                                                     completion: @escaping (_ dnsProfile: String?) -> ()) {
+        guard attemptsRemaining > 1 else {
+            completeWithLastKnownProfile(allowCachedFallback: allowCachedFallback, completion: completion)
+            return
+        }
+        internalQueue.asyncAfter(deadline: .now() + SecurityCenter.dnsProfileRetryDelay) { [weak self] in
+            guard let self else { completion(nil); return }
+            self.fetchDNSProfile(attemptsRemaining: attemptsRemaining - 1,
+                                 allowCachedFallback: allowCachedFallback,
+                                 completion: completion)
+        }
+    }
+
+    /// Last resort: the profile id from the most recent successful fetch on this device, so a
+    /// transient failure reuses the user's real profile instead of stranding DNS. Returns `nil`
+    /// when this device has never seen one — the caller must then leave DNS unconfigured.
+    private func completeWithLastKnownProfile(allowCachedFallback: Bool,
+                                              completion: @escaping (_ dnsProfile: String?) -> ()) {
+        guard allowCachedFallback else {
+            completion(nil)
+            return
+        }
+        let cached: String? = UserDefaultsService.shared.get(for: \.lastKnownDNSProfileID)
+        guard let profileID = cached, !profileID.isEmpty else {
+            Log.general.notice("DNS profile unavailable and no profile id cached on this device — leaving DNS unconfigured rather than pointing it at the shared profile.")
+            completion(nil)
+            return
+        }
+        Log.general.notice("DNS profile fetch failed — reusing the last profile id known on this device.")
+        completion("tls://" + profileID + SecurityCenter.DNS_ENDPOINT)
+    }
+
+    /// Pulls `data.profile_id` out of a `users/get` response, or `nil` when the account has
+    /// no profile yet.
+    ///
+    /// The shared backup id is rejected here as well. It is a client-side fallback, never a
+    /// user's own profile, and a device pinned to it reports zero blocked trackers forever;
+    /// accepting it from the server would re-pin the very devices this change exists to stop
+    /// creating. If the backend ever assigns it deliberately, this is the guard to revisit.
+    private static func parseDNSProfileID(from data: Data) -> String? {
+        let parsed: Any?
+        do {
+            parsed = try JSONSerialization.jsonObject(with: data, options: .allowFragments)
+        } catch {
+            Log.general.error("Failed to parse DNS profile JSON: \(error)")
+            parsed = nil
+        }
+        guard let json = parsed as? Dictionary<String,Any>,
+              let jdata = json["data"] as? Dictionary<String,Any>,
+              let rawProfileID = jdata["profile_id"] as? String else {
+            return nil
+        }
+        let profileID = rawProfileID.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !profileID.isEmpty else { return nil }
+        guard profileID != SecurityCenter.DNS_BACKUP else {
+            Log.general.notice("users/get returned the shared backup profile as this account's profile_id — treating it as unprovisioned.")
+            return nil
+        }
+        return profileID
     }
     
     /// - Parameter retryUntilVerified: When true, a negative probe is retried a few times
@@ -426,12 +546,24 @@ open class SecurityCenter: NSObject {
     ///   (onboarding auto-connect / manual connect), where the profile can take a few seconds
     ///   to become the live system resolver. The default (single probe) is correct for the
     ///   routine checks on foreground / appear / VPN status change.
-    public func doDNSCheck(retryUntilVerified: Bool = false, completion: ((Bool) -> Void)? = nil) {
+    /// - Parameter suppressEarlyPrompt: Pass `true` when the caller expects the profile to be
+    ///   briefly unverifiable and will act on the final verdict itself — e.g. `DNSProfileHealer`
+    ///   right after repointing the profile at a different server name. It keeps the
+    ///   "select Glacier DNS in Settings" prompt from firing mid-swap at a user whose DNS is
+    ///   about to be fine; the retries and the final verdict are unchanged.
+    public func doDNSCheck(retryUntilVerified: Bool = false,
+                          suppressEarlyPrompt: Bool = false,
+                          completion: ((Bool) -> Void)? = nil) {
         let attempts = retryUntilVerified ? SecurityCenter.dnsCheckMaxAttempts : 1
-        performDNSCheck(attemptsRemaining: attempts, completion: completion)
+        performDNSCheck(attemptsRemaining: attempts,
+                        suppressEarlyPrompt: suppressEarlyPrompt,
+                        completion: completion)
     }
 
-    private func performDNSCheck(attemptsRemaining: Int, isInitialAttempt: Bool = true, completion: ((Bool) -> Void)? = nil) {
+    private func performDNSCheck(attemptsRemaining: Int,
+                                 isInitialAttempt: Bool = true,
+                                 suppressEarlyPrompt: Bool = false,
+                                 completion: ((Bool) -> Void)? = nil) {
         if isInitialAttempt {
             didFireEarlyDNSPrompt = false
         }
@@ -468,7 +600,10 @@ open class SecurityCenter: NSObject {
                         // handler will re-check when the app becomes active again.
                         if attemptsRemaining > 1 {
                             DispatchQueue.main.asyncAfter(deadline: .now() + SecurityCenter.dnsCheckRetryDelay) { [weak self] in
-                                self?.performDNSCheck(attemptsRemaining: attemptsRemaining - 1, isInitialAttempt: false, completion: completion)
+                                self?.performDNSCheck(attemptsRemaining: attemptsRemaining - 1,
+                                                      isInitialAttempt: false,
+                                                      suppressEarlyPrompt: suppressEarlyPrompt,
+                                                      completion: completion)
                             }
                         } else {
                             completion?(false)
@@ -516,13 +651,17 @@ open class SecurityCenter: NSObject {
                             // that does come live will still flip the status (and dismiss the
                             // prompt) via dnsStatusUpdated(true).
                             let failuresSoFar = SecurityCenter.dnsCheckMaxAttempts - attemptsRemaining + 1
-                            if !self.didFireEarlyDNSPrompt,
+                            if !suppressEarlyPrompt,
+                               !self.didFireEarlyDNSPrompt,
                                failuresSoFar >= SecurityCenter.dnsEarlyPromptFailureThreshold {
                                 self.didFireEarlyDNSPrompt = true
                                 self.dnsStatusDelegate?.dnsVerificationProbeFailedEarly()
                             }
                             DispatchQueue.main.asyncAfter(deadline: .now() + SecurityCenter.dnsCheckRetryDelay) { [weak self] in
-                                self?.performDNSCheck(attemptsRemaining: attemptsRemaining - 1, isInitialAttempt: false, completion: completion)
+                                self?.performDNSCheck(attemptsRemaining: attemptsRemaining - 1,
+                                                      isInitialAttempt: false,
+                                                      suppressEarlyPrompt: suppressEarlyPrompt,
+                                                      completion: completion)
                             }
                             return
                         }

@@ -85,6 +85,22 @@ struct GlacierNotificationProperties {
     static let userName = "userName"
     static let confirmationCode = "confirmationCode"
     static let isAuthSessionValid = "isAuthSessionValid"
+    /// `true` when the verdict is a placeholder posted so the splash can dismiss before
+    /// the network answers (the launch watchdog and the not-configured / proxy guards).
+    /// Consumers must not take irreversible action on a provisional verdict — no session
+    /// expiry alert, no downgrade of an already-signed-in screen. Absent means authoritative.
+    static let isAuthVerdictProvisional = "isAuthVerdictProvisional"
+    /// `true` only for verdicts backed by real evidence that the user is signed out — a
+    /// terminal session expiry or the first-launch reinstall detection. A verdict that
+    /// cannot downgrade may correct the routing towards signed-in but must never pull the
+    /// user off a screen already committed to as signed-in, so a network failure can never
+    /// clobber a session established since the verdict was requested. Absent means `true`,
+    /// preserving the behaviour of callers that predate this key.
+    static let authVerdictCanDowngrade = "authVerdictCanDowngrade"
+    /// `true` when the verdict comes from a confirmed terminal session expiry. Drives the
+    /// "your session has expired" alert, which cannot key off `isUserLoggedIn` — that flag
+    /// is cleared before the notification is posted.
+    static let authSessionDidExpire = "authSessionDidExpire"
     
     // MARK: - User onboarding properties
     

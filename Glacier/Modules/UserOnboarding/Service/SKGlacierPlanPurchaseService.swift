@@ -156,6 +156,20 @@ final class SKGlacierPlanPurchaseService: GlacierPlanPurchaseService {
             throw GlacierPlanPurchaseError.failedVerification
         }
 
+        // Ignore revoked transactions. When Apple refunds a subscription it sets revocationDate
+        // and re-delivers that transaction through Transaction.updates — mid-period, so it is
+        // revoked but NOT yet expired and slips past the check above. Posting it would flip
+        // hasActiveSubscription back to true for a refunded user and, worse, arm
+        // subscriptionJustPurchased, which suppresses lapse detection on the following
+        // refreshBackendSubscription cycle. A revoked transaction never reflects the currently
+        // active entitlement (StoreKit already omits it from Transaction.currentEntitlements),
+        // so drop it silently and let the entitlement refresh be authoritative.
+        // Mirrors the same guard in SKGlacierPhoneNumberPlanPurchaseService.
+        if transaction.revocationDate != nil {
+            await transaction.finish()
+            return
+        }
+
         // Post success directly using the verified transaction we already have.
         // Calling evaluateCurrentEntitlements() here caused a race condition:
         // Transaction.currentEntitlements can lag on a first-ever purchase, returning
