@@ -61,33 +61,40 @@ struct PhoneScreen<ViewModel: PhoneViewModel & ObservableObject>: View, PhoneNum
     
     private var phoneNumberSubscriptionIntroView: some View {
         VStack(alignment: .leading, spacing: 20) {
-            GlacierViewContainer(shouldReverseColor: true, darkColor: .grey95, lightColor: .white) {
-                VStack(alignment: .leading, spacing: 16) {
-                    GlacierLabel(
-                        text: NSLocalizedString("Purchase external phone lines.", comment: "Phone number purchase home screen header"),
-                        font: .headerOne,
-                        shouldReverseColor: true
-                    )
-                    .frame(width: 200, alignment: .leading)
-                    .padding(.top, 8)
-                    
-                    Spacer()
-                    
-                    HStack(alignment: .bottom) {
+            Button {
+                viewModel.presentPhoneNumberPlanPurchaseView()
+            } label: {
+                GlacierViewContainer(shouldReverseColor: true, darkColor: .grey95, lightColor: .white) {
+                    VStack(alignment: .leading, spacing: 16) {
                         GlacierLabel(
-                            text: NSLocalizedString("For conversations that never point back to you.", comment: "Phone number purchase home screen overview"),
+                            text: NSLocalizedString("Purchase external phone lines.", comment: "Phone number purchase home screen header"),
                             font: .headerOne,
-                            customTextColor: .constant(.grey50)
+                            shouldReverseColor: true
                         )
+                        .frame(width: 200, alignment: .leading)
+                        .padding(.top, 8)
                         
-                        Spacer(minLength: 32)
+                        Spacer()
                         
-                        GlacierImageButton(name: "right-arrow-icon", imageWidth: 16, imageHeight: 16, backgroundOpacity: 0, shouldReverseColor: true) {
-                            viewModel.presentPhoneNumberPlanPurchaseView()
+                        HStack(alignment: .bottom) {
+                            GlacierLabel(
+                                text: NSLocalizedString("For conversations that never point back to you.", comment: "Phone number purchase home screen overview"),
+                                font: .headerOne,
+                                customTextColor: .constant(.grey50)
+                            )
+                            
+                            Spacer(minLength: 32)
+                            
+                            GlacierImageButton(name: "right-arrow-icon", imageWidth: 16, imageHeight: 16, backgroundOpacity: 0, shouldReverseColor: true) {
+                                viewModel.presentPhoneNumberPlanPurchaseView()
+                            }
+                            .allowsHitTesting(false)
                         }
                     }
                 }
             }
+            .buttonStyle(.plain)
+            .contentShape(Rectangle())
         }
         .padding(.top, 16)
         .padding(.horizontal, 16)

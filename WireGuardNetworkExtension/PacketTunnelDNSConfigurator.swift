@@ -41,11 +41,21 @@ final class PacketTunnelDNSConfigurator {
                 return
             }
 
+            // Use the fallback endpoint for this tunnel session only — never persist it.
+            //
+            // Persisting it wrote the shared profile into the same app-group keys the main app
+            // reads as its own DoT configuration, so the app saw a completed DNS setup, never
+            // provisioned the user's real profile, and the device queried the shared one for
+            // the life of the install: tracker count stuck at zero, personal blocklists never
+            // applied, and reinstalling the only fix anyone found. Leaving the store empty lets
+            // the app's own provisioning path (`ensureEnabledForVPN` /
+            // `prefetchAndStoreDNSProfile`) write the real profile the next time it runs, while
+            // the tunnel's DNS proxy still protects this session.
             let deviceID = Self.shortDeviceID(length: 12)
-            let urlString = "tls://\(deviceID)-\(endpoint)"
-            let configuration = PacketTunnelDnsConfiguration(urlString: urlString, isEnabled: false).sanitized()
-            preferences.save(configuration: configuration)
-            cachedConfiguration = configuration
+            // Matches the main app: no device label when the identifier is unknown, so one
+            // shared `glr-unknown` label doesn't stand in for many devices.
+            let host = deviceID.hasSuffix("-unknown") ? endpoint : "\(deviceID)-\(endpoint)"
+            cachedConfiguration = PacketTunnelDnsConfiguration(urlString: "tls://\(host)", isEnabled: false).sanitized()
         } else {
             cachedConfiguration = preferences.currentConfiguration()
         }

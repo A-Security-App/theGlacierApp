@@ -173,7 +173,9 @@ final class AmplifyAuthenticationService: GlacierAuthenticationService {
      custom challenge.
      */
     func confirmSignIn(challengeResponse: String) async throws -> AuthSignInResult? {
-        try await Amplify.Auth.confirmSignIn(challengeResponse: challengeResponse)
+        GlacierApplicationDelegate.isSignInInFlight = true
+        defer { GlacierApplicationDelegate.isSignInInFlight = false }
+        return try await Amplify.Auth.confirmSignIn(challengeResponse: challengeResponse)
     }
 
     /**
@@ -253,6 +255,10 @@ final class AmplifyAuthenticationService: GlacierAuthenticationService {
     private func signInClearingStaleSession(
         _ attempt: () async throws -> AuthSignInResult
     ) async throws -> AuthSignInResult {
+        // Marks the window in which the root screen must not re-route on a late auth verdict:
+        // the user is mid-submit and their own success path owns the navigation.
+        GlacierApplicationDelegate.isSignInInFlight = true
+        defer { GlacierApplicationDelegate.isSignInInFlight = false }
         do {
             return try await attempt()
         } catch let error as AuthError {

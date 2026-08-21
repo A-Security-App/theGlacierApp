@@ -169,7 +169,7 @@ public class GlacierApplicationDelegate: UIResponder, UIApplicationDelegate {
         guard !SecurityCenter.isProxyDetected else { return }
 
         // If the process was launched by a background task (e.g. vpnHealth
-        // BGAppRefreshTask), postAuthVerifiedOnce deferred the notification rather
+        // BGAppRefreshTask), postAuthVerified deferred the notification rather
         // than consuming the one-time lock.  Run a fresh auth check now that the
         // user is actually opening the app so the routing decision reflects current
         // Amplify state rather than whatever was true during the background wake.

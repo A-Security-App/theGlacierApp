@@ -21,6 +21,7 @@ protocol PhoneCallViewModel: GlacierViewModelWithRootCoordinator {
     var isMuted: Bool { get }
     var muteButtonTintColor: Color { get }
     var muteButtonBGColor: Color { get }
+    var dtmfDigits: String { get }
 
     init(rootCoordinator: any GlacierRootCoordinator)
 
@@ -29,6 +30,8 @@ protocol PhoneCallViewModel: GlacierViewModelWithRootCoordinator {
     func startCall()
     func toggleMuteAudio()
     func selectAudioRoute(_ route: PhoneCallAudioRoute)
+    func sendDTMF(_ digit: String)
+    func clearDTMFDigits()
     func endCall()
 }
 
@@ -48,6 +51,8 @@ final class PhoneCallVM: PhoneCallViewModel, ObservableObject, PhoneNumberMenuCo
     @Published var isMuted: Bool = false
     @Published var muteButtonTintColor: Color = .white
     @Published var muteButtonBGColor: Color = Color.grey90
+    /// Digits sent to the far end during this call, shown above the in-call keypad.
+    @Published var dtmfDigits: String = ""
     
     let rootCoordinator: any GlacierRootCoordinator
 
@@ -115,6 +120,23 @@ final class PhoneCallVM: PhoneCallViewModel, ObservableObject, PhoneNumberMenuCo
             self.activeAudioRoute = route
         }
     }
+
+    /// Sends a single in-call DTMF tone to the far end (IVR menus, extensions, conference PINs).
+    /// Deliberately not gated on `callStatus`: CallManager already no-ops without an active
+    /// Twilio call, and a second gate could silently swallow tones if a status update is missed.
+    func sendDTMF(_ digit: String) {
+        CallManager.sharedCallManager().dialedDigit(digit)
+        giveHapticFeedback(style: .light)
+        DispatchQueue.main.async {
+            self.dtmfDigits.append(digit)
+        }
+    }
+
+    func clearDTMFDigits() {
+        DispatchQueue.main.async {
+            self.dtmfDigits = ""
+        }
+    }
     
     func endCall() {
         let callManager = CallManager.sharedCallManager()
@@ -140,6 +162,11 @@ final class PhoneCallVM: PhoneCallViewModel, ObservableObject, PhoneNumberMenuCo
         CallManager.sharedCallManager().setGlacierCallDelegate(self)
         CallManager.sharedCallManager().makeVoiceCall(contact)
         callStatus = .ringing
+    }
+
+    private func giveHapticFeedback(style: UIImpactFeedbackGenerator.FeedbackStyle) {
+        let generator = UIImpactFeedbackGenerator(style: style)
+        generator.impactOccurred()
     }
 
     private func startCallTimer() {
@@ -185,6 +212,7 @@ extension PhoneCallVM {
         DispatchQueue.main.async {
             self.stopCallTimer()
             self.resetCallTimer()
+            self.dtmfDigits = ""
             self.callStatus = .ended
             
             // Let's notifiy dial pad screen about call ended event

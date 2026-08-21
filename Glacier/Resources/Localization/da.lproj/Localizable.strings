@@ -147,6 +147,8 @@
 "Secure DNS Protection Required" = "Sikker DNS-beskyttelse kræves";
 "When your VPN turns off on this trusted network, Secure DNS protection requires our profile to be selected in iOS Settings.\n\nIn Settings page, navigate to:\n\nGeneral →\nVPN & Device Management →\nDNS →\n\nThen select Glacier." = "Når VPN slås fra på dette betroede netværk, kræver sikker DNS-beskyttelse, at vores profil er valgt i iOS-indstillingerne.\n\nPå siden Indstillinger, naviger til:\n\nGenerelt →\nVPN og enhedsstyring →\nDNS →\n\nVælg derefter Glacier.";
 "Something went wrong while adding DNS configuration. Please try again." = "Noget gik galt under tilføjelse af DNS-konfigurationen. Prøv venligst igen.";
+"We couldn't finish setting up Secure DNS right now. Try again in a minute, or skip this step and turn it on later in Settings." = "Vi kunne ikke færdiggøre opsætningen af sikker DNS lige nu. Prøv igen om et minut, eller spring dette trin over og aktiver det senere i Indstillinger.";
+"We couldn't finish setting up Secure DNS right now. Try again in a minute — if it keeps happening, contact support." = "Vi kunne ikke færdiggøre opsætningen af sikker DNS lige nu. Prøv igen om et minut — hvis det bliver ved, kontakt support.";
 
 // MARK: - VPN Setup Screen
 "Secure DNS is setup." = "Sikker DNS er konfigureret.";

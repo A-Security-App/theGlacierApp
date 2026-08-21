@@ -76,6 +76,11 @@ struct GlacierAppRootScreen: View {
 
     @State private var isUserAuthenticationVerified = false
     @State private var isGlacierLogoAnimationComplete = false
+    /// Longest the splash may stay up waiting for the authoritative verdict when the cached
+    /// routing flags are known to be unreadable. Bounded on purpose: the launch path must
+    /// never wait on the network without a deadline, so this expires and commits the cached
+    /// guess (which the authoritative verdict can still correct) rather than hanging.
+    private static let poisonedCacheSplashGrace: TimeInterval = 3
     /// Set to `true` when `.glacierBaseSubscriptionLapsed` fires while the user is on the main
     /// screen.  Presents a non-dismissible paywall cover until the subscription is restored.
     @State private var showSubscriptionLapsedPaywall = false
@@ -145,6 +150,22 @@ struct GlacierAppRootScreen: View {
                     guard !self.isUserAuthenticationVerified else { return }
                     let cachedLoggedIn = UserDefaultsService.shared.get(for: \.isUserLoggedIn) ?? false
                     Log.auth.notice("[GlacierAuth] splash fast-path: cachedLoggedIn=\(cachedLoggedIn ? 1 : 0) (auth not yet resolved)")
+                    // A cached `false` read during a poisoned-cache launch is not evidence of
+                    // anything — every UserDefaults read in this process can return empty
+                    // regardless of what is on disk. Rather than guess "logged out" and show a
+                    // login screen to someone who is signed in, hold the splash briefly for the
+                    // authoritative verdict. Strictly bounded so a stalled network cannot hang
+                    // the launch: when the grace expires we commit the guess anyway.
+                    if !cachedLoggedIn, GlacierApplicationDelegate.userDefaultsCachePoisoned {
+                        Log.auth.notice("[GlacierAuth] splash fast-path: cache poisoned and cachedLoggedIn=0 — holding splash briefly for the authoritative verdict")
+                        DispatchQueue.main.asyncAfter(deadline: .now() + Self.poisonedCacheSplashGrace) {
+                            guard !self.isUserAuthenticationVerified else { return }
+                            Log.auth.notice("[GlacierAuth] splash fast-path: grace expired — routing to userAuthentication on the cached guess")
+                            self.setScreen(.userAuthentication)
+                            self.isUserAuthenticationVerified = true
+                        }
+                        return
+                    }
                     if cachedLoggedIn {
                         let needsOnboarding = UserOnboardingScreen.shouldShowUserOnboarding
                         // Benefit of the doubt on subscription — resolveSubscriptionStatus()
@@ -185,11 +206,32 @@ struct GlacierAppRootScreen: View {
                     return
                 }*/
 
+                let userInfo = notification.userInfo
+                // A provisional verdict is a cached guess posted so the splash can dismiss
+                // before the network answers. It may route, but it must not take irreversible
+                // action — no session-expiry alert.
+                let isProvisional = (userInfo?[GlacierNotificationProperties.isAuthVerdictProvisional] as? Bool) ?? false
+                // Absent means `true`, preserving the behaviour of posters that predate the key.
+                let canDowngrade = (userInfo?[GlacierNotificationProperties.authVerdictCanDowngrade] as? Bool) ?? true
+                let didSessionExpire = (userInfo?[GlacierNotificationProperties.authSessionDidExpire] as? Bool) ?? false
+
                 // Auth validity is known from the notification — no network call needed.
                 // Route to the auth screen immediately if the session is invalid.
-                guard let userInfo = notification.userInfo,
+                guard let userInfo = userInfo,
                       let isAuthSessionValid = userInfo[GlacierNotificationProperties.isAuthSessionValid] as? Bool,
                       isAuthSessionValid else {
+
+                    // Monotonic routing: a verdict without evidence of a signed-out user may
+                    // never pull the app off a screen already committed to as signed-in. This
+                    // is what stops a session fetch that was hung on a bad network from
+                    // signing out a user who logged in manually while it was stalled.
+                    let isOnSignedInScreen = glacierAppCoordinator.currentScreen == .main
+                        || glacierAppCoordinator.currentScreen == .userOnboarding
+                    if !canDowngrade, isOnSignedInScreen {
+                        Log.auth.notice("[GlacierAuth] ignoring invalid verdict — already on a signed-in screen and this verdict cannot downgrade")
+                        isUserAuthenticationVerified = true
+                        return
+                    }
 
                     let isUserAccountCreated = UserDefaultsService.shared.get(for: \.isUserAccountCreated) ?? false
                     let isUserAccountConfirmed = UserDefaultsService.shared.get(for: \.isUserAccountConfirmed) ?? false
@@ -198,7 +240,12 @@ struct GlacierAppRootScreen: View {
                     if isUserAccountCreated, !isUserAccountConfirmed {
                         self.setScreen(.userAccountConfirmation)
                     } else {
-                        if isUserLoggedIn {
+                        // Show the expiry alert only for a confirmed terminal expiry. Keying it
+                        // off isUserLoggedIn alone had it exactly backwards: the terminal-expiry
+                        // path clears that flag before posting, so the alert never appeared for a
+                        // real expiry and appeared only for false positives. isUserLoggedIn is
+                        // still honoured for legacy posters that carry no reason.
+                        if didSessionExpire || (!isProvisional && canDowngrade && isUserLoggedIn) {
                             self.presentAuthSessionExpirationAlert()
                         }
                         self.setScreen(.userAuthentication)
@@ -217,12 +264,25 @@ struct GlacierAppRootScreen: View {
                 // .main when auth is confirmed valid is always safe and intentional; the
                 // redundant-render concern only applies when already on .main.
                 if glacierAppCoordinator.currentScreen == .userAuthentication {
-                    if !needsOnboarding {
-                        account?.hasActiveSubscription = true
+                    // Never re-route out from under an in-progress sign-in — the user could be
+                    // parked on the emailed-code step, or signing into a different account.
+                    // Their own success path navigates; this correction is only for a login
+                    // screen nobody asked for.
+                    if GlacierApplicationDelegate.isSignInInFlight {
+                        Log.auth.notice("[GlacierAuth] valid verdict while a sign-in is in flight — leaving the login screen alone")
+                    } else {
+                        if !needsOnboarding {
+                            account?.hasActiveSubscription = true
+                        }
+                        self.setScreen(needsOnboarding ? .userOnboarding : .main)
+                        isUserAuthenticationVerified = true
                     }
-                    self.setScreen(needsOnboarding ? .userOnboarding : .main)
-                    isUserAuthenticationVerified = true
                 }
+                // NOTE: do not set isUserAuthenticationVerified here. Below, it doubles as the
+                // "a screen has already been navigated to" sentinel — setting it before that
+                // check skips the only setScreen on this path and reveals an empty root with
+                // currentScreen still nil. A held splash is brought down by that same block,
+                // which navigates first and then sets the flag.
 
                 // The subscription check is expensive (StoreKit + 15-second backend timeout).
                 // Guard it so that if MainVM re-posts this notification (e.g. no account record),

@@ -50,6 +50,12 @@ final class DnsOverTlsController {
     /// is treated as success. NEConfigurationErrorDomain isn't a public symbol, hence the literals.
     private static let neConfigurationErrorDomain = "NEConfigurationErrorDomain"
     private static let neConfigurationUnchangedCode = 9
+    /// "Configuration is stale" — the manager's loaded copy was superseded before our save landed.
+    /// Reported as `NEDNSSettingsManagerError.configurationStale` (3) by the DNS-settings layer, and
+    /// as code 5 by the configuration layer underneath it, depending on which one rejects the write.
+    private static let neDNSSettingsErrorDomain = "NEDNSSettingsErrorDomain"
+    private static let neDNSSettingsStaleCode = 3
+    private static let neConfigurationStaleCode = 5
 
     private let preferences: DnsOverTlsPreferences
     private let dnsManager: NEDNSSettingsManager
@@ -227,9 +233,8 @@ final class DnsOverTlsController {
                     tlsSettings.matchDomains = [self.bogusDomain]
                 }
                 //tlsSettings.strictPrivacy = true
-                self.dnsManager.localizedDescription = NSLocalizedString("Glacier", comment: "DNS preference label")
-                self.dnsManager.dnsSettings = tlsSettings
-                self.savePreferences(sanitized, completion: completion)
+                self.stageManagerSettings(tlsSettings)
+                self.savePreferences(sanitized, settings: tlsSettings, completion: completion)
             }
         }
     }
@@ -302,22 +307,52 @@ final class DnsOverTlsController {
         completion: @escaping (Result<DnsOverTlsConfiguration, Error>) -> Void
     ) {
         let saved = loadSavedConfiguration()
-        if saved.urlString != nil {
+
+        // A stored URL that points at the shared backup profile counts as "no URL" here. Simply
+        // enabling it would switch on a profile that isn't the user's — tracker count stuck at
+        // zero, their own blocklists never applied — and turning the tunnel on then removes the
+        // means to correct it: DoT verification is skipped while the tunnel carries traffic, so
+        // `DNSProfileHealer`'s verified-baseline trigger can't fire for as long as the VPN stays
+        // up. This is the one moment we know the user is actively asking for protection, so fetch
+        // the account's own profile and replace it here instead.
+        let isPinnedToSharedProfile = DNSProfileHealer.isPinnedToBackupProfile(saved.urlString)
+
+        guard saved.urlString == nil || isPinnedToSharedProfile else {
             // URL already on file — just make sure isEnabled is true.
             let enabled = DnsOverTlsConfiguration(urlString: saved.urlString, isEnabled: true)
             apply(configuration: enabled, completion: completion)
-        } else {
-            // No URL yet (user skipped DNS onboarding) — fetch it, store it, then enable.
-            urlProvider { [weak self] urlString in
-                guard let self, let urlString, !urlString.isEmpty else {
-                    // Can't fetch URL right now; skip silently so VPN connect still works.
+            return
+        }
+
+        // No usable URL yet (the user skipped DNS onboarding, or what's stored is the shared
+        // profile) — fetch the account's own profile, store it, then enable.
+        urlProvider { [weak self] urlString in
+            guard let self else {
+                completion(.failure(DnsOverTlsControllerError.missingHost))
+                return
+            }
+            guard let urlString, !urlString.isEmpty,
+                  !DNSProfileHealer.isPinnedToBackupProfile(urlString) else {
+                guard isPinnedToSharedProfile, let existingURLString = saved.urlString else {
+                    // Nothing to fall back to; skip silently so VPN connect still works.
                     completion(.failure(DnsOverTlsControllerError.missingHost))
                     return
                 }
-                self.storeNewConfiguration(urlString)
-                let enabled = DnsOverTlsConfiguration(urlString: urlString, isEnabled: true)
+                // No personal profile available right now. Enable what is already stored: the
+                // shared profile does filter, and that beats leaving DNS unprotected whenever
+                // on-demand suppresses the tunnel on a trusted network. The heal corrects the
+                // profile once the account has one.
+                Log.vpn.notice("ensureEnabledForVPN: no personal DNS profile available; enabling the existing shared-profile configuration for now.")
+                let enabled = DnsOverTlsConfiguration(urlString: existingURLString, isEnabled: true)
                 self.apply(configuration: enabled, completion: completion)
+                return
             }
+            if isPinnedToSharedProfile {
+                Log.vpn.notice("ensureEnabledForVPN: replacing a shared-profile configuration with this account's own profile before enabling DoT.")
+            }
+            self.storeNewConfiguration(urlString)
+            let enabled = DnsOverTlsConfiguration(urlString: urlString, isEnabled: true)
+            self.apply(configuration: enabled, completion: completion)
         }
     }
 
@@ -499,7 +534,22 @@ final class DnsOverTlsController {
         return resolvedAddresses
     }
 
+    /// Puts the intended DoT settings onto the shared `NEDNSSettingsManager`. Separate from `apply`
+    /// because a stale-configuration retry has to re-stage them: `loadFromPreferences` replaces
+    /// whatever is in memory with what is on disk, discarding the settings we were trying to save.
+    private func stageManagerSettings(_ settings: NEDNSSettings) {
+        dnsManager.localizedDescription = NSLocalizedString("Glacier", comment: "DNS preference label")
+        dnsManager.dnsSettings = settings
+    }
+
+    private static func isStaleConfigurationError(_ error: NSError) -> Bool {
+        (error.domain == neDNSSettingsErrorDomain && error.code == neDNSSettingsStaleCode)
+            || (error.domain == neConfigurationErrorDomain && error.code == neConfigurationStaleCode)
+    }
+
     private func savePreferences(_ configuration: DnsOverTlsConfiguration,
+                                 settings: NEDNSSettings,
+                                 retryOnStale: Bool = true,
                                  completion: @escaping (Result<DnsOverTlsConfiguration, Error>) -> Void) {
         self.dnsManager.saveToPreferences { saveError in
             DispatchQueue.main.async {
@@ -518,6 +568,29 @@ final class DnsOverTlsController {
                         Log.vpn.notice("DoT apply(isEnabled=\(configuration.isEnabled, privacy: .public)): saveToPreferences reported configuration unchanged; treating as success")
                         self.preferences.save(configuration: configuration)
                         completion(.success(configuration))
+                        return
+                    }
+                    // "Configuration is stale": another save landed between our `loadFromPreferences`
+                    // and this one, so iOS refuses the write. Nothing is wrong with what we are
+                    // saving — reload, re-stage it, and save once more. Seen at launch, where more
+                    // than one path can apply DoT in the same moment; without this the loser is
+                    // dropped and nothing retries until the next trigger, which for the healer means
+                    // a heal deferred to the next launch and, worse, a revert that never lands.
+                    if retryOnStale, Self.isStaleConfigurationError(ns) {
+                        Log.vpn.notice("DoT apply(isEnabled=\(configuration.isEnabled, privacy: .public)): configuration was stale; reloading and saving once more")
+                        self.dnsManager.loadFromPreferences { loadError in
+                            if let loadError = loadError {
+                                let loadNS = loadError as NSError
+                                Log.vpn.error("DoT apply(isEnabled=\(configuration.isEnabled, privacy: .public)): reload after stale configuration failed domain=\(loadNS.domain, privacy: .public) code=\(loadNS.code, privacy: .public)")
+                                DispatchQueue.main.async { completion(.failure(loadError)) }
+                                return
+                            }
+                            self.stageManagerSettings(settings)
+                            self.savePreferences(configuration,
+                                                 settings: settings,
+                                                 retryOnStale: false,
+                                                 completion: completion)
+                        }
                         return
                     }
                     Log.vpn.error("DoT apply(isEnabled=\(configuration.isEnabled, privacy: .public)): saveToPreferences failed domain=\(ns.domain, privacy: .public) code=\(ns.code, privacy: .public)")

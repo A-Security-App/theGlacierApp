@@ -102,6 +102,24 @@ final class HomeVM: HomeViewModel, ObservableObject {
     /// prompt and the final verdict don't both fire it (and it doesn't re-appear after
     /// the user has dismissed it).
     private var didPromptDNSSetupDuringVerification = false
+    /// Guards the zero-tracker diagnostic below to one line per launch.
+    private var didLogZeroTrackerDiagnostic = false
+    /// Short per-instance id for the logs. If more than one HomeVM is alive, one instance can be
+    /// querying while another renders the screen — which looks exactly like a refresh that does
+    /// nothing. The tag makes that visible instead of invisible.
+    private var instanceTag: String {
+        String(UInt(bitPattern: ObjectIdentifier(self).hashValue) & 0xFFFF, radix: 16)
+    }
+    /// Gap between the foreground refresh's two samples. Both run under one shimmer, so this is
+    /// how long that shimmer lasts — short enough to read as a single load, long enough to catch a
+    /// backend cached aggregate rolling over. The second sample bypasses SecurityCenter's throttle,
+    /// so this is a UX choice rather than a workaround for it.
+    private static let foregroundAnalyticsResampleDelay: TimeInterval = 2
+    /// True while the foreground refresh is running both samples under a single shimmer. The first
+    /// sample's result must not drop the loading state: the second follows shortly and can replace
+    /// the value if the backend's cache rolled over in between. Letting the shimmer resolve between
+    /// them gave the worst shape — a settled number that silently corrected itself seconds later.
+    private var isRunningForegroundAnalyticsRefresh = false
     /// True while the first security scan is deliberately held open waiting on the initial DNS
     /// verification. When DNS is enabled but not yet verified as the live resolver (e.g. right
     /// after onboarding), we keep the scanning gradient up rather than settle the card on an
@@ -188,7 +206,8 @@ final class HomeVM: HomeViewModel, ObservableObject {
         refreshDeviceSecurityStatus(suppressScanAnimation: false)
     }
 
-    private func refreshDeviceSecurityStatus(suppressScanAnimation: Bool) {
+    private func refreshDeviceSecurityStatus(suppressScanAnimation: Bool,
+                                             context: String = #function) {
         if !suppressScanAnimation {
             isScanningDevice = true
         }
@@ -197,7 +216,7 @@ final class HomeVM: HomeViewModel, ObservableObject {
         // suppressScanAnimation: true), doDNSCheck just ran and the foreground
         // path already kicked off an analytics query — skip the redundant one
         // so the "Status loading" rectangle doesn't flash a second time.
-        scanDeviceForSecurityIssues(skipAnalyticsRefresh: suppressScanAnimation)
+        scanDeviceForSecurityIssues(skipAnalyticsRefresh: suppressScanAnimation, context: context)
     }
     
     func connectToSecuredNetwork() {
@@ -524,9 +543,10 @@ final class HomeVM: HomeViewModel, ObservableObject {
         }
     }
     
-    private func scanDeviceForSecurityIssues(skipAnalyticsRefresh: Bool = false) {
+    private func scanDeviceForSecurityIssues(skipAnalyticsRefresh: Bool = false,
+                                             context: String = #function) {
         if !skipAnalyticsRefresh {
-            queryForDNSAnalytics()
+            queryForDNSAnalytics(context: context)
         }
 
         var issues: [String] = []
@@ -773,7 +793,7 @@ final class HomeVM: HomeViewModel, ObservableObject {
     }
 
     @objc func onVPNStatusChange() {
-        refreshDeviceSecurityStatus()
+        refreshDeviceSecurityStatus(suppressScanAnimation: false, context: "onVPNStatusChange")
         // When the tunnel goes inactive (e.g. on-demand suppressed by a trusted-network
         // rule), fire a DNS check so we immediately detect whether DoT is still routing
         // and prompt the user to select the profile in iOS Settings if needed.
@@ -790,10 +810,14 @@ final class HomeVM: HomeViewModel, ObservableObject {
     }
     
     @objc private func onAppBecameActive() {
+        Log.general.notice("Home foreground [\(self.instanceTag, privacy: .public)]: willEnterForeground received; refresh burst queued")
         DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
             self.consumeWidgetPendingToggleIfNeeded()
             self.connectToVPNIfRequired()
             self.connectToDNSIfRequired()
+            // Claim the loading state before the first sample below can come back, so both samples
+            // of the foreground refresh resolve under one shimmer.
+            self.runForegroundAnalyticsRefresh()
             self.scanDeviceForSecurityIssues()
             self.scanDeviceForSecuritySettings()
             // If DoT is enabled but the tunnel is suppressed (on-demand on a trusted network), heal
@@ -803,7 +827,11 @@ final class HomeVM: HomeViewModel, ObservableObject {
                 isTunnelConnected: self.securityCenter.isVpnTunnelConnected()
             )
             self.securityCenter.doDNSCheck()
-            self.queryDnsAnalyticsIfNeededAfterForeground()
+            // Covers the cases the `dnsStatusUpdated(true)` trigger can't reach: DNS switched off,
+            // or a device carrying only the packet tunnel's old shared-profile default. Neither
+            // runs a DoT verification, so neither ever reports a verified baseline.
+            DNSProfileHealer.shared.healIfNeeded(securityCenter: self.securityCenter,
+                                                 dnsController: self.dnsController)
         }
     }
 
@@ -853,12 +881,50 @@ final class HomeVM: HomeViewModel, ObservableObject {
     }
 
 
-    private func queryDnsAnalyticsIfNeededAfterForeground() {
-        guard isGlacierDNSEnabledIniOSSettings,
-              !securityCenter.isVpnEnabled() else {
-            return
+    /// Arms the second half of the foreground refresh: the sample `scanDeviceForSecurityIssues()`
+    /// is about to take, then one more `foregroundAnalyticsResampleDelay` later, both under the
+    /// single shimmer that first sample raises.
+    ///
+    /// Two samples because the first lands ~1s after the app comes back, often before the backend
+    /// has aggregated whatever the user just did — an identical query has been seen returning one
+    /// count and then a higher one seconds later, so the response is cached server-side with a TTL.
+    /// One sample means whatever that cache happened to hold; a second catches the rollover.
+    ///
+    /// No DNS/VPN gate. This used to require `isGlacierDNSEnabledIniOSSettings && !isVpnEnabled()`,
+    /// on the reasoning that tunnel users get their refresh from `doDNSCheck`'s early return
+    /// instead — but that call sits in the same burst and loses to the same throttle, so gating
+    /// here excluded the users most likely to see a stale count. Both flags are also unreliable at
+    /// this moment: `isGlacierDNSEnabledIniOSSettings` is only set once a DoT probe has reported
+    /// back, and `isVpnEnabled()` is true whenever on-demand is configured, even while the tunnel
+    /// is suppressed. The count is on screen regardless of either, so refreshing it is always
+    /// correct; being foregrounded is the only precondition that matters.
+    private func runForegroundAnalyticsRefresh() {
+        guard !isRunningForegroundAnalyticsRefresh else { return }
+        isRunningForegroundAnalyticsRefresh = true
+        // Own the loading state outright rather than relying on the first sample to raise it, so
+        // the pair behaves the same however the caller is ordered.
+        isUpdatingBlockedTrackersCount = true
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + HomeVM.foregroundAnalyticsResampleDelay) { [weak self] in
+            guard let self else { return }
+            // Gone to the background mid-pair: nothing to sample, but the shimmer still has to be
+            // released or it would still be running the next time the screen is shown.
+            guard UIApplication.shared.applicationState == .active else {
+                self.finishForegroundAnalyticsRefresh()
+                return
+            }
+            // `bypassThrottle` — this is the deliberate follow-up the throttle isn't meant to stop.
+            self.securityCenter.queryForDNSAnalytics(bypassThrottle: true) { [weak self] _ in
+                DispatchQueue.main.async { self?.finishForegroundAnalyticsRefresh() }
+            }
         }
-        securityCenter.queryForDNSAnalytics()
+    }
+
+    /// Ends the paired refresh and hands the loading state back, so the shimmer resolves once —
+    /// onto whichever value the second sample settled on.
+    private func finishForegroundAnalyticsRefresh() {
+        isRunningForegroundAnalyticsRefresh = false
+        isUpdatingBlockedTrackersCount = false
     }
 
     @objc private func onAccessTokenUpdated() {
@@ -918,13 +984,20 @@ extension HomeVM {
         return !url.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
     
-    private func queryForDNSAnalytics() {
+    /// `context` names the caller that originally asked, forwarded from `scanDeviceForSecurityIssues`.
+    /// Without it every path collapses to this function's own name in the logs, which is useless
+    /// when the point is working out which caller won the throttle.
+    private func queryForDNSAnalytics(context: String = #function) {
         isUpdatingBlockedTrackersCount = true
-        securityCenter.queryForDNSAnalytics { [weak self] didUpdateDNSAnalytics in
+        securityCenter.queryForDNSAnalytics(context: context) { [weak self] didUpdateDNSAnalytics in
+            Log.general.notice("Home analytics refresh [\(self?.instanceTag ?? "-", privacy: .public)] \(context, privacy: .public): didUpdate=\(didUpdateDNSAnalytics ? 1 : 0, privacy: .public)")
             let delay: Double = didUpdateDNSAnalytics ? 0.3 : 1
             DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
                 self?.markDeviceSercurityStatusRefreshAsCompleted()
-                self?.isUpdatingBlockedTrackersCount = false
+                // The foreground refresh owns the loading state until its second sample lands.
+                if self?.isRunningForegroundAnalyticsRefresh != true {
+                    self?.isUpdatingBlockedTrackersCount = false
+                }
             }
         }
     }
@@ -986,11 +1059,25 @@ extension HomeVM {
                 self?.dismissProgressIndicator()
             }
             
-            guard let strongSelf = self,
-                  let profile = dnsProfile else {
+            guard let strongSelf = self else { return }
+
+            // No profile available (the account isn't provisioned yet, or the fetch failed).
+            // `getDNSProfile` no longer substitutes the shared backup profile, because a device
+            // pinned to it never re-fetches and reports zero blocked trackers forever. Surface
+            // it rather than leaving the user looking at an unchanged screen.
+            guard let profile = dnsProfile else {
+                DispatchQueue.main.async {
+                    strongSelf.presentAlertWith(
+                        title: .errorText,
+                        description: NSLocalizedString(
+                            "We couldn't finish setting up Secure DNS right now. Try again in a minute — if it keeps happening, contact support.",
+                            comment: "Home screen missing DNS profile error"
+                        )
+                    )
+                }
                 return
             }
-            
+
             var finalProfile = profile
             if !profile.hasPrefix("tls://"), profile.contains(SecurityCenter.DNS_BACKUP) {
                 if let deviceID = strongSelf.getShortDeviceID(length: 12) {
@@ -1217,6 +1304,12 @@ extension HomeVM: DNSStatusDelegate {
                     strongSelf.dismissPopup()
                 }
                 strongSelf.didPromptDNSSetupDuringVerification = false
+
+                // DoT is confirmed live, which is the settled state the heal needs: if this
+                // device is pinned to the shared backup profile, repoint it at the user's own
+                // profile now. A no-op for everyone else, and rate-limited internally.
+                DNSProfileHealer.shared.healIfNeeded(securityCenter: strongSelf.securityCenter,
+                                                     dnsController: strongSelf.dnsController)
             } else if strongSelf.dnsController.loadSavedConfiguration().isEnabled {
                 // DNS config is marked enabled but the check IP wasn't returned —
                 // the user hasn't selected Glacier DNS in iOS Settings yet.
@@ -1260,13 +1353,31 @@ extension HomeVM: DNSStatusDelegate {
 
     func dnsAnalyticsUpdated(_ analytics: Int) {
         DispatchQueue.main.async {
+            Log.general.notice("Home analytics applied [\(self.instanceTag, privacy: .public)]: \(self.numberOfBlockedTrackers, privacy: .public) -> \(analytics, privacy: .public)")
             self.numberOfBlockedTrackers = analytics
             self.showBlockedTrackerAnalytics()
+
+            // A zero count while DoT is verified live is the signature of the shared-profile
+            // pinning bug: the device filters fine, but through a profile that isn't the user's,
+            // so their own profile has no traffic to report. Record which of the two it is —
+            // once per launch, without logging the profile id itself — so the next support log
+            // answers this outright instead of a reinstall being the only way to find out.
+            if analytics == 0, !self.didLogZeroTrackerDiagnostic, self.securityCenter.isDoTVerifiedActive {
+                self.didLogZeroTrackerDiagnostic = true
+                let isPinned = DNSProfileHealer.isPinnedToBackupProfile(
+                    self.dnsController.loadSavedConfiguration().urlString
+                )
+                Log.vpn.notice("Zero blocked trackers with DoT verified live; device is resolving through \(isPinned ? "the shared backup profile" : "its own profile", privacy: .public).")
+            }
             UserDefaults(suiteName: kGlacierGroup)?.set(analytics, forKey: kWidgetBlockedTrackersCountKey)
             WidgetCenter.shared.reloadAllTimelines()
 
             self.markDeviceSercurityStatusRefreshAsCompleted()
-            self.isUpdatingBlockedTrackersCount = false
+            // Same here: while the foreground refresh is mid-pair, the value can still change, so
+            // the shimmer stays up and the user sees one load resolving to one number.
+            if !self.isRunningForegroundAnalyticsRefresh {
+                self.isUpdatingBlockedTrackersCount = false
+            }
         }
     }
 }

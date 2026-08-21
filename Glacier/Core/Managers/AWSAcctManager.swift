@@ -110,11 +110,15 @@ open class AWSAcctManager: NSObject
                     // fetchAuthSession forever. Network/service errors are NOT
                     // terminal and fall through to the normal success/retry path.
                     if let cognitoSession = session as? AWSAuthCognitoSession,
-                       case .failure(let tokenError) = cognitoSession.getCognitoTokens(),
-                       Self.isTerminalAuthFailure(tokenError) {
-                        Log.auth.notice("[AWSAcctManager] Session reports signed-in but tokens are terminally invalid: \(tokenError)")
-                        await self.handleTerminalSessionExpiry()
-                        return false
+                       case .failure(let tokenError) = cognitoSession.getCognitoTokens() {
+                        if Self.isTerminalAuthFailure(tokenError) {
+                            Log.auth.notice("[AWSAcctManager] Session reports signed-in but tokens are terminally invalid: \(tokenError)")
+                            await self.handleTerminalSessionExpiry()
+                            return false
+                        }
+                        // Not attributable to the user pool — keep the session. Logged at
+                        // notice level so a sysdiagnose shows how often this fires.
+                        Log.auth.notice("[AWSAcctManager] Token accessor failed with a non-terminal error, keeping session: \(tokenError)")
                     }
                     await self.fetchAttributes()
                     return true
@@ -163,13 +167,29 @@ open class AWSAcctManager: NSObject
         return false
     }
 
-    /// Returns true only for auth failures from which the session cannot recover —
-    /// the refresh token was rejected (expired/revoked) or the Cognito user was
-    /// deleted. Network and service errors (`.service`) are explicitly NOT terminal
+    /// Returns true only for auth failures from which the *user pool* session cannot
+    /// recover — the refresh token was rejected (expired/revoked) or the Cognito user
+    /// was deleted. Network and service errors (`.service`) are explicitly NOT terminal
     /// so a bad connection never triggers a logout; they are left to retry/refresh.
+    ///
+    /// `.sessionExpired` is the only unambiguous signal: Amplify produces it in exactly
+    /// one place (`InformSessionError`), gated on the user pool returning
+    /// `AWSCognitoIdentityProvider.NotAuthorizedException`.
+    ///
+    /// `.notAuthorized` is deliberately NOT treated as terminal. Amplify stamps a single
+    /// error onto all three session results (identityId, awsCredentials, cognitoTokens),
+    /// so a failure in a non-user-pool leg surfaces on `getCognitoTokens()` as though the
+    /// user pool had rejected us. `.notAuthorized` in particular is what
+    /// `AWSCognitoIdentity` (the identity pool) errors map to — `GetId` via
+    /// `FetchSessionError.notAuthorized`, and `GetCredentialsForIdentity` via
+    /// `AWSCognitoIdentity.NotAuthorizedException: AuthErrorConvertible`. Signing out on
+    /// it discards a perfectly valid user pool session. Genuine user pool expiry is still
+    /// caught twice — here via `.sessionExpired`, and independently by the
+    /// `HubPayload.EventName.Auth.sessionExpired` listener in `init`, which Amplify
+    /// dispatches only for `.sessionExpired` — so excluding it loses no real coverage.
     private static func isTerminalAuthFailure(_ error: AuthError) -> Bool {
         switch error {
-        case .sessionExpired, .notAuthorized:
+        case .sessionExpired:
             return true
         default:
             return false
@@ -208,17 +228,33 @@ open class AWSAcctManager: NSObject
         // does not regress the transient-failure protection.
         UserDefaultsService.shared.remove(for: \.isUserLoggedIn)
 
+        // Drop the cached DNS profile id with the session, mirroring the manual sign-out in
+        // SettingsViewModel. It belongs to the account whose session just died, and both the
+        // VPN-connect fallback and `DNSProfileHealer` would otherwise be able to point the next
+        // user's DNS at it — putting their queries in the previous account's profile logs.
+        UserDefaultsService.shared.remove(for: \.lastKnownDNSProfileID)
+        UserDefaultsService.shared.remove(for: \.lastDNSProfileHealAttempt)
+
         // Route to the auth screen. Posting isAuthSessionValid=false makes
         // GlacierAppRootScreen show the "Your session has expired" alert (when the
         // user was logged in) and present the login screen. Posted directly rather
-        // than via postAuthVerifiedOnce because that path is locked to fire once
+        // than via postAuthVerified because that path is locked to fire once
         // per launch for the startup routing decision.
         await MainActor.run {
             self.updateUI(forSignInStatus: false)
             NotificationCenter.default.post(
                 name: .userAuthenticationVerified,
                 object: nil,
-                userInfo: [GlacierNotificationProperties.isAuthSessionValid: false]
+                userInfo: [
+                    GlacierNotificationProperties.isAuthSessionValid: false,
+                    GlacierNotificationProperties.isAuthVerdictProvisional: false,
+                    // This is the one path with proof the user is signed out, so it is
+                    // allowed to route away from an already-signed-in screen.
+                    GlacierNotificationProperties.authVerdictCanDowngrade: true,
+                    // Drives the "your session has expired" alert. It cannot key off
+                    // isUserLoggedIn — that flag is cleared just above.
+                    GlacierNotificationProperties.authSessionDidExpire: true
+                ]
             )
         }
     }
