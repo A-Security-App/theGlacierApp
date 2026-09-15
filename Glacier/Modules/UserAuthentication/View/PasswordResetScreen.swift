@@ -116,7 +116,7 @@ struct PasswordResetScreen<ViewModel: PasswordResetViewModel & ObservableObject,
                 )
 
                 GlacierLabel(
-                    text: NSLocalizedString("We'll send you a link to reset your password if this email is associated with an account.", comment: "Password reset screen sub header"),
+                    text: NSLocalizedString("We’ll send you a link to reset your password if this email is associated with an account.", comment: "Password reset screen sub header"),
                     font: .headerTwo,
                     textAlignment: .center,
                     customTextColor: $descriptionTextColor

@@ -573,11 +573,11 @@ final class VPNSettingsVM: VPNSettingsViewModel, ObservableObject {
         } else if status == .inactive, wireGuardManager.tunnelsManager?.hasActiveOnDemandTunnel() == true {
             let curssid = TunnelsManager.retrieveCurrentSSID()
             if self.onDemandViewModel?.isWiFiInterfaceEnabled == false, curssid != nil {
-                vpnConnectionStatusDetails = NSLocalizedString("Not active — you're on Wi-Fi", comment: "VPN settings screen inactive due to wifi network")
+                vpnConnectionStatusDetails = NSLocalizedString("Not active — you’re on Wi-Fi", comment: "VPN settings screen inactive due to wifi network")
             } else if self.onDemandViewModel?.isNonWiFiInterfaceEnabled == false, curssid == nil {
-                vpnConnectionStatusDetails = NSLocalizedString("Not active — you're on cellular data", comment: "VPN settings screen inactive due to cellular network")
+                vpnConnectionStatusDetails = NSLocalizedString("Not active — you’re on cellular data", comment: "VPN settings screen inactive due to cellular network")
             } else if self.onDemandViewModel?.isWiFiInterfaceEnabled == true, let ssid = curssid, self.onDemandViewModel?.selectedSSIDs.contains(ssid) == true {
-                let statusText = NSLocalizedString("Not active — you're on trusted network: %@", comment: "VPN settings screen inactive due to trusted network")
+                let statusText = NSLocalizedString("Not active — you’re on trusted network: %@", comment: "VPN settings screen inactive due to trusted network")
                 vpnConnectionStatusDetails = String(format: statusText, arguments: [ssid])
             }
         }
@@ -608,6 +608,11 @@ final class VPNSettingsVM: VPNSettingsViewModel, ObservableObject {
 extension VPNSettingsVM {
 
     private func toggleVPNConnection(_ shouldConnect: Bool) {
+        // The user is driving the VPN from Settings, so drop any outstanding
+        // "protection is off" alert — see the same call in HomeVM for why the
+        // status observer can't be relied on to do it.
+        VPNProtectionAlert.resolve(reason: "user toggled VPN from settings", logger: Log.vpn)
+
         let isConnected = securityCenter.isVpnEnabled()
         guard isConnected != shouldConnect,
               let tunnelsManager = wireGuardManager.tunnelsManager,

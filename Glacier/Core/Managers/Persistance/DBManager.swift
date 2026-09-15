@@ -130,20 +130,12 @@ import Foundation
             self.runGrdbSchemaMigrationsOnMainDatabase(completion: { () in
                 //alert app that migration completed
                 Log.database.notice("ran Migrations")
-                /*DispatchQueue.main.async {
-                    NotificationCenter.default.post(name: DBManager.didSetupDatabase, object: self)
-                }*/
             })
         }
     }
     
     private func addObservers() {
             // Cross process writes
-        /*crossProcess.callback = { [weak self] in
-            DispatchQueue.main.async {
-                self?.handleCrossProcessWrite()
-            }
-        }*/
         NotificationCenter.default.addObserver(self, selector: #selector(didBecomeActive), name:UIApplication.didBecomeActiveNotification, object: nil)
     }
     

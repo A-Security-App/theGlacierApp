@@ -39,7 +39,14 @@ final class PhoneNumberPlanPurchaseHomeVM: PhoneNumberPlanPurchaseHomeViewModel,
     // MARK: - Public methods
     
     func presentPhoneNumberPlanPurchaseView() {
-        presentSheet(.phoneNumberPlanPurchase)
+        // Onboarding routing already sends web subscribers past this screen (it gates on the
+        // reconciled hasActivePhoneNumberSubscription, which counts the backend), but that gate
+        // reads false when the account record isn't loaded yet at early launch. Re-check here so
+        // the race can't land a web subscriber in the StoreKit sheet. "Skip for Now" remains
+        // available, so the warning can't trap them on this screen.
+        presentPhoneNumberPlanPurchase(orWarnWebManaged: {
+            presentSheet(.phoneNumberPlanPurchase)
+        })
     }
     
     func presentUserPermissionsView() {

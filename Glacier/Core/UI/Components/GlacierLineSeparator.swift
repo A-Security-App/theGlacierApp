@@ -41,8 +41,8 @@ struct GlacierLineSeparator: View {
         self.label = label
         self.labelColor = labelColor
         self.labelWidth = labelWidth
-        self.labelBackgroundColor = .grey20
-        self.lineColor = lineColor
+        self._labelBackgroundColor = State(initialValue: .grey20)
+        self._lineColor = State(initialValue: lineColor)
         self.lineThickness = lineThickness
     }
     

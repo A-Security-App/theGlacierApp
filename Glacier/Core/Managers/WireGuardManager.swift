@@ -112,7 +112,6 @@ open class WireGuardManager: NSObject
                 responseHandler?(false)
                 return
             }
-            //print(WireGuardManager.PROFILE_ENDPOINT)
             self.sessionManager.request(WireGuardManager.PROFILE_ENDPOINT, method: .post, parameters: ["region": region], encoding: JSONEncoding.default, headers: headers)
             .validate()
             .responseData(queue: self.internalQueue) { response in
@@ -235,12 +234,6 @@ open class WireGuardManager: NSObject
                     //_ = FileManager.deleteFile(at: url)
                 //}
                 //self.refreshTunnelConnectionStatuses()
-                /*if tunnelsManager.numberOfTunnels() > 0 {
-                    let tunnel = tunnelsManager.tunnel(at: 0)
-                    if tunnel.status == .inactive {
-                        //tunnelsManager.startActivation(of: tunnel)
-                    }
-                }*/
             }
         }
         if let tunnelsManager = tunnelsManager {

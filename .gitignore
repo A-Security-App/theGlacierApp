@@ -9,6 +9,10 @@ DerivedData
 *.orig
 *.xccheckout
 
+# Xcode 27 writes a build-system spec cache into the working directory,
+# under a directory named for the Xcode build (e.g. 27.0-27A266a/Xcode/).
+CachedSpecifications-*
+
 Pods/
 Glacier/Resources/Properties/Secrets.plist
 WireGuardNetworkExtension/Secrets.plist

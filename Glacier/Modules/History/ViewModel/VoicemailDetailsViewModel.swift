@@ -267,15 +267,12 @@ class VoiceMailDetailsVM: VoiceMailDetailsViewModel, ObservableObject, PhoneNumb
     func startCall() {
         hidePhoneNumberMenu()
         
-        var phoneNumber: String = ""
-        var personName: String?
-        
-        if let contact = voiceMail.contact {
-            phoneNumber = contact.phoneNumber
-            personName = contact.name
-        } else if let fromNumber = voiceMail.from {
-            phoneNumber = fromNumber
-        }
+        // Call back the number the voicemail came from: the number this screen displays
+        // and the one the voicemail list dials. voiceMail.contact is not a safe source
+        // for it — contacts are matched on the last 10 digits, so the stored copy can be
+        // a different number than the caller's (an international caller in particular).
+        let phoneNumber = voiceMail.from ?? ""
+        let personName = ContactsManager.shared.matchContact(for: phoneNumber)?.name
         
         guard !phoneNumber.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
         guard !CallManager.isEmergencyNumber(phoneNumber) else {

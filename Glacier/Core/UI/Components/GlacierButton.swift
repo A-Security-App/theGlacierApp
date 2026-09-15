@@ -96,7 +96,7 @@ struct GlacierButton: View {
         self.width = width
         self.cornerRadius = cornerRadius
         self.padding = padding
-        self.shadowColor = shadowColor
+        self._shadowColor = State(initialValue: shadowColor)
         self._isEnabled = isEnabled
         self.action = action
     }

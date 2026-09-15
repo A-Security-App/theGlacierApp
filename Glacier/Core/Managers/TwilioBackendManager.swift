@@ -82,15 +82,6 @@ open class TwilioBackendManager: NSObject
         self.glacierPhone = nil
         self.pushRegistered = false
     }
-    /*func setIdToken(_ idToken: String) {
-        self.idToken = idToken
-        for listener in self.tokenListeners {
-            listener.tokenUpdated()
-        }
-    }
-    func getIdToken() -> String? {
-        return self.idToken
-    }*/
     func setAccessToken(_ accessToken: String) {
         self.accessToken = accessToken
         for listener in self.tokenListeners {
@@ -275,7 +266,6 @@ open class TwilioBackendManager: NSObject
                         if let acctname = selectedName {
                             smsAccount.grdbRecord?.displayName = acctname
                         }
-                        //IOSM#105
                         smsAccount.save(completion: {
                             self.currentAccounts.append(smsAccount)
                             if shouldActivateSubscriptionFeatures {
@@ -463,19 +453,6 @@ open class TwilioBackendManager: NSObject
             if let vtoken = json["voice_token"] as? String {
                 self.phoneToken = vtoken
                 CallManager.sharedCallManager().twilioTokenReceived(vtoken)
-                /*if let jwt = try? decode(jwt: vtoken) {
-                    if let exp = jwt.expiresAt {
-                        print("Token expires at: \(exp)")
-                    }
-                    if let grantsClaim = jwt.claim(name: "grants").rawValue as? [String: Any] {
-                        if grantsClaim["chat"] != nil {
-                            print("✅ ChatGrant present")
-                        }
-                        if grantsClaim["voice"] != nil {
-                            print("✅ VoiceGrant present")
-                        }
-                    }
-                }*/
             }
         }
     }
@@ -564,7 +541,6 @@ open class TwilioBackendManager: NSObject
                     if self.selectedAccount == nil {
                         self.selectedAccount = smsAccount
                     }
-                    //IOSM#105
                     smsAccount?.save(completion: {
                         DispatchQueue.main.async {
                             NotificationCenter.default.post(name: .newPhoneNumberAdded, object: nil)
@@ -680,7 +656,10 @@ open class TwilioBackendManager: NSObject
                     if recording.status == "new" {
                         hasUnreadVM = true
                     }
-                    if let to = recording.to, let contact = ContactsManager.shared.matchContact(for: to) {
+                    // Match on the number the voicemail came from — "to" is our own
+                    // Glacier number, so matching it named the voicemail after us
+                    // (or, more often, matched nothing at all).
+                    if let from = recording.from, let contact = ContactsManager.shared.matchContact(for: from) {
                         recording.contact = contact
                     }
                     recordings.append(recording)
@@ -764,10 +743,6 @@ extension TwilioBackendManager {
     func queryCallHistory(_ limitNum:Int, responseHandler: ((Data?) -> Void)? = nil) {
         guard !SecurityCenter.isProxyDetected else { responseHandler?(nil); return }
         //apikey -- number (selected, or all), limit 500
-        /*guard let apikey = self.getApiKey() else {
-            self.callHistoryDelegate?.callHistoryUpdated(nil)
-            return
-        }*/
         Task { [weak self] in
             guard let self,
                   let headers = await GlacierAPIHeaders.authHeaders() else {
@@ -778,7 +753,6 @@ extension TwilioBackendManager {
             if let currentNumber = self.selectedAccount?.grdbRecord?.phoneNumber
             {
                 let req = self.callHistoryUrl()
-                //print("***** \(req)")
                 self.sessionManager.request(req, method: .get, parameters: ["number": currentNumber, "limit": limit], encoding: URLEncoding.default, headers: headers)
                     .validate()
                     .responseData(queue: self.internalQueue) { response in
@@ -801,7 +775,6 @@ extension TwilioBackendManager {
         }
     }
 }
-//IOSM#76
 public class GlacierPhone:NSObject {
     public var selectedTwilionumber: [Dictionary<String,String>] = []
     public var addUserToPurchaseNumbers:Bool = false
@@ -852,7 +825,7 @@ public class VoicemailRecord:AnyObject {
     public var time:String?
     public var duration:String?
     public var callSid:String?
-    public var to:String? //ALF IOSM-503
+    public var to:String?
     public var url:String?
     public var status:String?
     var contact:PhoneContact?

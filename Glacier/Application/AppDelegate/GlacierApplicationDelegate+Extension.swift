@@ -8,7 +8,7 @@
 import Foundation
 import UserNotifications
 import PushKit
-import MBProgressHUD //ALF IOSM-498
+import MBProgressHUD
 import GRDB
 import Amplify
 import AWSCognitoAuthPlugin
@@ -431,13 +431,13 @@ public extension GlacierApplicationDelegate {
             self.lastInteractionDate = date
         }
     }
-    func getLatestSecurityInfo() -> SecurityInfoUtil? { //IOSM#110
+    func getLatestSecurityInfo() -> SecurityInfoUtil? {
         return self.securityCenter.getSecurityInfo()
     }
     func setVersionIssue(_ versionIssue:Bool) {
         self.securityCenter.setVersionIssue(versionIssue)
     }
-    func getIgnoreCompromisedAlert() -> Bool { //IOSM#58 (next 2)
+    func getIgnoreCompromisedAlert() -> Bool {
         return self.securityCenter.shouldIgnoreCompromisedAlert()
     }
     func setIgnoreCompromisedAlert(_ ignore:Bool) {

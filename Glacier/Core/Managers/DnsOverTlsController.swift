@@ -192,6 +192,14 @@ final class DnsOverTlsController {
                     } else if let cached = (self.cachedResolvedHost == host ? self.cachedResolvedServers : nil),
                               !cached.isEmpty {
                         resolvedHostsAr = cached
+                    } else if let persisted = self.persistedResolvedServerIPs() {
+                        // Last-known-good IPs from when DoT was enabled. Reaching here means the
+                        // manager reported no servers, which on a device that has been running DoT
+                        // is a load hiccup rather than "no profile" — resolving instead would put a
+                        // network round-trip in the disable path, and the resolver it would use is
+                        // the profile being turned off. The servers are irrelevant to a disabled
+                        // profile (matchDomains is the bogus domain); they only have to be valid.
+                        resolvedHostsAr = persisted
                     } else {
                         // No servers to reuse means no active DoT profile is pinning the resolver,
                         // so this is a first-time profile *creation* in the disabled state (e.g.
@@ -427,6 +435,17 @@ final class DnsOverTlsController {
         }
     }
 
+    /// Last-known-good DoT server IPs persisted by a previous enable, IP-only. `nil` when none
+    /// are on file. Unlike `bootstrapResolvedServers(for:)` this does no ordering or fallback —
+    /// callers that only need *valid* servers (a disable, where `matchDomains` is the bogus
+    /// domain and the servers are never queried) use this to stay off the network entirely.
+    private func persistedResolvedServerIPs() -> [String]? {
+        let persisted = preferences.savedResolvedServers().filter {
+            IPv4Address($0) != nil || IPv6Address($0) != nil
+        }
+        return persisted.isEmpty ? nil : persisted
+    }
+
     /// Returns fresh DoT server IPs WITHOUT using the system name resolver (which the DoT profile
     /// hijacks). Order: (1) last-known-good IPs persisted by the extension/app, IPv4-preferred and
     /// NAT64-aware; (2) IP-only servers already installed in the current profile. Returns [] if
@@ -596,6 +615,10 @@ final class DnsOverTlsController {
                     Log.vpn.error("DoT apply(isEnabled=\(configuration.isEnabled, privacy: .public)): saveToPreferences failed domain=\(ns.domain, privacy: .public) code=\(ns.code, privacy: .public)")
                     completion(.failure(saveError))
                 } else {
+                    // The success path was previously silent, which made a disable impossible to
+                    // confirm from a log — you could only infer it from a later `refreshDoT…`
+                    // bailing on `saved.isEnabled`. Say so directly.
+                    Log.vpn.notice("DoT apply(isEnabled=\(configuration.isEnabled, privacy: .public)): saved")
                     self.preferences.save(configuration: configuration)
                     completion(.success(configuration))
                 }

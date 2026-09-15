@@ -35,6 +35,7 @@ protocol HomeViewModel: GlacierViewModelWithRootCoordinator {
     var activeConnectionLabel: String? { get }
     var isConnectedToDNS: Bool { get }
     var isConnectedToVPN: Bool { get }
+    var isDNSTurnedOnByUser: Bool { get }
     
     var deviceSecuritySettingsStatus: [DeviceSecuritySetting] { get set }
     
@@ -73,6 +74,9 @@ final class HomeVM: HomeViewModel, ObservableObject {
 
     @Published private(set) var isConnectedToDNS: Bool = false
     @Published private(set) var isConnectedToVPN: Bool = false
+    /// The DoT profile is installed and switched on, whether or not a probe has been able to
+    /// confirm it is the live resolver. See `checkSecuredConnectionStatus()`.
+    @Published private(set) var isDNSTurnedOnByUser: Bool = false
     
     @Published var deviceSecuritySettingsStatus: [DeviceSecuritySetting] =
         DeviceSecuritySettingType.allCases.map { DeviceSecuritySetting(type: $0, isEnabled: false) }
@@ -104,6 +108,28 @@ final class HomeVM: HomeViewModel, ObservableObject {
     private var didPromptDNSSetupDuringVerification = false
     /// Guards the zero-tracker diagnostic below to one line per launch.
     private var didLogZeroTrackerDiagnostic = false
+    /// Last composite connection state written to the log, so `checkSecuredConnectionStatus()`
+    /// emits one line per actual change instead of one per call.
+    private var lastLoggedConnectionState: String?
+
+    /// What the DoT verification chain has managed to establish so far this session. Only
+    /// meaningful while the user has Secure DNS switched on; drives which of the three
+    /// "not connected" labels the card shows, all of which used to be "Disconnected".
+    private enum DNSVerificationState {
+        /// No chain has reported yet — the first second of a launch, or the activation lag
+        /// after onboarding. We genuinely do not know, and saying either "connected" or
+        /// "disconnected" would be a guess.
+        case pending
+        /// A resolver answered with our check IP: Glacier is the live resolver.
+        case verified
+        /// A resolver answered and it wasn't ours — the profile is not selected in iOS
+        /// Settings. Genuinely disconnected.
+        case answeredByAnotherResolver
+        /// The lookup could not complete, or no path existed to attempt it. The profile is
+        /// still installed and still steering DNS; we just cannot confirm it.
+        case unavailable
+    }
+    private var dnsVerificationState: DNSVerificationState = .pending
     /// Short per-instance id for the logs. If more than one HomeVM is alive, one instance can be
     /// querying while another renders the screen — which looks exactly like a refresh that does
     /// nothing. The tag makes that visible instead of invisible.
@@ -212,10 +238,11 @@ final class HomeVM: HomeViewModel, ObservableObject {
             isScanningDevice = true
         }
         checkSecuredConnectionStatus()
-        // When called from dnsStatusUpdated (the only caller that passes
-        // suppressScanAnimation: true), doDNSCheck just ran and the foreground
-        // path already kicked off an analytics query — skip the redundant one
-        // so the "Status loading" rectangle doesn't flash a second time.
+        // Callers that pass suppressScanAnimation: true are re-rendering a verdict that
+        // is already in hand — dnsStatusUpdated (doDNSCheck just ran and the foreground
+        // path already kicked off an analytics query) and onVPNProtectionStateChanged
+        // (a local VPN state change, no network involved). Skip the redundant analytics
+        // query so the "Status loading" rectangle doesn't flash a second time.
         scanDeviceForSecurityIssues(skipAnalyticsRefresh: suppressScanAnimation, context: context)
     }
     
@@ -231,7 +258,7 @@ final class HomeVM: HomeViewModel, ObservableObject {
         if isConnectedToVPN {
             toggleVPNConnection(false)
             toggleDNSConnection(false)
-        } else if isConnectedToDNS {
+        } else if isConnectedToDNS || isDNSTurnedOnByUser {
             toggleDNSConnection(false)
         } else {
             let lastType = UserDefaults(suiteName: kGlacierGroup)?.string(forKey: kLastConnectionTypeKey) ?? SecuredConnectionType.dns.rawValue
@@ -278,7 +305,10 @@ final class HomeVM: HomeViewModel, ObservableObject {
                 ]
             )
             presentPopup(with: popupConfiguration)
-        } else if isConnectedToDNS {
+        } else if isConnectedToDNS || isDNSTurnedOnByUser {
+            // `isDNSTurnedOnByUser` covers the unverifiable-but-active case: DoT is on and
+            // steering DNS, but no probe can confirm it (captive portal, dead network). The
+            // disable path needs no working resolver, so this always goes through.
             toggleDNSConnection(false)
         }
     }
@@ -480,6 +510,16 @@ final class HomeVM: HomeViewModel, ObservableObject {
             object: nil
         )
 
+        // Redraw the security card when VPNInterruptionMonitor confirms protection
+        // was lost, or that it came back, so the warning appears and clears without
+        // waiting for the next full device scan.
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(onVPNProtectionStateChanged),
+            name: VPNInterruptionMonitor.protectionStateDidChange,
+            object: nil
+        )
+
         registerForWidgetDarwinNotification()
     }
 
@@ -520,12 +560,43 @@ final class HomeVM: HomeViewModel, ObservableObject {
     
     private func checkSecuredConnectionStatus() {
         DispatchQueue.main.async {
+            let savedDNSConfiguration = self.dnsController.loadSavedConfiguration()
             self.isConnectedToVPN = self.wireGuardManager.tunnelsManager?.tunnelInOperation() != nil
-            self.isConnectedToDNS = self.isGlacierDNSEnabledIniOSSettings && self.dnsController.loadSavedConfiguration().isEnabled
+            self.isConnectedToDNS = self.isGlacierDNSEnabledIniOSSettings && savedDNSConfiguration.isEnabled
+            // Intent, not verification. `isConnectedToDNS` additionally requires a probe to have
+            // confirmed Glacier is the live resolver, which is the right input for the status
+            // text and the security verdict but the wrong thing to gate *turning DoT off* on:
+            // on a captive portal (hotel, plane) the probe can never succeed by design, so
+            // gating Disconnect on it hides the control exactly when the user needs it — and
+            // the profile is still installed with full matchDomains coverage, so the device
+            // really is locked to Glacier DNS while the card reports it as disconnected.
+            self.isDNSTurnedOnByUser = savedDNSConfiguration.isEnabled
+            self.logConnectionStateIfChanged()
             self.updateConnectionStatusText()
         }
     }
     
+    /// Records the inputs the connection card and the security verdict are computed from, one
+    /// line per actual change — this runs on every refresh and every status notification, so a
+    /// line per call would bury the log.
+    ///
+    /// `vpnEnabled` and `tunnelConnected` are both here because they disagree in the case that
+    /// is hardest to read from the outside: with on-demand configured but the tunnel suppressed
+    /// or unable to come up, `isConnectedToVPN` is true and the card reads "Connected" while no
+    /// tunnel is carrying anything. Without both values a log reader cannot tell that state from
+    /// a genuinely connected one, or from DNS-only.
+    private func logConnectionStateIfChanged() {
+        let state = "vpn=\(isConnectedToVPN ? 1 : 0)"
+            + " dns=\(isConnectedToDNS ? 1 : 0)"
+            + " dnsOn=\(isDNSTurnedOnByUser ? 1 : 0)"
+            + " vpnEnabled=\(securityCenter.isVpnEnabled() ? 1 : 0)"
+            + " tunnelConnected=\(securityCenter.isVpnTunnelConnected() ? 1 : 0)"
+            + " verify=\(dnsVerificationState)"
+        guard state != lastLoggedConnectionState else { return }
+        lastLoggedConnectionState = state
+        Log.general.notice("Home connection state [\(self.instanceTag, privacy: .public)]: \(state, privacy: .public)")
+    }
+
     private func markDeviceSercurityStatusRefreshAsCompleted() {
         // While waiting on the initial DNS verification, keep the scanning gradient up so the
         // card doesn't flash an at-risk verdict before DNS resolves. `finishInitialDNSGatedScan()`
@@ -592,6 +663,29 @@ final class HomeVM: HomeViewModel, ObservableObject {
                 self.isUserDeviceSecured = false
                 self.securityStatusText = systemAtRiskText
                 self.securityIssueText = issues.first ?? ""
+            } else if !self.isConnectedToDNS,
+                      let stopKind = VPNProtectionAlert.pendingWarningKind(),
+                      !self.securityCenter.isVpnTunnelConnected() {
+                // The VPN stopped without the user asking and hasn't come back, and DoT
+                // isn't covering them either. This is the fallback for the case where the
+                // local notification never reached them — permission denied, or Focus
+                // swallowed the banner — so opening the app still tells them protection is
+                // off. The record clears the moment the tunnel reconnects, so it can't linger.
+                //
+                // Gated on DoT being down: a dropped tunnel while Secure DNS is still
+                // filtering is worth a notification, but it is not an at-risk device, and
+                // flipping the card to at-risk would say otherwise.
+                self.isUserDeviceSecured = false
+                self.securityStatusText = systemAtRiskText
+                self.securityIssueText = stopKind == .appUpdate
+                    ? NSLocalizedString(
+                        "VPN protection is off after an app update. Finish updating Glacier, then reconnect.",
+                        comment: "Home screen VPN stopped by an app update"
+                    )
+                    : NSLocalizedString(
+                        "VPN protection stopped unexpectedly. Reconnect to protect your traffic.",
+                        comment: "Home screen VPN stopped unexpectedly"
+                    )
             } else if !self.isConnectedToDNS && !self.isConnectedToVPN {
                 self.isUserDeviceSecured = false
                 self.securityStatusText = systemAtRiskText
@@ -661,6 +755,31 @@ final class HomeVM: HomeViewModel, ObservableObject {
                 self.connectionStatusText = NSLocalizedString("Connected", comment: "Home screen connected to network text")
                 self.activeConnectionLabel = SecuredConnectionType.dns.label
                 self.writeActiveConnectionType(.dns)
+            } else if self.isDNSTurnedOnByUser && self.dnsVerificationState == .pending {
+                // Switched on, chain still running, nothing established yet. Both "connected" and
+                // "disconnected" would be guesses, and the old code guessed disconnected — which
+                // is why a healthy device flashed a scary label for the first second of every
+                // launch. Say what is actually happening instead.
+                self.connectionStatusText = NSLocalizedString(
+                    "Checking Secure DNS…",
+                    comment: "Home screen Secure DNS verification still in progress"
+                )
+                self.activeConnectionLabel = nil
+                self.writeActiveConnectionType(nil)
+            } else if self.isDNSTurnedOnByUser && self.dnsVerificationState == .unavailable {
+                // Switched on, and the chain finished without being able to confirm it — a captive
+                // portal, a network blocking 853, or no route to probe over. The profile is still
+                // installed with full matchDomains coverage and every lookup on the device is going
+                // through it, so "Disconnected" was the one thing we knew to be false.
+                //
+                // No connection chip and no active type written to the App Group: the chip asserts
+                // a verified active connection, which is exactly what we cannot assert.
+                self.connectionStatusText = NSLocalizedString(
+                    "Secure DNS status unavailable",
+                    comment: "Home screen Secure DNS enabled but not verifiable"
+                )
+                self.activeConnectionLabel = nil
+                self.writeActiveConnectionType(nil)
             } else {
                 self.connectionStatusText = NSLocalizedString("Disconnected from Secure DNS", comment: "Home screen disconnected from DNS text")
                 self.activeConnectionLabel = nil
@@ -788,6 +907,9 @@ final class HomeVM: HomeViewModel, ObservableObject {
         // profile can lag before it's the live resolver. On disable, the persisted flag
         // already drives the UI and a single probe is enough.
         let didEnable = dnsController.loadSavedConfiguration().isEnabled
+        // The profile just changed underneath the last verdict, so it no longer describes what
+        // is installed. Back to "don't know" until the chain below reports again.
+        dnsVerificationState = .pending
         checkSecuredConnectionStatus()
         securityCenter.doDNSCheck(retryUntilVerified: didEnable)
     }
@@ -809,6 +931,12 @@ final class HomeVM: HomeViewModel, ObservableObject {
         }
     }
     
+    /// `VPNInterruptionMonitor` confirmed protection was lost — or that it is back.
+    /// Re-run the security scan so the card picks the warning up (or drops it).
+    @objc private func onVPNProtectionStateChanged() {
+        refreshDeviceSecurityStatus(suppressScanAnimation: true, context: "onVPNProtectionStateChanged")
+    }
+
     @objc private func onAppBecameActive() {
         Log.general.notice("Home foreground [\(self.instanceTag, privacy: .public)]: willEnterForeground received; refresh burst queued")
         DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
@@ -1139,6 +1267,12 @@ extension HomeVM {
     private func toggleVPNConnection(_ shouldConnect: Bool) {
         guard let tunnelsManager = wireGuardManager.tunnelsManager else { return }
 
+        // Either way the user has taken charge of the VPN, so an outstanding
+        // "protection is off" alert has served its purpose. Clearing it here matters
+        // because the tunnel may already be down: with no connected→disconnected
+        // transition left to observe, VPNInterruptionMonitor would never clear it.
+        VPNProtectionAlert.resolve(reason: "user toggled VPN", logger: Log.vpn)
+
         tunnelsManager.activationDelegate = self
         if shouldConnect {
             guard let tunnel = tunnelsManager.tunnel(named: currentInstalledRegion) else { return }
@@ -1283,6 +1417,7 @@ extension HomeVM: DNSStatusDelegate {
             guard let strongSelf = self else { return }
 
             strongSelf.isGlacierDNSEnabledIniOSSettings = enabled
+            strongSelf.dnsVerificationState = enabled ? .verified : .answeredByAnotherResolver
             
             /**
              We consider DNS connection state when,
@@ -1348,6 +1483,29 @@ extension HomeVM: DNSStatusDelegate {
             guard strongSelf.didUserTappedDNSConnectionButton || isVPNSuppressedByOnDemand else { return }
             strongSelf.didPromptDNSSetupDuringVerification = true
             strongSelf.presentDNSSetupConfirmationPrompt(shouldDownloadAndAddDNSProfile: false)
+        }
+    }
+
+    /// The chain finished without an answer it could trust. See `DNSStatusDelegate` for the
+    /// meaning of `hadNetworkPath`.
+    func dnsVerificationUnavailable(hadNetworkPath: Bool) {
+        DispatchQueue.main.async { [weak self] in
+            guard let strongSelf = self else { return }
+
+            if hadNetworkPath {
+                // A path existed and the lookup still failed. That is real evidence DoT is not
+                // resolving here, so it overrides an earlier positive from this session.
+                strongSelf.isGlacierDNSEnabledIniOSSettings = false
+                strongSelf.dnsVerificationState = .unavailable
+            } else {
+                // Never got to ask. Absence of information must not overturn an answer we
+                // already have — the same reasoning as the reachability guard in
+                // `performDNSCheck`. Only fills in the blank when the blank is still there.
+                guard strongSelf.dnsVerificationState != .verified else { return }
+                strongSelf.dnsVerificationState = .unavailable
+            }
+
+            strongSelf.refreshDeviceSecurityStatus(suppressScanAnimation: true)
         }
     }
 

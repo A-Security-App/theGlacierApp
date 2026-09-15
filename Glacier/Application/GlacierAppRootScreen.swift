@@ -9,7 +9,6 @@
 import Foundation
 import SwiftUI
 import Lottie
-import WidgetKit
 
 /**
  Persistent banner shown at the top of every screen while a phone call is active and
@@ -53,20 +52,6 @@ private struct ActiveCallBannerView: View {
  */
 struct GlacierAppRootScreen: View {
 
-    /// After this date, TestFlight pilot participants see PilotEndedScreen instead of the
-    /// subscription lapse paywall. Keyed on date rather than subscription state to avoid
-    /// false positives from StoreKit timeouts or network errors at foreground transitions.
-    private static let pilotEndDate: Date = {
-        var components = DateComponents()
-        components.year = 2026
-        components.month = 4
-        components.day = 30
-        components.hour = 0
-        components.minute = 0
-        components.second = 0
-        return Calendar(identifier: .gregorian).date(from: components)!
-    }()
-
     // MARK: - Private properties
 
     @Environment(\.colorScheme) private var colorScheme
@@ -96,10 +81,6 @@ struct GlacierAppRootScreen: View {
     /// itself, and any lapse notification that arrives while it is in flight is based on stale or
     /// temporarily-reset state (e.g. the hasActiveSubscription = false reset at the start of the check).
     @State private var subscriptionCheckInFlight = false
-    /// Set to `true` when a TestFlight pilot user's subscription expires.  Shows a non-dismissible
-    /// "thank you" screen and blocks further app usage.  VPN is disabled and phone numbers are
-    /// released before this flag is set.
-    @State private var showPilotEndedScreen = false
 
     // MARK: - UI/UX
 
@@ -190,22 +171,6 @@ struct GlacierAppRootScreen: View {
             Task { @MainActor in
                 let receivedValid = (notification.userInfo?[GlacierNotificationProperties.isAuthSessionValid] as? Bool) ?? false
                 Log.auth.notice("[GlacierAuth] userAuthenticationVerified received: isAuthSessionValid=\(receivedValid ? 1 : 0), isUserAuthenticationVerified(current)=\(self.isUserAuthenticationVerified ? 1 : 0), subscriptionCheckStarted=\(self.subscriptionCheckStarted ? 1 : 0)")
-                // Pilot-ended gate runs before any network calls or auth checks so that
-                // deleting Cognito users doesn't route pilot participants to the login screen.
-                // All required data is local (UserDefaults + date) — no auth session needed.
-                /*if UIApplication.isDebugOrTestFlight(),
-                   UserDefaultsService.shared.get(for: \.hasEverSubscribedToGlacierPlan) == true,
-                   Date() >= Self.pilotEndDate {
-                    isUserAuthenticationVerified = true
-                    WireGuardManager.shared().turnOffCore()
-                    WireGuardManager.shared().removeAllTunnels()
-                    self.clearWidgetVPNStatus()
-                    self.releaseAllPhoneNumbers()
-                    CallManager.sharedCallManager().unregisterWithTwilio()
-                    showPilotEndedScreen = true
-                    return
-                }*/
-
                 let userInfo = notification.userInfo
                 // A provisional verdict is a cached guess posted so the splash can dismiss
                 // before the network answers. It may route, but it must not take irreversible
@@ -337,9 +302,9 @@ struct GlacierAppRootScreen: View {
                         // An active grace window is open — preserve protection (VPN/DoT keep running).
                         updatedAccount?.hasActiveSubscription = true
                     case .enforce:
-                        // Confirmed lapse, no grace owed. The handler already disabled DoT + cleared
-                        // widget status; stop the VPN and show the non-dismissible paywall.
-                        WireGuardManager.shared().turnOffCore()
+                        // Confirmed lapse, no grace owed. The handler has already torn protection
+                        // down (DoT off, VPN stopped, widget status cleared), recording what it
+                        // turned off so restore can put it back. Just show the paywall.
                         showSubscriptionLapsedPaywall = true
                     case .inconclusive:
                         // Network unavailable (e.g. WireGuard tunnel mid-reconnect) — cannot
@@ -359,21 +324,17 @@ struct GlacierAppRootScreen: View {
         //     hasActiveSubscription = false reset, not a confirmed lapse.
         .onReceive(NotificationCenter.default.publisher(for: .glacierBaseSubscriptionLapsed)) { _ in
             guard isUserAuthenticationVerified, !subscriptionCheckInFlight else { return }
-            /*if UIApplication.isDebugOrTestFlight(),
-               UserDefaultsService.shared.get(for: \.hasEverSubscribedToGlacierPlan) == true,
-               Date() >= Self.pilotEndDate {
-                // Pilot has ended — remove VPN profile, burn numbers, unregister from Twilio,
-                // sign out, and show pilot-ended screen.
-                WireGuardManager.shared().turnOffCore()
-                WireGuardManager.shared().removeAllTunnels()
-                self.clearWidgetVPNStatus()
-                self.releaseAllPhoneNumbers()
-                CallManager.sharedCallManager().unregisterWithTwilio()
-                showPilotEndedScreen = true
-            } else {*/
-                WireGuardManager.shared().turnOffCore()
-                showSubscriptionLapsedPaywall = true
-            //}
+            // This notification has two posters. The grace-window path has already torn
+            // protection down via evaluateExpiration(); onGlacierPlanPurchaseVerificationFailed()
+            // has not, so it is covered here. performTeardown() is idempotent — each half is
+            // gated on that protection actually being on — so this neither double-acts on the
+            // first poster nor skips the second.
+            //
+            // Unlike the bare turnOffCore() that used to sit here, this also disables DoT and
+            // records both, so a teardown on a StoreKit blip is undone automatically by the
+            // next confirmed reading rather than leaving the VPN off for good.
+            BaseSubscriptionLifecycleHandler.shared.performTeardown()
+            showSubscriptionLapsedPaywall = true
         }
         // Present a dismissible renew paywall when the grace nag's "Renew now" is tapped.
         .onReceive(NotificationCenter.default.publisher(for: .glacierPresentRenewPaywall)) { _ in
@@ -415,9 +376,6 @@ struct GlacierAppRootScreen: View {
         .onChange(of: showSubscriptionLapsedPaywall) { _ in
             BaseSubscriptionLifecycleHandler.shared.setPaywallPresented(showGraceRenewPaywall || showSubscriptionLapsedPaywall)
         }
-        //.fullScreenCover(isPresented: $showPilotEndedScreen) {
-        //    PilotEndedScreen()
-        //}
     }
 
     // MARK: - Private methods
@@ -425,25 +383,6 @@ struct GlacierAppRootScreen: View {
     private func setScreen(_ screen: GlacierScreen) {
         withAnimation(.easeInOut(duration: 0.2)) {
             glacierAppCoordinator.setScreen(screen)
-        }
-    }
-
-    /// Clears the shared App Group VPN status key so the widget stops showing the VPN
-    /// as active after the pilot subscription ends.
-    private func clearWidgetVPNStatus() {
-        UserDefaults(suiteName: kGlacierGroup)?.removeObject(forKey: kActiveConnectionTypeKey)
-        WidgetCenter.shared.reloadAllTimelines()
-    }
-
-    /// Calls `TwilioBackendManager.releaseNumber` for every phone number currently known to
-    /// the app.  This makes the backend `/release` call so the number is freed server-side
-    /// ("burned").  Called just before showing the pilot-ended screen.
-    private func releaseAllPhoneNumbers() {
-        let numbers = TwilioBackendManager.sharedMgr()
-            .getExistingAccounts()
-            .compactMap { $0.grdbRecord?.phoneNumber }
-        for number in numbers {
-            TwilioBackendManager.sharedMgr().releaseNumber(number)
         }
     }
 

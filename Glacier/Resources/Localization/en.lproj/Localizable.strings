@@ -15,6 +15,7 @@
 "Continue" = "Continue";
 "Skip" = "Skip";
 "Ok" = "Ok";
+"OK" = "OK";
 "or" = "or";
 "Terms of Use" = "Terms of Use";
 "Privacy Policy" = "Privacy Policy";
@@ -247,6 +248,8 @@
 
 "Connected" = "Connected";
 "Disconnected from Secure DNS" = "Disconnected from Secure DNS";
+"Secure DNS status unavailable" = "Secure DNS status unavailable";
+"Checking Secure DNS…" = "Checking Secure DNS…";
 "Connect" = "Connect";
 "Disconnect" = "Disconnect";
 "Something went wrong while connecting to Glacier DNS.\n\nPlease check that Glacier DNS is selected in:\n\nSettings →\nGeneral →\nVPN & Device Management →\nDNS" = "Something went wrong while connecting to Glacier DNS.\n\nPlease check that Glacier DNS is selected in:\n\nSettings →\nGeneral →\nVPN & Device Management →\nDNS";
@@ -270,7 +273,7 @@
 "Enable Screen Lock" = "Enable Screen Lock";
 "Open Settings \n→ Display & Brightness \n→ Auto-Lock" = "Open Settings \n→ Display & Brightness \n→ Auto-Lock";
 "Enable Biometrics" = "Enable Biometrics";
-"Open Settings \n→ Select Face ID & Passcode" = "Open Settings \n→ Select Face ID & Passcode";
+"Open Settings \n→ Select Face ID & Passcode" = "Open Settings \n→ Select Face ID & Passcode";
 "Update Glacier iOS" = "Update Glacier iOS";
 "Open the App Store \n→ Go to Account \n→ Scroll down to see “Updates” \n→ Find Glacier \n→ Tap “Update”" = "Open the App Store \n→ Go to Account \n→ Scroll down to see “Updates” \n→ Find Glacier \n→ Tap “Update”";
 
@@ -312,6 +315,31 @@
 "%@ will be removed and can’t be added again." = "%@ will be removed and can’t be added again.";
 "Something went wrong while updating name for the number. Please try again." = "Something went wrong while updating name for the number. Please try again.";
 "Something went wrong while burning number. Please try again." = "Something went wrong while burning number. Please try again.";
+"Your plan is managed on the web" = "Your plan is managed on the web";
+"You subscribed to your phone lines through the Glacier website, so changes to your plan need to be made there. Subscribing here would start a second, separate subscription and you’d be billed for both." = "You subscribed to your phone lines through the Glacier website, so changes to your plan need to be made there. Subscribing here would start a second, separate subscription and you’d be billed for both.";
+"Choose numbers to remove" = "Choose numbers to remove";
+"Decide later" = "Decide later";
+"Your plan now includes %d number(s). Select %d to remove. Removing a number permanently deletes its messages and call history." = "Your plan now includes %d number(s). Select %d to remove. Removing a number permanently deletes its messages and call history.";
+"Select %d to remove" = "Select %d to remove";
+"Remove %d of %d" = "Remove %d of %d";
+"Remove this number?" = "Remove this number?";
+"Remove these numbers?" = "Remove these numbers?";
+"%@ will be permanently removed, including its messages and call history. This can't be undone." = "%@ will be permanently removed, including its messages and call history. This can't be undone.";
+"%@ will be permanently removed, including their messages and call history. This can't be undone." = "%@ will be permanently removed, including their messages and call history. This can't be undone.";
+"Remove permanently" = "Remove permanently";
+
+
+/***************************
+ Subscription Lifecycle
+ ***************************/
+
+"Subscription expired" = "Subscription expired";
+"Your Glacier subscription has expired. Renew to keep your VPN and encrypted DNS protection — otherwise it will turn off in about %d day." = "Your Glacier subscription has expired. Renew to keep your VPN and encrypted DNS protection — otherwise it will turn off in about %d day.";
+"Your Glacier subscription has expired. Renew to keep your VPN and encrypted DNS protection — otherwise it will turn off in about %d days." = "Your Glacier subscription has expired. Renew to keep your VPN and encrypted DNS protection — otherwise it will turn off in about %d days.";
+"Renew now" = "Renew now";
+"Later" = "Later";
+"Numbers removed" = "Numbers removed";
+"%@ and its messages and call history were removed because your phone plan was downgraded." = "%@ and its messages and call history were removed because your phone plan was downgraded.";
 
 
 /***************************
@@ -352,6 +380,17 @@
 /***************************
  Settings
  ***************************/
+
+"Delete Account?" = "Delete Account?";
+"This permanently deletes your Glacier account and associated data. This action cannot be undone." = "This permanently deletes your Glacier account and associated data. This action cannot be undone.";
+"Yes, Delete" = "Yes, Delete";
+"Manage Your Subscription" = "Manage Your Subscription";
+"Your account has been deleted, but your subscription is managed through Apple and remains active." = "Your account has been deleted, but your subscription is managed through Apple and remains active.";
+"Cancel Your Subscription" = "Cancel Your Subscription";
+"Your account has been deleted, but your subscription was purchased on the Glacier website and is still active. Cancel it there to stop being billed." = "Your account has been deleted, but your subscription was purchased on the Glacier website and is still active. Cancel it there to stop being billed.";
+"Manage" = "Manage";
+"Couldn't Delete Account" = "Couldn't Delete Account";
+"Something went wrong while deleting your account. Please check your connection and try again." = "Something went wrong while deleting your account. Please check your connection and try again.";
 
 // MARK: - Settings Home Screen
 
@@ -440,3 +479,11 @@
 "Glacier" = "Glacier";
 "Choose your preferred widget, then press " = "Choose your preferred widget, then press ";
 " to confirm" = " to confirm";
+
+/* VPN protection-off alert (issue #204) */
+"VPN protection is off" = "VPN protection is off";
+"Glacier's VPN stopped for an app update. Finish updating, then reconnect." = "Glacier's VPN stopped for an app update. Finish updating, then reconnect.";
+"Your Glacier VPN stopped unexpectedly. Open Glacier to reconnect." = "Your Glacier VPN stopped unexpectedly. Open Glacier to reconnect.";
+"Open Glacier" = "Open Glacier";
+"VPN protection is off after an app update. Finish updating Glacier, then reconnect." = "VPN protection is off after an app update. Finish updating Glacier, then reconnect.";
+"VPN protection stopped unexpectedly. Reconnect to protect your traffic." = "VPN protection stopped unexpectedly. Reconnect to protect your traffic.";

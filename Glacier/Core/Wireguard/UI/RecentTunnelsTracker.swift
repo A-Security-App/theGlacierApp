@@ -10,7 +10,6 @@ class RecentTunnelsTracker {
 
     private static var userDefaults: UserDefaults? {
         guard let userDefaults = UserDefaults(suiteName: FileManager.appGroupId) else {
-            //wg_log(.error, staticMessage: "Cannot obtain shared user defaults for tracking recently used tunnels")
             return nil
         }
         return userDefaults

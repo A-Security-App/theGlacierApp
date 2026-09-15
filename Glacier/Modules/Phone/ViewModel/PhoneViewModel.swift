@@ -62,7 +62,9 @@ final class PhoneVM: PhoneViewModel, ObservableObject {
     }
     
     func presentPhoneNumberPlanPurchaseView() {
-        presentSheet(.phoneNumberPlanPurchase)
+        presentPhoneNumberPlanPurchase(orWarnWebManaged: {
+            presentSheet(.phoneNumberPlanPurchase)
+        })
     }
     
     func presentPhoneNumberSelectionView() {

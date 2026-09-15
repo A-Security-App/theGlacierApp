@@ -94,7 +94,7 @@ enum DeviceSecuritySettingType: CaseIterable, Hashable {
             comment: "Device security settings screen enable screen lock description"
         )
         case .bioMetrics: return NSLocalizedString(
-            "Open Settings \n→ Select Face ID & Passcode",
+            "Open Settings \n→ Select Face ID & Passcode",
             comment: "Device security settings screen enable biometrics description"
         )
         case .glacierAndiOSVersionUpdated: return NSLocalizedString(

@@ -10,7 +10,6 @@
 		1FC1B4FD9AB5CA2A3E9E4509 /* WidgetSettingsScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F7F0CC69311A87C3D420299 /* WidgetSettingsScreen.swift */; };
 		4BA0E32E77A3ADCA9FF65C2F /* SKExtraPhoneNumberPurchaseService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EF318DC5FBCB7111F649616 /* SKExtraPhoneNumberPurchaseService.swift */; };
 		5BD2992BF2D3B4B52FBCB15F /* Pods_GlacierTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 44C833202D388FFE0FD9FA6E /* Pods_GlacierTests.framework */; };
-		790FCB98BDD2423C8B301F55 /* PilotEndedScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21746C697EF848339127005B /* PilotEndedScreen.swift */; };
 		8E4827076322A71A05BBB14A /* GlacierJailbreakChecks.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC0655BDA81A811B22FEEABF /* GlacierJailbreakChecks.swift */; };
 		949B0C3D7A9C4E5883E499EA /* DnsOverTlsControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63E2CDA5D466488AB985CA9E /* DnsOverTlsControllerTests.swift */; };
 		A1A3D86BE5809A00AE439043 /* GlacierExtraPhoneNumberProduct.swift in Sources */ = {isa = PBXBuildFile; fileRef = D71AB5AD5457CAEF5397CBA3 /* GlacierExtraPhoneNumberProduct.swift */; };
@@ -244,6 +243,18 @@
 		D718D543D712F42B0B0E8649 /* GlacierApplicationDelegate+BackendSubscription.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9D635C907A4C8B95FD8AFCB /* GlacierApplicationDelegate+BackendSubscription.swift */; };
 		E1F2A3B52F12A190003D40CB /* GlacierImages.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1F2A3B42F12A190003D40CB /* GlacierImages.swift */; };
 		E91100000000000000000002 /* EmergencyCallPolicyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E91100000000000000000001 /* EmergencyCallPolicyTests.swift */; };
+		F2040001000000000000AA02 /* VPNProtectionAlert.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2040001000000000000AA01 /* VPNProtectionAlert.swift */; };
+		F2040001000000000000AA03 /* VPNProtectionAlert.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2040001000000000000AA01 /* VPNProtectionAlert.swift */; };
+		F2040001000000000000AA05 /* VPNOnDemandPolicyEvaluator.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2040001000000000000AA04 /* VPNOnDemandPolicyEvaluator.swift */; };
+		F2040001000000000000AA07 /* VPNInterruptionMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2040001000000000000AA06 /* VPNInterruptionMonitor.swift */; };
+		F2040001000000000000AA09 /* VPNProtectionAlertTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2040001000000000000AA08 /* VPNProtectionAlertTests.swift */; };
+		F2040001000000000000AB02 /* UpstreamExhaustionTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2040001000000000000AB01 /* UpstreamExhaustionTracker.swift */; };
+		F2040001000000000000AB03 /* UpstreamExhaustionTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2040001000000000000AB01 /* UpstreamExhaustionTracker.swift */; };
+		F2040001000000000000AB09 /* UpstreamExhaustionTrackerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2040001000000000000AB08 /* UpstreamExhaustionTrackerTests.swift */; };
+		F2040001000000000000AC09 /* InternationalDialStringTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2040001000000000000AC08 /* InternationalDialStringTests.swift */; };
+		F2040001000000000000AD02 /* UpstreamFanOutOrder.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2040001000000000000AD01 /* UpstreamFanOutOrder.swift */; };
+		F2040001000000000000AD03 /* UpstreamFanOutOrder.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2040001000000000000AD01 /* UpstreamFanOutOrder.swift */; };
+		F2040001000000000000AD09 /* UpstreamFanOutOrderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2040001000000000000AD08 /* UpstreamFanOutOrderTests.swift */; };
 		F2DE36DE44E908551C60DAAA /* GlacierJailbreakChecksTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2FFA452E8AE63489185CCAA6 /* GlacierJailbreakChecksTests.swift */; };
 		F5080AA82D14BB8300DAF2FC /* Authenticator in Frameworks */ = {isa = PBXBuildFile; productRef = F5080AA72D14BB8300DAF2FC /* Authenticator */; };
 		F52932552C7CBFB6003EAE92 /* NetworkExtension.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F529323B2C78C0E8003EAE92 /* NetworkExtension.framework */; };
@@ -323,7 +334,6 @@
 /* Begin PBXFileReference section */
 		00F36E40900145399E1558AB /* da */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = da; path = da.lproj/Localizable.strings; sourceTree = "<group>"; };
 		1EF318DC5FBCB7111F649616 /* SKExtraPhoneNumberPurchaseService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SKExtraPhoneNumberPurchaseService.swift; sourceTree = "<group>"; };
-		21746C697EF848339127005B /* PilotEndedScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PilotEndedScreen.swift; sourceTree = "<group>"; };
 		2F7F0CC69311A87C3D420299 /* WidgetSettingsScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetSettingsScreen.swift; sourceTree = "<group>"; };
 		2FFA452E8AE63489185CCAA6 /* GlacierJailbreakChecksTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GlacierJailbreakChecksTests.swift; sourceTree = "<group>"; };
 		42914F2C34008EDD9D61456C /* Pods-GlacierTests.simulator.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-GlacierTests.simulator.xcconfig"; path = "Pods/Target Support Files/Pods-GlacierTests/Pods-GlacierTests.simulator.xcconfig"; sourceTree = "<group>"; };
@@ -575,6 +585,15 @@
 		F00000000000000000000004 /* UserLoginEmailCodeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserLoginEmailCodeTests.swift; sourceTree = "<group>"; };
 		F00000000000000000000005 /* UserRegistrationBootstrapTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserRegistrationBootstrapTests.swift; sourceTree = "<group>"; };
 		F1D9ED03FE1944E8BBC805B2 /* nl */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = nl; path = nl.lproj/Localizable.strings; sourceTree = "<group>"; };
+		F2040001000000000000AA01 /* VPNProtectionAlert.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = VPNProtectionAlert.swift; sourceTree = "<group>"; };
+		F2040001000000000000AA04 /* VPNOnDemandPolicyEvaluator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNOnDemandPolicyEvaluator.swift; sourceTree = "<group>"; };
+		F2040001000000000000AA06 /* VPNInterruptionMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNInterruptionMonitor.swift; sourceTree = "<group>"; };
+		F2040001000000000000AA08 /* VPNProtectionAlertTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VPNProtectionAlertTests.swift; sourceTree = "<group>"; };
+		F2040001000000000000AB01 /* UpstreamExhaustionTracker.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = UpstreamExhaustionTracker.swift; sourceTree = "<group>"; };
+		F2040001000000000000AB08 /* UpstreamExhaustionTrackerTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = UpstreamExhaustionTrackerTests.swift; sourceTree = "<group>"; };
+		F2040001000000000000AC08 /* InternationalDialStringTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = InternationalDialStringTests.swift; sourceTree = "<group>"; };
+		F2040001000000000000AD01 /* UpstreamFanOutOrder.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = UpstreamFanOutOrder.swift; sourceTree = "<group>"; };
+		F2040001000000000000AD08 /* UpstreamFanOutOrderTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = UpstreamFanOutOrderTests.swift; sourceTree = "<group>"; };
 		F529323B2C78C0E8003EAE92 /* NetworkExtension.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = NetworkExtension.framework; path = System/Library/Frameworks/NetworkExtension.framework; sourceTree = SDKROOT; };
 		F529324A2C78D5B7003EAE92 /* libwg-go.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = "libwg-go.a"; path = "Glacier/Scripts/libwg-go.a"; sourceTree = "<group>"; };
 		F52932542C7CBFB6003EAE92 /* WireGuardNetworkExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = WireGuardNetworkExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -689,6 +708,10 @@
 				F00000000000000000000004 /* UserLoginEmailCodeTests.swift */,
 				F00000000000000000000005 /* UserRegistrationBootstrapTests.swift */,
 				2FFA452E8AE63489185CCAA6 /* GlacierJailbreakChecksTests.swift */,
+				F2040001000000000000AA08 /* VPNProtectionAlertTests.swift */,
+				F2040001000000000000AB08 /* UpstreamExhaustionTrackerTests.swift */,
+				F2040001000000000000AD08 /* UpstreamFanOutOrderTests.swift */,
+				F2040001000000000000AC08 /* InternationalDialStringTests.swift */,
 			);
 			path = GlacierTests;
 			sourceTree = "<group>";
@@ -1064,6 +1087,8 @@
 				C14DA1E52F12A562003D40CB /* CallManager.swift */,
 				C14DA1EE2F12A562003D40CB /* SecurityCenter.swift */,
 				C14DA1F32F12A562003D40CB /* WireGuardManager.swift */,
+				F2040001000000000000AA06 /* VPNInterruptionMonitor.swift */,
+				F2040001000000000000AA04 /* VPNOnDemandPolicyEvaluator.swift */,
 				C17C07102F3799C100D78990 /* UserPermissionManager.swift */,
 				C18131B82F5B4D430093DD0D /* ContactsManager.swift */,
 				C14DA0C12F12A190003D40CB /* DnsOverTlsController.swift */,
@@ -1377,7 +1402,6 @@
 			children = (
 				C19A34442F1AB9B3000B3543 /* UserOnboardingScreen.swift */,
 				C17C816A2F18E068007C4EE4 /* UserOnboardingHomeScreen.swift */,
-				21746C697EF848339127005B /* PilotEndedScreen.swift */,
 				C19A342D2F1AB1E2000B3543 /* GlacierPlanPurchaseScreen.swift */,
 				C19A342F2F1AB213000B3543 /* DNSSetupScreen.swift */,
 				C19A34312F1AB21E000B3543 /* VPNSetupScreen.swift */,
@@ -1607,6 +1631,9 @@
 				F52932752C7CD47D003EAE92 /* Keychain.swift */,
 				F52932742C7CD47D003EAE92 /* NotificationToken.swift */,
 				F52932722C7CD46A003EAE92 /* FileManager+Extension.swift */,
+				F2040001000000000000AA01 /* VPNProtectionAlert.swift */,
+				F2040001000000000000AB01 /* UpstreamExhaustionTracker.swift */,
+				F2040001000000000000AD01 /* UpstreamFanOutOrder.swift */,
 			);
 			path = Shared;
 			sourceTree = "<group>";
@@ -1999,6 +2026,10 @@
 				B00000000000000000000004 /* UserLoginEmailCodeTests.swift in Sources */,
 				B00000000000000000000005 /* UserRegistrationBootstrapTests.swift in Sources */,
 				F2DE36DE44E908551C60DAAA /* GlacierJailbreakChecksTests.swift in Sources */,
+				F2040001000000000000AA09 /* VPNProtectionAlertTests.swift in Sources */,
+				F2040001000000000000AC09 /* InternationalDialStringTests.swift in Sources */,
+				F2040001000000000000AB09 /* UpstreamExhaustionTrackerTests.swift in Sources */,
+				F2040001000000000000AD09 /* UpstreamFanOutOrderTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2022,6 +2053,9 @@
 				F52932872C7CD4C0003EAE92 /* String+ArrayConversion.swift in Sources */,
 				F52932762C7CD47D003EAE92 /* NotificationToken.swift in Sources */,
 				F52932732C7CD46A003EAE92 /* FileManager+Extension.swift in Sources */,
+				F2040001000000000000AA03 /* VPNProtectionAlert.swift in Sources */,
+				F2040001000000000000AB03 /* UpstreamExhaustionTracker.swift in Sources */,
+				F2040001000000000000AD03 /* UpstreamFanOutOrder.swift in Sources */,
 				F574E20C2EBE62230052C919 /* DNSProxy.swift in Sources */,
 				F52932772C7CD47D003EAE92 /* Keychain.swift in Sources */,
 				F52932862C7CD4C0003EAE92 /* NETunnelProviderProtocol+Extension.swift in Sources */,
@@ -2036,6 +2070,11 @@
 				C1CD7A372F29075A0094BED6 /* UserRegistrationViewModel.swift in Sources */,
 				C1E23F102F262BE300332C51 /* UserPasswordValidationChecklist.swift in Sources */,
 				F52932962C7D36BC003EAE92 /* FileManager+Extension.swift in Sources */,
+				F2040001000000000000AA02 /* VPNProtectionAlert.swift in Sources */,
+				F2040001000000000000AB02 /* UpstreamExhaustionTracker.swift in Sources */,
+				F2040001000000000000AD02 /* UpstreamFanOutOrder.swift in Sources */,
+				F2040001000000000000AA05 /* VPNOnDemandPolicyEvaluator.swift in Sources */,
+				F2040001000000000000AA07 /* VPNInterruptionMonitor.swift in Sources */,
 				C107FD852F390448006E4AF5 /* GlacierPlanPurchaseService.swift in Sources */,
 				C147C67E2F1D845900298689 /* Font+GlacierFonts.swift in Sources */,
 				C17280DB2F2E71CF00B81B91 /* UserAuthenticationError.swift in Sources */,
@@ -2170,7 +2209,6 @@
 				C158F94E2F13FB7A00194829 /* UserAuthenticationHomeScreen.swift in Sources */,
 				C14DA1752F12A190003D40CB /* ActivateOnDemandViewModel.swift in Sources */,
 				C14DA1782F12A190003D40CB /* RecentTunnelsTracker.swift in Sources */,
-				790FCB98BDD2423C8B301F55 /* PilotEndedScreen.swift in Sources */,
 				C19A342E2F1AB1E2000B3543 /* GlacierPlanPurchaseScreen.swift in Sources */,
 				C121AD722F3FA8E2001955F2 /* GlacierSearchBar.swift in Sources */,
 				C13B0FA92F541D2800C4EE79 /* VoicemailsScreen.swift in Sources */,
@@ -2310,7 +2348,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 67;
+				CURRENT_PROJECT_VERSION = 84;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = UG8VC96NZF;
 				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
@@ -2337,7 +2375,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/Glacier/Includes-Simulator",
 				);
-				MARKETING_VERSION = 1.0.8;
+				MARKETING_VERSION = 1.0.9;
 				PRODUCT_BUNDLE_IDENTIFIER = com.theglacierapp.Glacier;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE = "";
@@ -2929,7 +2967,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 67;
+				CURRENT_PROJECT_VERSION = 84;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = UG8VC96NZF;
 				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
@@ -2962,7 +3000,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/Glacier/Includes-Simulator",
 				);
-				MARKETING_VERSION = 1.0.8;
+				MARKETING_VERSION = 1.0.9;
 				PRODUCT_BUNDLE_IDENTIFIER = com.theglacierapp.Glacier;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE = "";
@@ -2994,7 +3032,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 67;
+				CURRENT_PROJECT_VERSION = 84;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = UG8VC96NZF;
 				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
@@ -3021,7 +3059,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/Glacier/Includes-Simulator",
 				);
-				MARKETING_VERSION = 1.0.8;
+				MARKETING_VERSION = 1.0.9;
 				PRODUCT_BUNDLE_IDENTIFIER = com.theglacierapp.Glacier;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE = "";

@@ -184,19 +184,6 @@ final class PacketTunnelDNSConfigurator {
         return plist
     }
     
-    /*private func resourcesBundle() -> Bundle? {
-        if let url = Bundle.main.url(forResource: "GlacierResources", withExtension: "bundle"),
-           let bundle = Bundle(url: url) {
-            return bundle
-        }
-
-        if let resourceURL = Bundle(for: PacketTunnelDNSConfigurator.self).resourceURL?.appendingPathComponent("GlacierResources.bundle"),
-           let bundle = Bundle(url: resourceURL) {
-            return bundle
-        }
-
-        return nil
-    }*/
 
     private static func shortDeviceID(prefix: String = "glr", length: Int = 10) -> String {
         // Authoritative path: use the digest the app seeded into the shared app group. For a fresh
@@ -274,6 +261,30 @@ final class PacketTunnelDNSConfigurator {
         return resolvedAddresses
     }
 
+    /// Picks the upstream set, interleaving address families so both are represented.
+    ///
+    /// This used to be `ipv4Addresses + ipv6Addresses` truncated to `limit`, which meant
+    /// that whenever the hostname resolved to `limit` or more IPv4 records — routinely the
+    /// case, it has at least five — **every IPv6 address was discarded**.
+    ///
+    /// On an IPv6-only 5G network the resulting pool then has no natively routable member
+    /// at all and depends entirely on NAT64 synthesis.  Measured on device over 42 minutes
+    /// of locked idle cellular: four IPv4 upstreams, zero IPv6, 7,028 connection attempts,
+    /// 56% of them returning "No network route".  It also made the stale-upstream-set
+    /// failure worse, because a set resolved on Wi-Fi had nothing that could route after a
+    /// handoff (see `handleSustainedDNSFailure`).
+    ///
+    /// Note the resolution above works hard to obtain those IPv6 records — AF_UNSPEC,
+    /// SOCK_STREAM/IPPROTO_TCP to trigger NAT64 synthesis, deliberately no AI_ADDRCONFIG —
+    /// and this function was throwing them away.
+    ///
+    /// Interleaving keeps IPv4 first (unchanged preference for which is tried first) while
+    /// guaranteeing family diversity within the same limit, so whichever interface the
+    /// device is on, part of the pool routes natively.  Raising `limit` would not achieve
+    /// this: with five IPv4 records available, a limit of six still yields five IPv4 and
+    /// one IPv6.  Ordering is what guarantees diversity; the limit only controls how many
+    /// persistent TLS connections the extension holds open, which the NECP flow table
+    /// cares about.
     private static func preferredServerList(from resolvedServers: [String], fallbackHost: String, limit: Int = 4) -> [String] {
         guard !resolvedServers.isEmpty else {
             return [fallbackHost]
@@ -282,7 +293,15 @@ final class PacketTunnelDNSConfigurator {
         let ipv4Addresses = resolvedServers.filter { IPv4Address($0) != nil }
         let ipv6Addresses = resolvedServers.filter { IPv6Address($0) != nil }
 
-        var prioritized = ipv4Addresses + ipv6Addresses
+        var prioritized: [String] = []
+        for index in 0..<max(ipv4Addresses.count, ipv6Addresses.count) {
+            if index < ipv4Addresses.count {
+                prioritized.append(ipv4Addresses[index])
+            }
+            if index < ipv6Addresses.count {
+                prioritized.append(ipv6Addresses[index])
+            }
+        }
         if prioritized.isEmpty {
             prioritized = resolvedServers
         }

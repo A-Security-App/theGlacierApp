@@ -16,8 +16,8 @@ public protocol GlacierCallDelegateProtocol: AnyObject {
     func disconnectCall(_ userInitiated: Bool)
     func isConnected() -> Bool
     func setStatus(_ status:String)
-    func setBluetoothEnabled(_ bluetoothEnabled: Bool) //ALF IOSM-451
-    func handleAudioDenied() //ALF IOSM-464
+    func setBluetoothEnabled(_ bluetoothEnabled: Bool)
+    func handleAudioDenied()
 }
 
 public enum SpeakerChoice : UInt {
@@ -57,7 +57,7 @@ public class CallManager : NSObject {
     var currentCall:TwilioCall?
     var alternateCall:TwilioCall?
     var currentUuid:UUID?
-    var lastUuid:UUID? //IOSM-569
+    var lastUuid:UUID?
     var notificationUuid:String?
     var awaitingCallResponse:Bool = false
     var isBusy:Bool = false
@@ -127,7 +127,6 @@ public class CallManager : NSObject {
         super.init()
         self.cAccount = nil
         
-        //ALF IOSM-451
         NotificationCenter.default.addObserver(self, selector: #selector(audioRouteChange(_:)), name: NSNotification.Name(rawValue: AVAudioSession.routeChangeNotification.rawValue), object: nil)
         
         callKitProvider.setDelegate(self, queue: nil)
@@ -182,7 +181,11 @@ public class CallManager : NSObject {
     func makeVoiceCall(_ receiver: String, name: String) {
         let initials = GlacierImages.stringInitials(withMaxCharacters: name, maxCharacters: 2) ?? ""
         var contact = PhoneContact(id: UUID().uuidString, name: name, initials: initials, phoneNumber: receiver)
-        if let foundContact = ContactsManager.shared.matchContact(for: receiver) {
+        if var foundContact = ContactsManager.shared.matchContact(for: receiver) {
+            // Contacts are matched on the last 10 digits only, so the indexed copy can
+            // be a different form of the number (or a different number entirely). Dial
+            // what the caller asked for and take only the identity from the match.
+            foundContact.phoneNumber = receiver
             contact = foundContact
         }
         self.makeVoiceCall(contact)
@@ -227,7 +230,7 @@ public class CallManager : NSObject {
 
         let call = TwilioCall()
         call.receiver = callto
-        call.calltitle = contact.name //ALF IOSM-503 and change to receivers above
+        call.calltitle = contact.name // and change to receivers above
         call.caller = backend.selectedAccount?.grdbRecord?.phoneNumber
         self.currentUuid = UUID.init()
         call.callUuid = self.currentUuid
@@ -302,8 +305,16 @@ public class CallManager : NSObject {
             return "+" + digitsOnly
         }
 
-        let digitsOnly = cleanPhoneNumber(trimmed)
+        var digitsOnly = cleanPhoneNumber(trimmed)
         guard digitsOnly.isEmpty == false else { return nil }
+
+        // "00" is the international exit prefix and means the same thing as a leading
+        // "+", so what follows is a country code — never a US 10-digit number.
+        if digitsOnly.hasPrefix("00") {
+            digitsOnly.removeFirst(2)
+            guard digitsOnly.isEmpty == false else { return nil }
+            return "+" + digitsOnly
+        }
 
         if digitsOnly.count == 10 {
             return "+1" + digitsOnly
@@ -319,13 +330,13 @@ public class TwilioCall:AnyObject {
     public var roomname:String?
     public var token:String?
     public var callid:String?
-    public var calltitle:String? //ALF IOSM-503
+    public var calltitle:String?
     public var status:String?
     public var systemMessage:String?
     public var callUuid:UUID?
     public var outgoing:Bool = true
-    public var isGroup:Bool = false //IOSM-545
-    public var isCaller:Bool = false //IOSM-527b
+    public var isGroup:Bool = false
+    public var isCaller:Bool = false
     var contact:PhoneContact?
     var callstatus:CallStatus = .disconnected
     var answerCallAction: CXAnswerCallAction?
@@ -429,7 +440,7 @@ extension CallManager : CXProviderDelegate {
          * Configure the audio session, but do not start call audio here, since it must be done once
          * the audio session has been activated by the system after having its priority elevated.
          */
-        self.callTimeout?.cancel() //IOSM-569
+        self.callTimeout?.cancel()
         
         if self.currentCall != nil {
             self.currentCall?.callstatus = .connecting
@@ -517,12 +528,6 @@ extension CallManager : CXProviderDelegate {
         
         gcdelegate?.muteAudio(action.isMuted)
         
-        /*if let call = activeCalls[action.callUUID.uuidString] {
-            call.isMuted = action.isMuted
-            action.fulfill()
-        } else {
-            action.fail()
-        }*/
         
         action.fulfill()
     }
@@ -561,24 +566,6 @@ extension CallManager : CXProviderDelegate {
             gcdelegate?.holdCall(true)
         }
         
-        /*if let call = activeCalls[action.callUUID.uuidString] {
-            call.isOnHold = action.isOnHold
-
-            /** Explicitly enable the TVOAudioDevice.
-            * This is workaround for an iOS issue where the `provider(_:didActivate:)` method is not called
-            * when un-holding a VoIP call after an ended PSTN call.
-            */ https://developer.apple.com/forums/thread/694836
-            if !call.isOnHold {
-                audioDevice.isEnabled = true
-                activeCall = call
-            }
-
-            toggleUIState(isEnabled: true, showCallControl: true)
-
-            action.fulfill()
-        } else {
-            action.fail()
-        }*/
         
         action.fulfill()
     }
@@ -755,7 +742,10 @@ extension CallManager {
                 contact.phoneNumber = from
             }
 
-            if let foundContact = ContactsManager.shared.matchContact(for: contactnum) {
+            if var foundContact = ContactsManager.shared.matchContact(for: contactnum) {
+                // Keep the number the call actually came from; the match only supplies
+                // the name and avatar (see makeVoiceCall for why).
+                foundContact.phoneNumber = contactnum
                 contact = foundContact
             }
             callContact = contact
@@ -804,7 +794,6 @@ extension CallManager {
         return self.bluetoothAvailable
     }
     
-    //ALF IOSM-451
     @objc func audioRouteChange(_ notification:Notification) {
         //if (IPAD)
         //    return;
@@ -833,7 +822,6 @@ extension CallManager {
         }
     }
     
-    //ALF IOSM-437
     func isRinging() -> Bool {
         if (self.awaitingCallResponse) {
             return true
@@ -847,7 +835,7 @@ extension CallManager {
         var calltitle = caller
         if (self.currentCall == nil) {
             self.currentUuid = uuid
-            self.lastUuid = uuid //IOSM-569
+            self.lastUuid = uuid
             let call = TwilioCall()
             call.callid = callId
             call.caller = caller
@@ -856,7 +844,8 @@ extension CallManager {
             call.isCaller = false
             
             //print("***** reportIncomingCall about to getMAtchingContact for \(caller)")
-            if isVoice, let contact = ContactsManager.shared.matchContact(for: caller) {
+            if isVoice, var contact = ContactsManager.shared.matchContact(for: caller) {
+                contact.phoneNumber = caller
                 call.calltitle = contact.name
                 call.contact = contact
             }
@@ -1004,12 +993,11 @@ extension CallManager {
     }
 
     func reportCallDisconnected(uuid: UUID, error: Error?) {
-        //ALF IOSM-515
         Log.calls.notice("reportCallDisconnected uuid=\(uuid, privacy: .public) userInitiated=\(self.userInitiatedDisconnect, privacy: .public) hasError=\(error != nil, privacy: .public)")
         self.isBusy = false
         self.busyTone = false
         
-        //IOSM-527b if groupCall, and we are caller, send callEnded message with
+        // if groupCall, and we are caller, send callEnded message with
         //if let curcall = self.currentCall, curcall.isCaller {
             //self.sendEndCallMessage(curcall)
         //}
@@ -1045,7 +1033,7 @@ extension CallManager {
     public func reportCallConnected(uuid: UUID?, connectTime: Date) {
         self.stopSound()
         
-        self.currentCall?.status = "inprogress" //ALF IOSM-503
+        self.currentCall?.status = "inprogress"
         
         let cxObserver = callKitCallController.callObserver
         let calls = cxObserver.calls
@@ -1059,11 +1047,10 @@ extension CallManager {
             }
         }
         
-        //ALF IOSM-464 check permissions
+        // check permissions
         checkAudioPermissions()
     }
     
-    //ALF IOSM-464
     public func checkAudioPermissions() -> Bool {
         switch AVAudioSession.sharedInstance().recordPermission {
         case .denied:
@@ -1080,7 +1067,7 @@ extension CallManager {
         return false
     }
     
-    //ALF IOSM-464, true means it still needs authorization
+    // true means it still needs authorization
     public func checkVideoPermissions() -> Bool {
         if AVCaptureDevice.authorizationStatus(for: .video) != .authorized {
             return true

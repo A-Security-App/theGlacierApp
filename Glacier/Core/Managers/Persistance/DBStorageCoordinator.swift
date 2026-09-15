@@ -92,24 +92,7 @@ import SAMKeychain
             // a push notification, we won't be able to access the keychain to
             // process that notification, so we should just terminate by throwing
             // an uncaught exception.
-            /*var errorDescription = "CipherKeySpec inaccessible. New install, migration or no unlock since device restart?"
-            if CurrentAppContext().isMainApp {
-                let applicationState = CurrentAppContext().reportedApplicationState
-                errorDescription += ", ApplicationState: \(NSStringForUIApplicationState(applicationState))"
-            }
-            Logger.error(errorDescription)
-            Logger.flush()*/
 
-            /*if CurrentAppContext().isMainApp {
-                if CurrentAppContext().isInBackground() {
-                    // Rather than crash here, we should have already detected the situation earlier
-                    // and exited gracefully (in the app delegate) using isDatabasePasswordAccessible.
-                    // This is a last ditch effort to avoid blowing away the user's database.
-                    throw OWSAssertionError(errorDescription)
-                }
-            } else {
-                throw OWSAssertionError("CipherKeySpec inaccessible; not main app.")
-            }*/
 
             // At this point, either:
             //
@@ -136,15 +119,6 @@ import SAMKeychain
         let keyspec = try keyspec.fetchString()
         try db.execute(sql: "PRAGMA key = \"\(keyspec)\"")
         try db.execute(sql: "PRAGMA cipher_plaintext_header_size = 32")
-        /*if !CurrentAppContext().isMainApp {
-                let perConnectionCacheSizeInKibibytes = 2000 / (GRDBStorage.maximumReaderCountInExtensions + 1)
-                // Limit the per-connection cache size based on the number of possible readers.
-                // (The default is 2000KiB per connection regardless of how many other connections there are).
-                // The minus sign indicates that this is in KiB rather than the database's page size.
-                // An alternative would be to use SQLite's "shared cache" mode to have a single memory pool,
-                // but unfortunately that changes the locking model in a way GRDB doesn't support.
-                try db.execute(sql: "PRAGMA \(prefix)cache_size = -\(perConnectionCacheSizeInKibibytes)")
-        }*/
     }
     
     @objc public static func existsGlacierGRDB() -> Bool {

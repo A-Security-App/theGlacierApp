@@ -42,7 +42,7 @@ struct UserRegistrationConfirmationScreen<ViewModel: UserRegistrationViewModel &
                 )
 
                 GlacierLabel(
-                    text: NSLocalizedString("We sent you an email to verify you're you.", comment: "User registration confirmation screen sub header"),
+                    text: NSLocalizedString("We sent you an email to verify you’re you.", comment: "User registration confirmation screen sub header"),
                     font: .headerTwo,
                     textAlignment: .center,
                     customTextColor: .constant(.grey60)

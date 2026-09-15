@@ -15,6 +15,7 @@
 "Continue" = "Doorgaan";
 "Skip" = "Overslaan";
 "Ok" = "OK";
+"OK" = "OK";
 "or" = "of";
 "Terms of Use" = "Gebruiksvoorwaarden";
 "Privacy Policy" = "Privacybeleid";
@@ -38,7 +39,7 @@
  ***************************/
 "Browse privately, ad-free." = "Surf privé, zonder advertenties.";
 "VPN and Secure DNS protection for safer browsing—from anywhere." = "VPN- en beveiligde DNS-bescherming voor veiliger browsen – vanaf elke locatie.";
-"Know you're protected." = "Weet dat je beschermd bent.";
+"Know you’re protected." = "Weet dat je beschermd bent.";
 "Get alerts and recommendations to ensure your device is secure." = "Ontvang meldingen en aanbevelingen om je apparaat veilig te houden.";
 "Make calls privately." = "Bel anoniem.";
 "Conversations will never point back to you." = "Gesprekken zijn nooit naar jou te herleiden.";
@@ -59,7 +60,7 @@
 // MARK: - User Registration Screen
 
 "Create your account" = "Maak je account aan";
-"You'll use this email to log in." = "Je gebruikt dit e-mailadres om in te loggen.";
+"You’ll use this email to log in." = "Je gebruikt dit e-mailadres om in te loggen.";
 "Set your Password" = "Stel je wachtwoord in";
 "Email" = "E-mail";
 "Password" = "Wachtwoord";
@@ -73,7 +74,7 @@
 // MARK: - User Registration Confirmation Screen
 
 "Check your email" = "Controleer je e-mail";
-"We sent you an email to verify you're you." = "We hebben je een e-mail gestuurd om je identiteit te verifiëren.";
+"We sent you an email to verify you’re you." = "We hebben je een e-mail gestuurd om je identiteit te verifiëren.";
 "We sent you email for account confirmation." = "We hebben je een e-mail gestuurd voor accountbevestiging.";
 "Something went wrong while resending the confirmation email. Please try again." = "Er is iets misgegaan bij het opnieuw verzenden van de bevestigingsmail. Probeer het opnieuw.";
 "This confirmation email has expired. Please request a new one." = "Deze bevestigingsmail is verlopen. Vraag een nieuwe aan.";
@@ -91,7 +92,7 @@
 // MARK: - Password Reset Screen
 
 "Reset your password" = "Stel je wachtwoord opnieuw in";
-"We'll send you a link to reset your password if this email is associated with an account." = "We sturen je een link om je wachtwoord opnieuw in te stellen als dit e-mailadres aan een account is gekoppeld.";
+"We’ll send you a link to reset your password if this email is associated with an account." = "We sturen je een link om je wachtwoord opnieuw in te stellen als dit e-mailadres aan een account is gekoppeld.";
 "Send Link" = "Link versturen";
 
 "Enter Code" = "Code invoeren";
@@ -108,7 +109,7 @@
 "• At least one number\n" = "• Minimaal één cijfer\n";
 "• At least one special character (!@#$%^&*)" = "• Minimaal één speciaal teken (!@#$%^&*)";
 "Re-enter password" = "Herhaal wachtwoord";
-"Passwords don't match" = "Wachtwoorden komen niet overeen";
+"Passwords don’t match" = "Wachtwoorden komen niet overeen";
 "Something went wrong while sending the password reset link. Please try again." = "Er is iets misgegaan bij het verzenden van de link voor wachtwoordherstel. Probeer het opnieuw.";
 "Something went wrong while updating your password. Please try again." = "Er is iets misgegaan bij het bijwerken van je wachtwoord. Probeer het opnieuw.";
 "Your password has been updated successfully. Please log in with your new password." = "Je wachtwoord is succesvol bijgewerkt. Log in met je nieuwe wachtwoord.";
@@ -139,7 +140,7 @@
 "Please try again." = "Probeer het opnieuw.";
 
 // MARK: - DNS Setup Screen
-"You're in." = "Je bent er.";
+"You’re in." = "Je bent er.";
 "Setup Secure DNS." = "Beveiligde DNS instellen.";
 "Hides which sites you're visiting - faster connection, no ads, and enough privacy for everyday use." = "Verbergt welke sites je bezoekt - snellere verbinding, geen advertenties en voldoende privacy voor dagelijks gebruik.";
 "Enable Glacier DNS in Settings" = "Activeer Glacier DNS in Instellingen";
@@ -191,10 +192,10 @@
 "There were no results for '%@'. Try a new search." = "Geen resultaten voor '%@'. Probeer een nieuwe zoekopdracht.";
 "Confirm new number" = "Nieuw nummer bevestigen";
 "Are you sure you want to add %@?" = "Weet je zeker dat je %@ wilt toevoegen?";
-"Your number wasn't added" = "Je nummer is niet toegevoegd";
+"Your number wasn’t added" = "Je nummer is niet toegevoegd";
 "Your current subscription allows up to %@ phone numbers. You may upgrade your plan later to purchase more." = "Je huidige abonnement staat tot %@ telefoonnummers toe. Je kunt je abonnement later upgraden om er meer aan te schaffen.";
 "Add display name" = "Weergavenaam toevoegen";
-"This name is just for you and won't be saved after logout." = "Deze naam is alleen voor jou en wordt niet opgeslagen na uitloggen.";
+"This name is just for you and won’t be saved after logout." = "Deze naam is alleen voor jou en wordt niet opgeslagen na uitloggen.";
 "Display name" = "Weergavenaam";
 "Add Name" = "Naam toevoegen";
 "Something went wrong while adding name to the number. Please try again." = "Er is iets misgegaan bij het toevoegen van een naam aan het nummer. Probeer het opnieuw.";
@@ -247,6 +248,8 @@
 
 "Connected" = "Verbonden";
 "Disconnected from Secure DNS" = "Verbinding met beveiligde DNS verbroken";
+"Secure DNS status unavailable" = "Status beveiligde DNS niet beschikbaar";
+"Checking Secure DNS…" = "Beveiligde DNS controleren…";
 "Connect" = "Verbinden";
 "Disconnect" = "Verbinding verbreken";
 "Something went wrong while connecting to Glacier DNS.\n\nPlease check that Glacier DNS is selected in:\n\nSettings →\nGeneral →\nVPN & Device Management →\nDNS" = "Er is iets misgegaan bij het verbinden met Glacier DNS.\n\nControleer of Glacier DNS is geselecteerd in:\n\nInstellingen →\nAlgemeen →\nVPN en apparaatbeheer →\nDNS";
@@ -312,6 +315,31 @@
 "%@ will be removed and can't be added again." = "%@ wordt verwijderd en kan niet opnieuw worden toegevoegd.";
 "Something went wrong while updating name for the number. Please try again." = "Er is iets misgegaan bij het bijwerken van de naam voor het nummer. Probeer het opnieuw.";
 "Something went wrong while burning number. Please try again." = "Er is iets misgegaan bij het verwijderen van het nummer. Probeer het opnieuw.";
+"Your plan is managed on the web" = "Je abonnement wordt op het web beheerd";
+"You subscribed to your phone lines through the Glacier website, so changes to your plan need to be made there. Subscribing here would start a second, separate subscription and you’d be billed for both." = "Je hebt je telefoonlijnen via de website van Glacier aangeschaft, dus wijzigingen in je abonnement moeten daar worden doorgevoerd. Als je hier een abonnement neemt, start je een tweede, apart abonnement en betaal je voor beide.";
+"Choose numbers to remove" = "Kies de nummers die je wilt verwijderen";
+"Decide later" = "Later beslissen";
+"Your plan now includes %d number(s). Select %d to remove. Removing a number permanently deletes its messages and call history." = "Je abonnement omvat nu %d nummer(s). Selecteer %d om te verwijderen. Als je een nummer verwijdert, worden de berichten en gespreksgeschiedenis permanent verwijderd.";
+"Select %d to remove" = "Selecteer %d om te verwijderen";
+"Remove %d of %d" = "Verwijder %d van %d";
+"Remove this number?" = "Dit nummer verwijderen?";
+"Remove these numbers?" = "Deze nummers verwijderen?";
+"%@ will be permanently removed, including its messages and call history. This can't be undone." = "%@ wordt permanent verwijderd, inclusief de berichten en gespreksgeschiedenis. Dit kan niet worden ongedaan gemaakt.";
+"%@ will be permanently removed, including their messages and call history. This can't be undone." = "%@ worden permanent verwijderd, inclusief hun berichten en gespreksgeschiedenis. Dit kan niet worden ongedaan gemaakt.";
+"Remove permanently" = "Permanent verwijderen";
+
+
+/***************************
+ Subscription Lifecycle
+ ***************************/
+
+"Subscription expired" = "Abonnement verlopen";
+"Your Glacier subscription has expired. Renew to keep your VPN and encrypted DNS protection — otherwise it will turn off in about %d day." = "Je Glacier-abonnement is verlopen. Verleng het om je VPN en versleutelde DNS-bescherming te behouden — anders wordt deze over ongeveer %d dag uitgeschakeld.";
+"Your Glacier subscription has expired. Renew to keep your VPN and encrypted DNS protection — otherwise it will turn off in about %d days." = "Je Glacier-abonnement is verlopen. Verleng het om je VPN en versleutelde DNS-bescherming te behouden — anders wordt deze over ongeveer %d dagen uitgeschakeld.";
+"Renew now" = "Nu verlengen";
+"Later" = "Later";
+"Numbers removed" = "Nummers verwijderd";
+"%@ and its messages and call history were removed because your phone plan was downgraded." = "%@ en de bijbehorende berichten en gespreksgeschiedenis zijn verwijderd omdat je telefoonabonnement is verlaagd.";
 
 
 /***************************
@@ -324,7 +352,7 @@
 "No Results" = "Geen resultaten";
 "There were no results for '%@'. Try a new search." = "Geen resultaten voor '%@'. Probeer een nieuwe zoekopdracht.";
 "To help you easily connect with people, please allow access to your contacts by going to, \n\n→ Settings \n→ Apps \n→ Glacier \n→ Contacts" = "Om je te helpen gemakkelijk contact te maken met mensen, sta toegang tot je contacten toe door naar het volgende te gaan, \n\n→ Instellingen \n→ Apps \n→ Glacier \n→ Contacten";
-"Looks like you haven't added a phone number yet. Add one to start making calls." = "Het lijkt erop dat je nog geen telefoonnummer hebt toegevoegd. Voeg er een toe om te beginnen met bellen.";
+"Looks like you haven’t added a phone number yet. Add one to start making calls." = "Het lijkt erop dat je nog geen telefoonnummer hebt toegevoegd. Voeg er een toe om te beginnen met bellen.";
 
 
 /***************************
@@ -345,13 +373,24 @@
 "No voicemails" = "Geen voicemails";
 "New voicemail" = "Nieuwe voicemail";
 "Delete this voicemail?" = "Deze voicemail verwijderen?";
-"You won't be able to recover it after deleting." = "Je kunt het niet meer herstellen na verwijdering.";
+"You won’t be able to recover it after deleting." = "Je kunt het niet meer herstellen na verwijdering.";
 "Delete" = "Verwijderen";
 
 
 /***************************
  Settings
  ***************************/
+
+"Delete Account?" = "Account verwijderen?";
+"This permanently deletes your Glacier account and associated data. This action cannot be undone." = "Hiermee worden je Glacier-account en de bijbehorende gegevens permanent verwijderd. Deze actie kan niet worden ongedaan gemaakt.";
+"Yes, Delete" = "Ja, verwijderen";
+"Manage Your Subscription" = "Beheer je abonnement";
+"Your account has been deleted, but your subscription is managed through Apple and remains active." = "Je account is verwijderd, maar je abonnement wordt via Apple beheerd en blijft actief.";
+"Cancel Your Subscription" = "Zeg je abonnement op";
+"Your account has been deleted, but your subscription was purchased on the Glacier website and is still active. Cancel it there to stop being billed." = "Je account is verwijderd, maar je abonnement is via de website van Glacier aangeschaft en is nog actief. Zeg het daar op om verdere kosten te voorkomen.";
+"Manage" = "Beheren";
+"Couldn't Delete Account" = "Account kan niet worden verwijderd";
+"Something went wrong while deleting your account. Please check your connection and try again." = "Er is iets misgegaan bij het verwijderen van je account. Controleer je verbinding en probeer het opnieuw.";
 
 // MARK: - Settings Home Screen
 
@@ -369,7 +408,7 @@
 // MARK: - Appearance Settings Screen
 
 "Device Settings" = "Apparaatinstellingen";
-"Use your device's default mode." = "Gebruik de standaardmodus van je apparaat.";
+"Use your device’s default mode." = "Gebruik de standaardmodus van je apparaat.";
 "Light" = "Licht";
 "Always use light mode." = "Altijd lichte modus gebruiken.";
 "Dark" = "Donker";
@@ -387,9 +426,9 @@
 "Restarting" = "Opnieuw opstarten";
 "Transition in Progress" = "Overgang bezig";
 "Your VPN is currently activated." = "Je VPN is momenteel geactiveerd.";
-"Not active — you're on cellular data" = "Niet actief — je gebruikt mobiel internet";
-"Not active — you're on Wi-Fi" = "Niet actief — je bent verbonden met Wi-Fi";
-"Not active — you're on trusted network: %@" = "Niet actief — je bent op vertrouwd netwerk: %@";
+"Not active — you’re on cellular data" = "Niet actief — je gebruikt mobiel internet";
+"Not active — you’re on Wi-Fi" = "Niet actief — je bent verbonden met Wi-Fi";
+"Not active — you’re on trusted network: %@" = "Niet actief — je bent op vertrouwd netwerk: %@";
 "Locations" = "Locaties";
 "VPN Activation" = "VPN-activering";
 "Cellular" = "Mobiel internet";
@@ -440,3 +479,11 @@
 "Glacier" = "Glacier";
 "Choose your preferred widget, then press " = "Kies je gewenste widget en tik vervolgens op ";
 " to confirm" = " om te bevestigen";
+
+/* VPN protection-off alert (issue #204) */
+"VPN protection is off" = "VPN-bescherming is uit";
+"Glacier's VPN stopped for an app update. Finish updating, then reconnect." = "De VPN van Glacier is gestopt voor een app-update. Rond de update af en verbind opnieuw.";
+"Your Glacier VPN stopped unexpectedly. Open Glacier to reconnect." = "Je Glacier-VPN is onverwacht gestopt. Open Glacier om opnieuw verbinding te maken.";
+"Open Glacier" = "Glacier openen";
+"VPN protection is off after an app update. Finish updating Glacier, then reconnect." = "VPN-bescherming is uit na een app-update. Werk Glacier bij en maak opnieuw verbinding.";
+"VPN protection stopped unexpectedly. Reconnect to protect your traffic." = "VPN-bescherming is onverwacht gestopt. Maak opnieuw verbinding om je verkeer te beschermen.";

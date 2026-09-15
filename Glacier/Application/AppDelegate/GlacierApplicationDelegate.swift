@@ -117,14 +117,20 @@ public class GlacierApplicationDelegate: UIResponder, UIApplicationDelegate {
         UIDevice.current.isBatteryMonitoringEnabled = true
         batteryStateDidChange(nil)
 
-        BGTaskScheduler.shared.register(forTaskWithIdentifier: "com.theglacierapp.Glacier.task.vpnHealth", using: nil) { [weak self] task in
+        BGTaskScheduler.shared.register(forTaskWithIdentifier: GlacierApplicationDelegate.vpnHealthTaskIdentifier, using: nil) { [weak self] task in
             self?.beginVPNHealthCheck(task)
         }
+        scheduleVPNHealthCheckIfNotPending()
 
         UNUserNotificationCenter.current().delegate = self
         registerVoIPNotifications()
 
         scheduleWeeklyRebootReminder()
+
+        // Watches for the VPN stopping without the user asking (issue #204). Started
+        // here rather than from a screen so it is running before any view model can
+        // create or replace the TunnelsManager.
+        VPNInterruptionMonitor.shared.start()
 
         return true
     }
@@ -154,7 +160,14 @@ public class GlacierApplicationDelegate: UIResponder, UIApplicationDelegate {
 
     public func applicationDidEnterBackground(_ application: UIApplication) {
         enteringForeground = false
-        scheduleVPNHealthCheck()
+        // Only if nothing is pending. Submitting unconditionally here was starving the
+        // sweep: every submit resets earliestBeginDate to +15 min, so each backgrounding
+        // cancelled the pending request and pushed the next run a further 15 minutes out.
+        // A device log showed exactly that — seven runs between 06:18 and 09:58 while the
+        // phone was idle, then six cancel/re-submit pairs between 12:42 and 14:27 during
+        // active use and not a single run. An already-pending request is always due sooner
+        // than a fresh one, so there is never a reason to replace it.
+        scheduleVPNHealthCheckIfNotPending()
     }
 
     public func applicationWillEnterForeground(_ application: UIApplication) {
@@ -193,6 +206,10 @@ public class GlacierApplicationDelegate: UIResponder, UIApplicationDelegate {
         BaseSubscriptionLifecycleHandler.shared.handleAppDidBecomeActive()
         didReceiveWillEnterForeground = false
         enteringForeground = false
+
+        // Clear a "VPN protection is off" banner and in-app warning if protection is
+        // already back by the time the user opens the app.
+        VPNInterruptionMonitor.shared.reconcileOnForeground()
     }
 
     public func application(
@@ -227,19 +244,50 @@ public class GlacierApplicationDelegate: UIResponder, UIApplicationDelegate {
 
     // MARK: - VPN health check background task
 
+    static let vpnHealthTaskIdentifier = "com.theglacierapp.Glacier.task.vpnHealth"
+
+    /// Re-arms the sweep at launch, but only when nothing is pending.
+    ///
+    /// iOS discards every pending BGTaskScheduler request when the app is updated.
+    /// Until this existed, the only place that armed the task was
+    /// `applicationDidEnterBackground`, so after an update the sweep stayed disarmed
+    /// until the user next opened Glacier *and* backgrounded it. That is precisely the
+    /// user it exists for: the one who doesn't know their VPN stopped and therefore has
+    /// no reason to open the app at all. An app update disarming the only thing that
+    /// could report an app update is the likely explanation for the silence in #204.
+    ///
+    /// Submitting unconditionally would trade one bug for another — each submit resets
+    /// `earliestBeginDate` to +15 min, so anyone who opens Glacier every few minutes
+    /// would push the sweep out indefinitely. Check first and leave a live request alone.
+    private func scheduleVPNHealthCheckIfNotPending() {
+        BGTaskScheduler.shared.getPendingTaskRequests { [weak self] requests in
+            guard !requests.contains(where: { $0.identifier == GlacierApplicationDelegate.vpnHealthTaskIdentifier }) else {
+                Log.vpn.notice("[VPNHealth] request already pending — leaving its schedule intact")
+                return
+            }
+            Log.vpn.notice("[VPNHealth] no pending request at launch — arming")
+            self?.scheduleVPNHealthCheck()
+        }
+    }
+
     private func scheduleVPNHealthCheck() {
-        let request = BGAppRefreshTaskRequest(identifier: "com.theglacierapp.Glacier.task.vpnHealth")
+        let request = BGAppRefreshTaskRequest(identifier: GlacierApplicationDelegate.vpnHealthTaskIdentifier)
         // Earliest begin date is a lower bound only — iOS decides the actual fire time.
         request.earliestBeginDate = Date(timeIntervalSinceNow: 15 * 60)
         do {
             try BGTaskScheduler.shared.submit(request)
-            Log.vpn.info("VPN health BGTask scheduled OK")
+            // .notice, not .info: only notice and above are persisted to the log
+            // archive, and "did the sweep ever get scheduled?" is the first question a
+            // sysdiagnose has to answer. At .info the success path was invisible, which
+            // made an absence of log lines impossible to distinguish from a failure.
+            Log.vpn.notice("[VPNHealth] BGTask scheduled, earliest begin +15m")
         } catch {
-            Log.vpn.error("VPN health BGTask schedule failed: \(error.localizedDescription)")
+            Log.vpn.error("[VPNHealth] BGTask schedule failed: \(error.localizedDescription)")
         }
     }
 
     private func beginVPNHealthCheck(_ task: BGTask) {
+        Log.vpn.notice("[VPNHealth] BGTask fired")
         // Reschedule first so the chain continues even if we exhaust our time budget.
         scheduleVPNHealthCheck()
 
@@ -290,6 +338,7 @@ public class GlacierApplicationDelegate: UIResponder, UIApplicationDelegate {
             // running. A deliberate user disconnect clears this key from the foreground
             // before the app backgrounds, so wasVPNConnected will be false there.
             let wasVPNConnected = sharedDefaults?.string(forKey: kActiveConnectionTypeKey) == SecuredConnectionType.vpn.rawValue
+            Log.vpn.notice("[VPNHealth] tunnel connected=\(isConnected), VPN intended on=\(wasVPNConnected)")
 
             // The "should we notify?" decision is network-state-dependent and is
             // evaluated at the end of this handler (it may need an async SSID read).
@@ -353,7 +402,7 @@ public class GlacierApplicationDelegate: UIResponder, UIApplicationDelegate {
                 // steering DNS; heal its pinned resolver IPs (background, no user interaction needed)
                 // so DNS keeps working, then decide whether to surface a disconnected notification.
                 DnsOverTlsController.shared.refreshDoTResolutionIfSuppressed(isTunnelConnected: false) { _ in
-                    self?.evaluateShouldBeConnectedOnCurrentNetwork(managers) { shouldConnect in
+                    VPNOnDemandPolicyEvaluator.shouldBeConnectedOnCurrentNetwork(managers) { shouldConnect in
                         if shouldConnect {
                             self?.showVPNDisconnectedNotification()
                         } else {
@@ -368,127 +417,22 @@ public class GlacierApplicationDelegate: UIResponder, UIApplicationDelegate {
         }
     }
 
-    private enum PrimaryInterface {
-        case wifi, cellular, other, none
-    }
-
-    /// Decides whether the VPN tunnel *should* be connected on the network the
-    /// device is currently using, by evaluating the tunnel's on-demand rules
-    /// against the current interface (and SSID, when the policy is SSID-scoped).
-    /// Calls `completion(true)` only when we can affirmatively confirm the tunnel
-    /// should be up here. For a trusted/disconnect network, an undeterminable
-    /// network path, or an unreadable SSID we call `completion(false)` so the
-    /// caller stays silent rather than firing a false "VPN Disconnected" alert.
-    private func evaluateShouldBeConnectedOnCurrentNetwork(
-        _ managers: [NETunnelProviderManager],
-        completion: @escaping (Bool) -> Void
-    ) {
-        guard let manager = managers.first(where: { $0.isEnabled }) ?? managers.first else {
-            completion(false)
-            return
-        }
-        let option = ActivateOnDemandOption(from: manager)
-        let interface = GlacierApplicationDelegate.currentPrimaryInterface()
-
-        // No usable network path: the tunnel can't be up regardless, so there's
-        // nothing to alert about.
-        guard interface != .none else {
-            completion(false)
-            return
-        }
-
-        switch option {
-        case .off, .anyInterface(.anySSID):
-            // No SSID-scoped policy — the tunnel should be up wherever there's a network.
-            completion(true)
-
-        case .nonWiFiInterfaceOnly:
-            completion(interface == .cellular)
-
-        case .wiFiInterfaceOnly(let ssidOption):
-            switch interface {
-            case .wifi:
-                GlacierApplicationDelegate.resolveWiFiConnectDecision(ssidOption, completion: completion)
-            default:
-                // Cellular (or anything non-Wi-Fi) carries a disconnect rule here.
-                completion(false)
-            }
-
-        case .anyInterface(let ssidOption):
-            switch interface {
-            case .cellular:
-                completion(true)   // connect rule on the non-Wi-Fi interface
-            case .wifi:
-                GlacierApplicationDelegate.resolveWiFiConnectDecision(ssidOption, completion: completion)
-            default:
-                completion(false)
-            }
-        }
-    }
-
-    /// Resolves the connect/disconnect decision for the current Wi-Fi network
-    /// against an SSID-scoped on-demand option. SSID-specific options require the
-    /// current SSID; when it can't be read we report `false` (stay silent).
-    private static func resolveWiFiConnectDecision(
-        _ ssidOption: ActivateOnDemandSSIDOption,
-        completion: @escaping (Bool) -> Void
-    ) {
-        switch ssidOption {
-        case .anySSID:
-            completion(true)
-        case .onlySpecificSSIDs(let ssids):
-            fetchCurrentSSID { ssid in
-                guard let ssid else { completion(false); return }
-                completion(ssids.contains(ssid))
-            }
-        case .exceptSpecificSSIDs(let ssids):
-            fetchCurrentSSID { ssid in
-                guard let ssid else { completion(false); return }
-                completion(!ssids.contains(ssid))
-            }
-        }
-    }
-
-    private static func fetchCurrentSSID(_ completion: @escaping (String?) -> Void) {
-        NEHotspotNetwork.fetchCurrent { network in
-            if let ssid = network?.ssid {
-                completion(ssid)
-            } else {
-                // Fall back to the Captive Network copy used elsewhere in the app.
-                completion(TunnelsManager.retrieveCurrentSSID())
-            }
-        }
-    }
-
-    /// NWPathMonitor populates `currentPath` synchronously after `start()`,
-    /// matching the inline pattern used in WiFiSettingsViewModel. Biasing toward
-    /// silence on uncertainty, a momentary unsatisfied read returns `.none`.
-    private static func currentPrimaryInterface() -> PrimaryInterface {
-        let monitor = NWPathMonitor()
-        monitor.start(queue: .global())
-        let path = monitor.currentPath
-        defer { monitor.cancel() }
-        guard path.status == .satisfied else { return .none }
-        if path.usesInterfaceType(.wifi) { return .wifi }
-        if path.usesInterfaceType(.cellular) { return .cellular }
-        return .other
-    }
-
+    /// Surfaces the "protection is off" alert from the periodic background sweep.
+    ///
+    /// Routed through `VPNProtectionAlert` so this path shares the fixed identifier,
+    /// the rate limit and the "Open Glacier" action with the two prompt paths — the
+    /// tunnel extension and `VPNInterruptionMonitor`. Previously this posted with a
+    /// random identifier, which meant a tunnel that stayed down produced a fresh
+    /// banner on every sweep.
+    ///
+    /// No confirmation delay: unlike the prompt paths, this sweep runs at least 15
+    /// minutes after the drop and has already confirmed both that the tunnel is down
+    /// and that the on-demand policy wants it up.
     private func showVPNDisconnectedNotification() {
-        let content = UNMutableNotificationContent()
-        content.title = "VPN Disconnected"
-        content.body = "Glacier detected your VPN is off. Tap to reconnect."
-        content.sound = .default
-        let request = UNNotificationRequest(
-            identifier: "vpn-health-\(UUID().uuidString)",
-            content: content,
-            trigger: nil
-        )
-        UNUserNotificationCenter.current().add(request) { error in
-            if let error = error as NSError? {
-                Log.vpn.error("VPN health notification failed: \(error)")
-            }
-        }
+        // If the extension recorded *why* the tunnel stopped, keep that reason — an
+        // app update needs different instructions from a plain failure.
+        let kind = VPNProtectionAlert.pendingWarningKind() ?? .failure
+        VPNProtectionAlert.arm(kind, delay: 0, logger: Log.vpn)
     }
 
     public class var appDelegate: GlacierApplicationDelegate {
@@ -669,6 +613,17 @@ extension GlacierApplicationDelegate: UNUserNotificationCenterDelegate {
     }
     
     public func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse, withCompletionHandler completionHandler: @escaping () -> Void) {
+        // The "VPN protection is off" alert carries no GlacierNotificationType, so it
+        // has to be matched before the guard below drops unknown types on the floor.
+        // Opening the app *is* the action; the Home screen shows the disconnected
+        // warning and the reconnect control from there.
+        if response.notification.request.identifier == VPNProtectionAlert.notificationId {
+            center.removeDeliveredNotifications(withIdentifiers: [VPNProtectionAlert.notificationId])
+            NotificationCenter.default.post(name: VPNInterruptionMonitor.protectionStateDidChange, object: nil)
+            completionHandler()
+            return
+        }
+
         guard let notificationType = extractNotificationType(notification: response.notification) else {
             completionHandler()
             return

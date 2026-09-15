@@ -192,7 +192,12 @@ struct HomeScreen<ViewModel: HomeViewModel & ObservableObject>: View {
                                     }
                                 }
                                 
-                                if !viewModel.isConnectedToVPN && !viewModel.isConnectedToDNS {
+                                // Offer Disconnect whenever DoT is switched on, not only when a
+                                // probe has verified it: on a captive portal the probe cannot
+                                // succeed, and the profile is still steering DNS regardless.
+                                if !viewModel.isConnectedToVPN
+                                    && !viewModel.isConnectedToDNS
+                                    && !viewModel.isDNSTurnedOnByUser {
                                     GlacierButton(
                                         style: .primary,
                                         title: NSLocalizedString("Connect", comment: "Home screen connect button title"),

@@ -5,7 +5,6 @@
 //  Created by Andy Friedman on 12/7/20.
 //  Copyright © 2020 Glacier. All rights reserved.
 //
-//ALF IOSM-472
 import UIKit
 import Kingfisher
 class GlacierImageCache: NSObject {//} , NSDiscardableContent {
@@ -35,7 +34,6 @@ class GlacierImageCache: NSObject {//} , NSDiscardableContent {
         return ImageCache.default
     }
     public static func image(_ identifier:String) -> UIImage? {
-        //ALF IOSM-472
         return Self.glacierCache.retrieveImageInMemoryCache(forKey: identifier)
     }
     public static func removeImage(_ identifier:String) {
@@ -47,15 +45,4 @@ class GlacierImageCache: NSObject {//} , NSDiscardableContent {
     public static func setImage(_ image:UIImage, identifier:String, toDisk: Bool) {
         Self.glacierCache.store(image, forKey: identifier, options: Self.parsedOptions, toDisk: toDisk)
     }
-    /*public var image: UIImage!
-    func beginContentAccess() -> Bool {
-        return true
-    }
-    func endContentAccess() {
-    }
-    func discardContentIfPossible() {
-    }
-    func isContentDiscarded() -> Bool {
-        return false
-    }*/
 }

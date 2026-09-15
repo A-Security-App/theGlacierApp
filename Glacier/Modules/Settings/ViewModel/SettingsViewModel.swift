@@ -149,7 +149,13 @@ final class SettingsVM: SettingsViewModel, ObservableObject {
 
                             // Capture subscription state before we tear down local state,
                             // since the local account record is cleared during cleanup.
-                            let hasActiveSubscription = GlacierAccountModel.getGlacierAccount()?.hasActiveSubscription ?? false
+                            // `lastKnownBackendSubscribed` also tells us the *source*: the
+                            // follow-up popup must not tell a website subscriber their plan is
+                            // managed by Apple. Read from the persisted value — no network call
+                            // belongs on this path.
+                            let account = GlacierAccountModel.getGlacierAccount()
+                            let hasActiveSubscription = account?.hasActiveSubscription ?? false
+                            let isWebManagedSubscription = account?.lastKnownBackendSubscribed ?? false
 
                             // Tear down and remove the VPN + DoT DNS before deleting so no
                             // tunnel keeps running and no DNS profile stays installed for an
@@ -173,11 +179,15 @@ final class SettingsVM: SettingsViewModel, ObservableObject {
                             let service = AmplifyAuthenticationService()
                             _ = await service.signOut()
 
-                            // App Store subscriptions can't be cancelled programmatically, so
-                            // if the user has an active subscription, offer to open Apple's
-                            // manage sheet before navigating away. Otherwise finish immediately.
+                            // Neither an App Store nor a website subscription can be cancelled
+                            // programmatically, so if one is still active we tell the user where
+                            // it lives before navigating away. Otherwise finish immediately.
                             if hasActiveSubscription {
-                                self.presentManageSubscriptionFollowUp()
+                                if isWebManagedSubscription {
+                                    self.presentWebManagedSubscriptionFollowUp()
+                                } else {
+                                    self.presentManageSubscriptionFollowUp()
+                                }
                             } else {
                                 self.clearLocalUserStateAndNavigateToLogin()
                             }
@@ -208,9 +218,13 @@ final class SettingsVM: SettingsViewModel, ObservableObject {
     }
 
     /// Shown after a successful account deletion when the user still has an active
-    /// subscription. App Store subscriptions can't be cancelled programmatically,
-    /// so we offer to open Apple's native manage-subscriptions sheet. Either choice
-    /// finishes local cleanup and routes the user back to the login screen.
+    /// subscription purchased **through Apple**. App Store subscriptions can't be
+    /// cancelled programmatically, so we offer to open Apple's native
+    /// manage-subscriptions sheet. Either choice finishes local cleanup and routes
+    /// the user back to the login screen.
+    ///
+    /// Website (Stripe) subscribers get `presentWebManagedSubscriptionFollowUp()`
+    /// instead — Apple's sheet has nothing to show them.
     @MainActor
     private func presentManageSubscriptionFollowUp() {
         let popupConfiguration = PopupConfiguration(
@@ -239,6 +253,47 @@ final class SettingsVM: SettingsViewModel, ObservableObject {
                             await self.showManageSubscriptionsSheet()
                             self.clearLocalUserStateAndNavigateToLogin()
                         }
+                    }
+                )
+            ],
+            buttonsAlignment: .horizontal
+        )
+        presentPopup(with: popupConfiguration)
+    }
+
+    /// Shown after a successful account deletion when the still-active subscription was
+    /// purchased on the Glacier website rather than through Apple.
+    ///
+    /// The Apple variant of this popup would be actively misleading here: it asserts the
+    /// plan is "managed through Apple" and opens a manage-subscriptions sheet that has
+    /// nothing to show, so the user leaves believing they were pointed at the cancel path
+    /// while the website subscription keeps billing.
+    ///
+    /// No link out to the website: a purchase-adjacent popup steering to an external
+    /// payment flow is what App Store Review Guideline 3.1.1 targets. Naming where the
+    /// subscription lives is enough to get the user to the right place.
+    ///
+    /// Only the base plan is branched. A website subscriber never sees the in-app base
+    /// paywall (reconciliation grants access from either source), so holding an Apple
+    /// base subscription *and* a website one is not a reachable state.
+    @MainActor
+    private func presentWebManagedSubscriptionFollowUp() {
+        let popupConfiguration = PopupConfiguration(
+            title: NSLocalizedString(
+                "Cancel Your Subscription",
+                comment: "Web-managed subscription follow-up title"
+            ),
+            description: NSLocalizedString(
+                "Your account has been deleted, but your subscription was purchased on the Glacier website and is still active. Cancel it there to stop being billed.",
+                comment: "Web-managed subscription follow-up description"
+            ),
+            buttons: [
+                PopupButton(
+                    style: .tertiary,
+                    title: NSLocalizedString("Ok", comment: "Ok button title"),
+                    onTap: {
+                        self.dismissPopup()
+                        self.clearLocalUserStateAndNavigateToLogin()
                     }
                 )
             ],
@@ -366,6 +421,9 @@ final class SettingsVM: SettingsViewModel, ObservableObject {
         // profile, putting their queries in that account's logs.
         UserDefaultsService.shared.remove(for: \.lastKnownDNSProfileID)
         UserDefaultsService.shared.remove(for: \.lastDNSProfileHealAttempt)
+        // Both profiles are gone now, so any pending "enforcement turned this off, put it back"
+        // record is stale — and must not re-arm protection for whoever signs in next.
+        BaseSubscriptionLifecycleHandler.shared.clearEnforcementRestoreState()
     }
 
     private func removeUserAddedPhoneNumbersFromDB() {
