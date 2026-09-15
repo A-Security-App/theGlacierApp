@@ -44,11 +44,9 @@ class TunnelsManager {
 
     static func create(completionHandler: @escaping (Result<TunnelsManager, TunnelsManagerError>) -> Void) {
         #if targetEnvironment(simulator)
-        //completionHandler(.success(TunnelsManager(tunnelProviders: MockTunnels.createMockTunnels())))
         #else
         NETunnelProviderManager.loadAllFromPreferences { managers, error in
             if let error = error {
-                //wg_log(.error, message: "Failed to load tunnel provider managers: \(error)")
                 completionHandler(.failure(TunnelsManagerError.systemErrorOnListingTunnels(systemError: error)))
                 return
             }
@@ -69,7 +67,6 @@ class TunnelsManager {
                 if let ref = passwordRef {
                     refs.insert(ref)
                 } else {
-                    //wg_log(.info, message: "Removing orphaned tunnel with non-verifying keychain entry: \(tunnelManager.localizedDescription ?? "<unknown>")")
                     tunnelManager.removeFromPreferences { _ in }
                     tunnelManagers.remove(at: index)
                 }
@@ -136,7 +133,6 @@ class TunnelsManager {
         }
         
         if let tunnel = self.tunnel(named: tunnelName) { //tunnels.contains(where: { $0.name == tunnelName }) {
-            //completionHandler(.failure(TunnelsManagerError.tunnelAlreadyExistsWithThatName))
             completionHandler(.success(tunnel))
             //Failure here prints an alert, not necessary
             return
@@ -154,7 +150,6 @@ class TunnelsManager {
 
         tunnelProviderManager.saveToPreferences { [weak self] error in
             if let error = error {
-                //wg_log(.error, message: "Add: Saving configuration failed: \(error)")
                 (tunnelProviderManager.protocolConfiguration as? NETunnelProviderProtocol)?.destroyConfigurationReference()
                 completionHandler(.failure(TunnelsManagerError.systemErrorOnAddTunnel(systemError: error)))
                 return
@@ -295,6 +290,9 @@ class TunnelsManager {
                 if tunnel.status == .active || tunnel.status == .activating || tunnel.status == .reasserting {
                     // Turn off the tunnel, and then turn it back on, so the changes are made effective
                     tunnel.status = .restarting
+                    // On-demand stays enabled across this bounce, so without an explicit
+                    // marker the drop is indistinguishable from a system kill.
+                    VPNProtectionAlert.noteAppInitiatedStop()
                     (tunnel.tunnelProvider.connection as? NETunnelProviderSession)?.stopTunnel()
                 }
             }
@@ -324,7 +322,6 @@ class TunnelsManager {
         
         tunnelProviderManager.removeFromPreferences { [weak self] error in
             if let error = error {
-                //wg_log(.error, message: "Remove: Saving configuration failed: \(error)")
                 completionHandler(TunnelsManagerError.systemErrorOnRemoveTunnel(systemError: error))
                 return
             }
@@ -405,15 +402,9 @@ class TunnelsManager {
         tunnelProviderManager.isOnDemandEnabled = isOnDemandEnabled
         tunnelProviderManager.isEnabled = true
         
-        /*var needsReload = false
-        if tunnel.status == .inactive && isOnDemandEnabled == false {
-            tunnelProviderManager.isEnabled = false
-            needsReload = true
-        }*/
         
         tunnelProviderManager.saveToPreferences { error in
             if let error = error {
-                //wg_log(.error, message: "Modify On-Demand: Saving configuration failed: \(error)")
                 completionHandler(TunnelsManagerError.systemErrorOnModifyTunnel(systemError: error))
                 return
             }
@@ -424,7 +415,6 @@ class TunnelsManager {
                     // isActivateOnDemandEnabled will get changed in reload(), but no harm in setting it here too
                     tunnel.isActivateOnDemandEnabled = tunnelProviderManager.isOnDemandEnabled
                     if let error = error {
-                        //wg_log(.error, message: "Modify On-Demand: Re-loading after saving configuration failed: \(error)")
                         completionHandler(TunnelsManagerError.systemErrorOnModifyTunnel(systemError: error))
                         return
                     }
@@ -542,14 +532,12 @@ class TunnelsManager {
 
         // first where inactive OR not = current and isActivateOnDemandEnabled
         if let tunnelInOperation = tunnels.first(where: { ($0.status != .inactive || ($0.name != tunnel.name && $0.isActivateOnDemandEnabled == true)) }) {
-            //wg_log(.info, message: "Tunnel '\(tunnel.name)' waiting for deactivation of '\(tunnelInOperation.name)'")
             tunnel.status = .waiting
             activateWaitingTunnelOnDeactivation(of: tunnelInOperation)
             if tunnelInOperation.status != .deactivating {
                 if tunnelInOperation.isActivateOnDemandEnabled {
                     setOnDemandEnabled(false, on: tunnelInOperation) { [weak self] error in
                         guard error == nil else {
-                            //wg_log(.error, message: "Unable to activate tunnel '\(tunnel.name)' because on-demand could not be disabled on active tunnel '\(tunnel.name)'")
                             return
                         }
                         self?.startDeactivation(of: tunnelInOperation)
@@ -577,9 +565,12 @@ class TunnelsManager {
     }
 
     func startDeactivation(of tunnel: TunnelContainer) {
-        //print("***** start deactivation")
         tunnel.isAttemptingActivation = false
         guard tunnel.status != .inactive && tunnel.status != .deactivating else { return }
+        // The app is asking for this stop, so the resulting .disconnected must not be
+        // reported to the user as lost protection (issue #204). Nothing outside the app
+        // reaches this method, which is what makes it a trustworthy signal of intent.
+        VPNProtectionAlert.noteAppInitiatedStop()
         #if targetEnvironment(simulator)
         tunnel.status = .inactive
         #else
@@ -606,15 +597,12 @@ class TunnelsManager {
 
     private func startObservingTunnelStatuses() {
         statusObservationToken = NotificationCenter.default.observe(name: .NEVPNStatusDidChange, object: nil, queue: OperationQueue.main) { [weak self] statusChangeNotification in
-            //print("***** Status Change noted")
             guard let self = self,
                 let session = statusChangeNotification.object as? NETunnelProviderSession,
                 let tunnelProvider = session.manager as? NETunnelProviderManager,
                 let tunnel = self.tunnels.first(where: { $0.tunnelProvider == tunnelProvider }) else { return }
             
-            //print("***** Tunnel \(tunnel.name)")
 
-            //wg_log(.debug, message: "Tunnel '\(tunnel.name)' connection status changed to '\(tunnel.tunnelProvider.connection.status)'")
 
             if tunnel.isAttemptingActivation {
                 if session.status == .connected {
@@ -662,30 +650,6 @@ class TunnelsManager {
         return lhs.compare(rhs, options: [.caseInsensitive, .diacriticInsensitive, .widthInsensitive, .numeric]) == .orderedAscending
     }
     
-    /*func canIgnoreActivationError(_ tunnel:TunnelContainer) -> Bool {
-        var ignore = false
-        let model = ActivateOnDemandViewModel(tunnel: tunnel)
-        if let currentSSID = TunnelsManager.retrieveCurrentSSID() {
-            // this should mean we are currently using wifi
-            if model.isWiFiInterfaceEnabled == false {
-                //using wifi, but wifi disabled = no VPN and we can ignore activation error
-                ignore = true
-            } else {
-                if model.ssidOption == .anySSID {
-                    ignore = true
-                }
-            }
-            let option = tunnel.onDemandOption
-        } else {
-            //could mean we are using cellular? Or no internet, hmmmm
-            if model.isNonWiFiInterfaceEnabled == false {
-                ignore = true
-            }
-        }
-        //if using wifi but wifi is turns off
-        // if wifi is turned on but on protected SSID
-        return ignore
-    }*/
     
     /// retrieve the current SSID from a connected Wifi network
     static func retrieveCurrentSSID() -> String? {
@@ -741,7 +705,6 @@ public class TunnelContainer: NSObject {
                 self.activationTimer?.invalidate()
                 let activationTimer = Timer(timeInterval: 5 /* seconds */, repeats: true) { [weak self] _ in
                     guard let self = self else { return }
-                    //wg_log(.debug, message: "Status update notification timeout for tunnel '\(self.name)'. Tunnel status is now '\(self.tunnelProvider.connection.status)'.")
                     switch self.tunnelProvider.connection.status {
                     case .connected, .disconnected, .invalid:
                         self.activationTimer?.invalidate()
@@ -834,16 +797,13 @@ public class TunnelContainer: NSObject {
         guard tunnelProvider.isEnabled else {
             // In case the tunnel had gotten disabled, re-enable and save it,
             // then call this function again.
-            //wg_log(.debug, staticMessage: "startActivation: Tunnel is disabled. Re-enabling and saving")
             tunnelProvider.isEnabled = true
             tunnelProvider.saveToPreferences { [weak self] error in
                 guard let self = self else { return }
                 if error != nil {
-                    //wg_log(.error, message: "Error saving tunnel after re-enabling: \(error!)")
                     activationDelegate?.tunnelActivationAttemptFailed(tunnel: self, error: .failedWhileSaving(systemError: error!))
                     return
                 }
-                //wg_log(.debug, staticMessage: "startActivation: Tunnel saved after re-enabling, invoking startActivation")
                 self.startActivation(recursionCount: recursionCount + 1, lastError: NEVPNError(NEVPNError.configurationUnknown), activationDelegate: activationDelegate)
             }
             return
@@ -851,44 +811,36 @@ public class TunnelContainer: NSObject {
 
         // Start the tunnel
         do {
-            //wg_log(.debug, staticMessage: "startActivation: Starting tunnel")
             isAttemptingActivation = true
             let activationAttemptId = UUID().uuidString
             self.activationAttemptId = activationAttemptId
             try (tunnelProvider.connection as? NETunnelProviderSession)?.startTunnel(options: ["activationAttemptId": activationAttemptId])
-            //wg_log(.debug, staticMessage: "startActivation: Success")
             activationDelegate?.tunnelActivationAttemptSucceeded(tunnel: self)
         } catch let error {
             isAttemptingActivation = false
             guard let systemError = error as? NEVPNError else {
-                //wg_log(.error, message: "Failed to activate tunnel: Error: \(error)")
                 status = .inactive
                 activationDelegate?.tunnelActivationAttemptFailed(tunnel: self, error: .failedWhileStarting(systemError: error))
                 return
             }
             guard systemError.code == NEVPNError.configurationInvalid || systemError.code == NEVPNError.configurationStale else {
-                //wg_log(.error, message: "Failed to activate tunnel: VPN Error: \(error)")
                 status = .inactive
                 activationDelegate?.tunnelActivationAttemptFailed(tunnel: self, error: .failedWhileStarting(systemError: systemError))
                 return
             }
-            //wg_log(.debug, staticMessage: "startActivation: Will reload tunnel and then try to start it.")
             tunnelProvider.loadFromPreferences { [weak self] error in
                 guard let self = self else { return }
                 if error != nil {
-                    //wg_log(.error, message: "startActivation: Error reloading tunnel: \(error!)")
                     self.status = .inactive
                     activationDelegate?.tunnelActivationAttemptFailed(tunnel: self, error: .failedWhileLoading(systemError: systemError))
                     return
                 }
-                //wg_log(.debug, staticMessage: "startActivation: Tunnel reloaded, invoking startActivation")
                 self.startActivation(recursionCount: recursionCount + 1, lastError: systemError, activationDelegate: activationDelegate)
             }
         }
     }
 
     fileprivate func startDeactivation() {
-        //wg_log(.debug, message: "startDeactivation: Tunnel: \(name)")
         (tunnelProvider.connection as? NETunnelProviderSession)?.stopTunnel()
     }
 }

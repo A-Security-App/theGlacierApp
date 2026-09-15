@@ -15,6 +15,7 @@
 "Continue" = "Continuer";
 "Skip" = "Passer";
 "Ok" = "OK";
+"OK" = "OK";
 "or" = "ou";
 "Terms of Use" = "Conditions d'utilisation";
 "Privacy Policy" = "Politique de confidentialité";
@@ -38,7 +39,7 @@
  ***************************/
 "Browse privately, ad-free." = "Naviguez en privé, sans publicités.";
 "VPN and Secure DNS protection for safer browsing—from anywhere." = "Protection VPN et DNS sécurisé pour une navigation plus sûre — de partout.";
-"Know you're protected." = "Sachez que vous êtes protégé.";
+"Know you’re protected." = "Sachez que vous êtes protégé.";
 "Get alerts and recommendations to ensure your device is secure." = "Recevez des alertes et recommandations pour garantir la sécurité de votre appareil.";
 "Make calls privately." = "Passez des appels anonymement.";
 "Conversations will never point back to you." = "Les conversations ne pourront jamais être retracées jusqu'à vous.";
@@ -59,7 +60,7 @@
 // MARK: - User Registration Screen
 
 "Create your account" = "Créez votre compte";
-"You'll use this email to log in." = "Vous utiliserez cet e-mail pour vous connecter.";
+"You’ll use this email to log in." = "Vous utiliserez cet e-mail pour vous connecter.";
 "Set your Password" = "Définissez votre mot de passe";
 "Email" = "E-mail";
 "Password" = "Mot de passe";
@@ -73,7 +74,7 @@
 // MARK: - User Registration Confirmation Screen
 
 "Check your email" = "Vérifiez votre e-mail";
-"We sent you an email to verify you're you." = "Nous vous avons envoyé un e-mail pour vérifier votre identité.";
+"We sent you an email to verify you’re you." = "Nous vous avons envoyé un e-mail pour vérifier votre identité.";
 "We sent you email for account confirmation." = "Nous vous avons envoyé un e-mail pour confirmer votre compte.";
 "Something went wrong while resending the confirmation email. Please try again." = "Une erreur s'est produite lors du renvoi de l'e-mail de confirmation. Veuillez réessayer.";
 "This confirmation email has expired. Please request a new one." = "Cet e-mail de confirmation a expiré. Veuillez en demander un nouveau.";
@@ -91,7 +92,7 @@
 // MARK: - Password Reset Screen
 
 "Reset your password" = "Réinitialisez votre mot de passe";
-"We'll send you a link to reset your password if this email is associated with an account." = "Nous vous enverrons un lien pour réinitialiser votre mot de passe si cet e-mail est associé à un compte.";
+"We’ll send you a link to reset your password if this email is associated with an account." = "Nous vous enverrons un lien pour réinitialiser votre mot de passe si cet e-mail est associé à un compte.";
 "Send Link" = "Envoyer le lien";
 
 "Enter Code" = "Saisir le code";
@@ -108,7 +109,7 @@
 "• At least one number\n" = "• Au moins un chiffre\n";
 "• At least one special character (!@#$%^&*)" = "• Au moins un caractère spécial (!@#$%^&*)";
 "Re-enter password" = "Confirmez le mot de passe";
-"Passwords don't match" = "Les mots de passe ne correspondent pas";
+"Passwords don’t match" = "Les mots de passe ne correspondent pas";
 "Something went wrong while sending the password reset link. Please try again." = "Une erreur s'est produite lors de l'envoi du lien de réinitialisation. Veuillez réessayer.";
 "Something went wrong while updating your password. Please try again." = "Une erreur s'est produite lors de la mise à jour de votre mot de passe. Veuillez réessayer.";
 "Your password has been updated successfully. Please log in with your new password." = "Votre mot de passe a été mis à jour avec succès. Connectez-vous avec votre nouveau mot de passe.";
@@ -139,7 +140,7 @@
 "Please try again." = "Veuillez réessayer.";
 
 // MARK: - DNS Setup Screen
-"You're in." = "Vous êtes connecté.";
+"You’re in." = "Vous êtes connecté.";
 "Setup Secure DNS." = "Configurer le DNS sécurisé.";
 "Hides which sites you're visiting - faster connection, no ads, and enough privacy for everyday use." = "Masque les sites que vous visitez - connexion plus rapide, sans publicités et une confidentialité suffisante pour un usage quotidien.";
 "Enable Glacier DNS in Settings" = "Activer Glacier DNS dans Réglages";
@@ -191,10 +192,10 @@
 "There were no results for '%@'. Try a new search." = "Aucun résultat pour '%@'. Essayez une nouvelle recherche.";
 "Confirm new number" = "Confirmer le nouveau numéro";
 "Are you sure you want to add %@?" = "Êtes-vous sûr de vouloir ajouter %@ ?";
-"Your number wasn't added" = "Votre numéro n'a pas été ajouté";
+"Your number wasn’t added" = "Votre numéro n'a pas été ajouté";
 "Your current subscription allows up to %@ phone numbers. You may upgrade your plan later to purchase more." = "Votre abonnement actuel permet jusqu'à %@ numéros de téléphone. Vous pouvez mettre à niveau votre forfait ultérieurement pour en acheter davantage.";
 "Add display name" = "Ajouter un nom d'affichage";
-"This name is just for you and won't be saved after logout." = "Ce nom est uniquement pour vous et ne sera pas sauvegardé après déconnexion.";
+"This name is just for you and won’t be saved after logout." = "Ce nom est uniquement pour vous et ne sera pas sauvegardé après déconnexion.";
 "Display name" = "Nom d'affichage";
 "Add Name" = "Ajouter un nom";
 "Something went wrong while adding name to the number. Please try again." = "Une erreur s'est produite lors de l'ajout du nom au numéro. Veuillez réessayer.";
@@ -247,6 +248,8 @@
 
 "Connected" = "Connecté";
 "Disconnected from Secure DNS" = "Déconnecté du DNS sécurisé";
+"Secure DNS status unavailable" = "État du DNS sécurisé indisponible";
+"Checking Secure DNS…" = "Vérification du DNS sécurisé…";
 "Connect" = "Connecter";
 "Disconnect" = "Déconnecter";
 "Something went wrong while connecting to Glacier DNS.\n\nPlease check that Glacier DNS is selected in:\n\nSettings →\nGeneral →\nVPN & Device Management →\nDNS" = "Une erreur s'est produite lors de la connexion à Glacier DNS.\n\nVérifiez que Glacier DNS est sélectionné dans :\n\nRéglages →\nGénéral →\nVPN et gestion de l'appareil →\nDNS";
@@ -312,6 +315,31 @@
 "%@ will be removed and can't be added again." = "%@ sera supprimé et ne pourra pas être ajouté à nouveau.";
 "Something went wrong while updating name for the number. Please try again." = "Une erreur s'est produite lors de la mise à jour du nom. Veuillez réessayer.";
 "Something went wrong while burning number. Please try again." = "Une erreur s'est produite lors de la suppression du numéro. Veuillez réessayer.";
+"Your plan is managed on the web" = "Votre forfait est géré sur le site web";
+"You subscribed to your phone lines through the Glacier website, so changes to your plan need to be made there. Subscribing here would start a second, separate subscription and you’d be billed for both." = "Vous avez souscrit vos lignes téléphoniques sur le site web de Glacier ; les modifications de votre forfait doivent donc y être effectuées. Souscrire ici créerait un second abonnement distinct et vous seriez facturé pour les deux.";
+"Choose numbers to remove" = "Choisissez les numéros à supprimer";
+"Decide later" = "Décider plus tard";
+"Your plan now includes %d number(s). Select %d to remove. Removing a number permanently deletes its messages and call history." = "Votre forfait comprend désormais %d numéro(s). Sélectionnez-en %d à supprimer. La suppression d’un numéro efface définitivement ses messages et son historique d’appels.";
+"Select %d to remove" = "Sélectionnez-en %d à supprimer";
+"Remove %d of %d" = "Supprimer %d sur %d";
+"Remove this number?" = "Supprimer ce numéro ?";
+"Remove these numbers?" = "Supprimer ces numéros ?";
+"%@ will be permanently removed, including its messages and call history. This can't be undone." = "%@ sera définitivement supprimé, y compris ses messages et son historique d’appels. Cette action est irréversible.";
+"%@ will be permanently removed, including their messages and call history. This can't be undone." = "%@ seront définitivement supprimés, y compris leurs messages et leurs historiques d’appels. Cette action est irréversible.";
+"Remove permanently" = "Supprimer définitivement";
+
+
+/***************************
+ Subscription Lifecycle
+ ***************************/
+
+"Subscription expired" = "Abonnement expiré";
+"Your Glacier subscription has expired. Renew to keep your VPN and encrypted DNS protection — otherwise it will turn off in about %d day." = "Votre abonnement Glacier a expiré. Renouvelez-le pour conserver votre VPN et votre protection DNS chiffrée — sinon, elle sera désactivée dans environ %d jour.";
+"Your Glacier subscription has expired. Renew to keep your VPN and encrypted DNS protection — otherwise it will turn off in about %d days." = "Votre abonnement Glacier a expiré. Renouvelez-le pour conserver votre VPN et votre protection DNS chiffrée — sinon, elle sera désactivée dans environ %d jours.";
+"Renew now" = "Renouveler maintenant";
+"Later" = "Plus tard";
+"Numbers removed" = "Numéros supprimés";
+"%@ and its messages and call history were removed because your phone plan was downgraded." = "%@ ainsi que ses messages et son historique d’appels ont été supprimés car votre forfait téléphonique a été rétrogradé.";
 
 
 /***************************
@@ -324,7 +352,7 @@
 "No Results" = "Aucun résultat";
 "There were no results for '%@'. Try a new search." = "Aucun résultat pour '%@'. Essayez une nouvelle recherche.";
 "To help you easily connect with people, please allow access to your contacts by going to, \n\n→ Settings \n→ Apps \n→ Glacier \n→ Contacts" = "Pour vous aider à contacter facilement des personnes, autorisez l'accès à vos contacts en allant dans, \n\n→ Réglages \n→ Apps \n→ Glacier \n→ Contacts";
-"Looks like you haven't added a phone number yet. Add one to start making calls." = "Il semble que vous n'ayez pas encore ajouté de numéro de téléphone. Ajoutez-en un pour commencer à appeler.";
+"Looks like you haven’t added a phone number yet. Add one to start making calls." = "Il semble que vous n'ayez pas encore ajouté de numéro de téléphone. Ajoutez-en un pour commencer à appeler.";
 
 
 /***************************
@@ -345,13 +373,24 @@
 "No voicemails" = "Aucun message vocal";
 "New voicemail" = "Nouveau message vocal";
 "Delete this voicemail?" = "Supprimer ce message vocal ?";
-"You won't be able to recover it after deleting." = "Vous ne pourrez pas le récupérer après la suppression.";
+"You won’t be able to recover it after deleting." = "Vous ne pourrez pas le récupérer après la suppression.";
 "Delete" = "Supprimer";
 
 
 /***************************
  Settings
  ***************************/
+
+"Delete Account?" = "Supprimer le compte ?";
+"This permanently deletes your Glacier account and associated data. This action cannot be undone." = "Cette action supprime définitivement votre compte Glacier et les données associées. Elle est irréversible.";
+"Yes, Delete" = "Oui, supprimer";
+"Manage Your Subscription" = "Gérer votre abonnement";
+"Your account has been deleted, but your subscription is managed through Apple and remains active." = "Votre compte a été supprimé, mais votre abonnement est géré par Apple et reste actif.";
+"Cancel Your Subscription" = "Résilier votre abonnement";
+"Your account has been deleted, but your subscription was purchased on the Glacier website and is still active. Cancel it there to stop being billed." = "Votre compte a été supprimé, mais votre abonnement a été souscrit sur le site web de Glacier et est toujours actif. Résiliez-le sur le site web pour ne plus être facturé.";
+"Manage" = "Gérer";
+"Couldn't Delete Account" = "Impossible de supprimer le compte";
+"Something went wrong while deleting your account. Please check your connection and try again." = "Une erreur s’est produite lors de la suppression de votre compte. Veuillez vérifier votre connexion et réessayer.";
 
 // MARK: - Settings Home Screen
 
@@ -360,6 +399,7 @@
 "VPN Settings" = "Réglages VPN";
 "Appearance" = "Apparence";
 "Dark Mode" = "Mode sombre";
+"Support & FAQ" = "Assistance et FAQ";
 "Reset Password" = "Réinitialiser le mot de passe";
 "Sign Out" = "Se déconnecter";
 "Are you sure?" = "Êtes-vous sûr ?";
@@ -368,7 +408,7 @@
 // MARK: - Appearance Settings Screen
 
 "Device Settings" = "Réglages de l'appareil";
-"Use your device's default mode." = "Utiliser le mode par défaut de l'appareil.";
+"Use your device’s default mode." = "Utiliser le mode par défaut de l'appareil.";
 "Light" = "Clair";
 "Always use light mode." = "Toujours utiliser le mode clair.";
 "Dark" = "Sombre";
@@ -386,9 +426,9 @@
 "Restarting" = "Redémarrage";
 "Transition in Progress" = "Transition en cours";
 "Your VPN is currently activated." = "Votre VPN est actuellement activé.";
-"Not active — you're on cellular data" = "Inactif — vous utilisez les données mobiles";
-"Not active — you're on Wi-Fi" = "Inactif — vous êtes connecté au Wi-Fi";
-"Not active — you're on trusted network: %@" = "Inactif — vous êtes sur le réseau de confiance : %@";
+"Not active — you’re on cellular data" = "Inactif — vous utilisez les données mobiles";
+"Not active — you’re on Wi-Fi" = "Inactif — vous êtes connecté au Wi-Fi";
+"Not active — you’re on trusted network: %@" = "Inactif — vous êtes sur le réseau de confiance : %@";
 "Locations" = "Emplacements";
 "VPN Activation" = "Activation du VPN";
 "Cellular" = "Données mobiles";
@@ -423,3 +463,25 @@
 "Type the Wi-Fi network name (SSID) you want to trust." = "Saisissez le nom du réseau Wi-Fi (SSID) que vous souhaitez approuver.";
 "Please enter a network name." = "Veuillez saisir un nom de réseau.";
 "Next" = "Suivant";
+
+// MARK: - Widget Settings Screen
+
+"Widget" = "Widget";
+"Check your security status and VPN connection at a glance from your Home Screen." = "Consultez d’un coup d’œil votre état de sécurité et votre connexion VPN depuis votre écran d’accueil.";
+"How to add the Glacier widget" = "Comment ajouter le widget Glacier";
+"Press and hold anywhere on your Home Screen" = "Touchez et maintenez n’importe où sur votre écran d’accueil";
+"Press the " = "Appuyez sur le bouton ";
+"Edit" = "Modifier";
+" button, then select " = ", puis sélectionnez ";
+"Add Widget" = "Ajouter un widget";
+"Select or search for " = "Sélectionnez ou recherchez ";
+"Choose your preferred widget, then press " = "Choisissez le widget de votre choix, puis appuyez sur ";
+" to confirm" = " pour confirmer";
+
+/* VPN protection-off alert (issue #204) */
+"VPN protection is off" = "La protection VPN est désactivée";
+"Glacier's VPN stopped for an app update. Finish updating, then reconnect." = "Le VPN Glacier s'est arrêté pour une mise à jour. Terminez la mise à jour, puis reconnectez-vous.";
+"Your Glacier VPN stopped unexpectedly. Open Glacier to reconnect." = "Votre VPN Glacier s'est arrêté de façon inattendue. Ouvrez Glacier pour vous reconnecter.";
+"Open Glacier" = "Ouvrir Glacier";
+"VPN protection is off after an app update. Finish updating Glacier, then reconnect." = "La protection VPN est désactivée après une mise à jour. Terminez la mise à jour de Glacier, puis reconnectez-vous.";
+"VPN protection stopped unexpectedly. Reconnect to protect your traffic." = "La protection VPN s'est arrêtée de façon inattendue. Reconnectez-vous pour protéger votre trafic.";

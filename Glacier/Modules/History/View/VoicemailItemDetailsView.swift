@@ -84,7 +84,7 @@ struct VoicemailItemDetailsView: View {
                     
                     // Name and phone number
                     VStack(alignment: .leading, spacing: 8) {
-                        if let contact = voiceMail.contact, contact.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                        if let contact = voiceMail.contact, !contact.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                             GlacierLabel(
                                 text: contact.name,
                                 font: .bodyThick

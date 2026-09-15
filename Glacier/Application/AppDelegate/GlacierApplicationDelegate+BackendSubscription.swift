@@ -111,9 +111,9 @@ extension GlacierApplicationDelegate {
             // distinguish "subscription genuinely lapsed" from "network was unavailable" (e.g.
             // the WireGuard tunnel was reconnecting).  Apple-only (IAP) subscribers always have
             // lastKnownBackendSubscribed=false, so a cached-fallback result combined with a
-            // StoreKit timeout would otherwise incorrectly trigger the PilotEndedScreen and
-            // fire destructive actions (tunnel removal, phone number release) against an active
-            // subscriber who simply had a bad network moment.
+            // StoreKit timeout would otherwise incorrectly read as a lapse and fire destructive
+            // actions (tunnel teardown, DoT disabled) against an active subscriber who simply
+            // had a bad network moment.
             let isNowSubscribed = account?.hasActiveSubscription == true
             // A base-plan reading is only "confirmed" when BOTH the backend gave a live response AND
             // StoreKit gave a definitive (non-timeout) answer. Either gap means we cannot declare a
@@ -192,7 +192,8 @@ extension GlacierApplicationDelegate {
     ///
     /// Returns `true` when the backend responded with a live HTTP result, `false` when the
     /// backend call was skipped or failed and fell back to the cached value. Callers that
-    /// take destructive action on a "not subscribed" result (e.g. showing PilotEndedScreen)
+    /// take destructive action on a "not subscribed" result (e.g. tearing down protection
+    /// and presenting the lapse paywall)
     /// should only do so when this returns `true` — a `false` return means we cannot
     /// distinguish a genuine lapse from a transient network outage (e.g. the WireGuard
     /// tunnel mid-reconnect at launch).

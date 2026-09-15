@@ -163,6 +163,55 @@ extension GlacierViewModelWithRootCoordinator {
             description: CallManager.emergencyServicesUnavailableMessage
         )
     }
+
+    /**
+     `true` when the signed-in account's phone lines are granted by the *web* (Stripe)
+     subscription rather than by Apple.
+
+     Reads the persisted last-known backend value instead of re-querying, so this stays
+     synchronous and never blocks a tap on the network. The value is refreshed on every launch
+     and foreground by `refreshBackendSubscription()`.
+     */
+    var hasWebManagedPhoneSubscription: Bool {
+        (GlacierAccountModel.getGlacierAccount()?.lastKnownBackendPhoneNumbers ?? 0) > 0
+    }
+
+    /**
+     Gates the "add / upgrade phone lines" tap.
+
+     A user whose lines come from the web subscription is warned instead of being sent to
+     StoreKit. Apple cannot upgrade a web subscription: the App Store sees a first-time purchase
+     in the add-on group, charges full price with no proration, and the web subscription keeps
+     billing — so the user pays twice. Only the *backend* line count matters for this gate; the
+     Apple side is 0 by definition for these users, and once it isn't, StoreKit handles
+     same-group upgrades (with proration) itself.
+
+     Deliberately fails open: `lastKnownBackendPhoneNumbers` is 0 until the first successful
+     `/status` response, so a web subscriber on a dead network slips past the warning rather than
+     having a legitimate Apple purchase blocked by a blip. The window is narrow — with both
+     sources reading 0 the user has no phone subscription and no upgrade affordance to begin with.
+
+     The warning intentionally does not link out to the web checkout: a purchase-adjacent popup
+     that steers to an external payment flow is what App Store Review Guideline 3.1.1 targets.
+     Naming where the plan lives is enough to stop the double charge.
+     */
+    func presentPhoneNumberPlanPurchase(orWarnWebManaged proceed: () -> Void) {
+        guard hasWebManagedPhoneSubscription else {
+            proceed()
+            return
+        }
+
+        presentAlertWith(
+            title: NSLocalizedString(
+                "Your plan is managed on the web",
+                comment: "Web-managed phone subscription upgrade warning title"
+            ),
+            description: NSLocalizedString(
+                "You subscribed to your phone lines through the Glacier website, so changes to your plan need to be made there. Subscribing here would start a second, separate subscription and you’d be billed for both.",
+                comment: "Web-managed phone subscription upgrade warning description"
+            )
+        )
+    }
     
     func presentProgressIndicator() {
         guard let appRootCoordinator = rootCoordinator as? GlacierAppRootCoordinator else {

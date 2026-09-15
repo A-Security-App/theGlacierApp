@@ -38,11 +38,49 @@ class PacketTunnelProvider: NEPacketTunnelProvider {
         // Wake-driven restart is a safety net only, so it can run on a much
         // longer cadence.
         static let minWakeDrivenRestartInterval: TimeInterval = 300.0
+        // Floor between restarts driven by sustained total DNS failure.  Deliberately
+        // far shorter than the wake and path limiters, because unlike those this one
+        // only fires on evidence that the current configuration is *not working* — the
+        // limiters above exist to damp churn while things are fine.  Still a floor, so
+        // a device with genuinely no network cannot restart the proxy in a tight loop.
+        static let minFailureDrivenRestartInterval: TimeInterval = 60.0
+
+        // MARK: - Tunnel health sampling (diagnostic only)
+        //
+        // How often to read WireGuard's own view of the tunnel. A local UAPI read, no
+        // packets and no radio, so this can be frequent.
+        static let healthSampleInterval: TimeInterval = 60.0
+        // How often to persist a sample even when everything looks normal. Establishes
+        // the baseline the eventual recovery thresholds have to be set against, without
+        // spending the log budget the per-episode DNS change just reclaimed.
+        static let healthHeartbeatInterval: TimeInterval = 1800.0
+        // WireGuard rekeys roughly every 120 s while there is traffic. Past this a
+        // handshake is old enough to be worth noting — but only alongside the rx/tx
+        // picture, since an idle tunnel legitimately has an ancient handshake.
+        //
+        // Raised from 180 s after 13.5 h of overnight sampling on 2026-09-06/07: a
+        // perfectly healthy idle tunnel was measured at 184 s, and 18 of 19 samples sat
+        // at or below 121 s. 180 s was inside the healthy distribution with no margin.
+        // 300 s is 2.5x the rekey interval and clear of everything observed.
+        static let staleHandshakeThreshold: TimeInterval = 300.0
+        // An idle tunnel still emits keepalives.  The false positive that prompted all
+        // of the tuning below reported `tx +64B` — a single packet — which satisfied a
+        // naive `txDelta > 0`.  Require enough traffic to mean somebody is actually
+        // trying to use the tunnel.
+        static let minSuspectTxBytes: UInt64 = 4096
+        // Deltas are only interpretable when the timer ran roughly on schedule.  iOS
+        // suspends a DispatchSourceTimer through deep sleep: overnight, intervals ranged
+        // 60–1791 s against a 60 s schedule, with a median around 640 s.  A half-hour
+        // "delta" says nothing about the last minute, and nobody is using the network
+        // then anyway.  Such samples are still logged, just not judged.
+        static let maxSuspectSampleInterval: TimeInterval = 180.0
+        // Consecutive qualifying samples before reporting.  The observed false positive
+        // cleared on the very next sample.
+        static let suspectSampleThreshold = 2
     }
 
     private lazy var adapter: WireGuardAdapter = {
         return WireGuardAdapter(with: self) { logLevel, message in
-            //wg_log(logLevel.osLogLevel, message: message)
         }
     }()
 
@@ -58,6 +96,13 @@ class PacketTunnelProvider: NEPacketTunnelProvider {
     private let pathMonitorQueue = DispatchQueue(label: "com.theglacierapp.PacketTunnel.path-monitor")
     private var pendingSatisfiedUpdate: DispatchWorkItem?
     private var pendingUnsatisfiedTeardown: DispatchWorkItem?
+
+    // Tunnel health sampling. All touched only on pathMonitorQueue.
+    private var healthSampleTimer: DispatchSourceTimer?
+    private var lastHealthSample: (rx: UInt64, tx: UInt64, at: Date)?
+    private var lastHealthHeartbeat: Date?
+    private var consecutiveSuspectSamples = 0
+    private var isTunnelSuspect = false
     private var lastAppliedNetworkSettings: NETunnelNetworkSettings?
     private var isReapplyingNetworkSettings = false
     /// Timestamp of the most recent proxy restart driven by a path-satisfied event or a
@@ -67,6 +112,14 @@ class PacketTunnelProvider: NEPacketTunnelProvider {
     /// the proxy can restart immediately when the network returns after a genuine
     /// outage without bypassing the rate limit during normal path-churn / wake restarts.
     private var lastPathDrivenRestartDate: Date = .distantPast
+    private var lastFailureDrivenRestartDate: Date = .distantPast
+    private var lastLoggedUpstreamSet: [String]?
+    /// Wakes the rate limit turned away since the last restart we actually performed.
+    /// Reported on that next restart rather than one persisted line per suppressed wake:
+    /// at ~54/hour asleep and ~150/hour in use, that line was 69-72% of everything this
+    /// extension wrote to disk, and each one recorded a decision *not* to act.  Mutated
+    /// only on `pathMonitorQueue`.
+    private var suppressedWakeCount = 0
 
     override init() {
         self.log = Self.log
@@ -101,14 +154,17 @@ class PacketTunnelProvider: NEPacketTunnelProvider {
             guard adapterError == nil else {
                 switch adapterError {
                 case .cannotLocateTunnelFileDescriptor:
-                    //wg_log(.error, staticMessage: "Starting tunnel failed: could not determine file descriptor")
+                    // ErrorNotifier only writes its file for app-initiated starts (it needs an
+                    // activationAttemptId, which on-demand starts don't carry), so without this
+                    // line an on-demand start failure leaves no record anywhere.
+                    self.log.log(level: .error, "Starting tunnel failed: could not determine file descriptor")
                     errorNotifier.notify(PacketTunnelProviderError.couldNotDetermineFileDescriptor)
                     completionHandler(PacketTunnelProviderError.couldNotDetermineFileDescriptor)
 
                 case .dnsResolution(let dnsErrors):
                     let hostnamesWithDnsResolutionFailure = dnsErrors.map { $0.address }
                         .joined(separator: ", ")
-                    //wg_log(.error, message: "DNS resolution failed for the following hostnames: \(hostnamesWithDnsResolutionFailure)")
+                    self.log.log(level: .error, "Starting tunnel failed: DNS resolution failed for \(hostnamesWithDnsResolutionFailure, privacy: .public)")
                     errorNotifier.notify(PacketTunnelProviderError.dnsResolutionFailure)
                     completionHandler(PacketTunnelProviderError.dnsResolutionFailure)
 
@@ -132,6 +188,16 @@ class PacketTunnelProvider: NEPacketTunnelProvider {
             }
 
             self.log.log(level: .info, "Tunnel interface is \(self.adapter.interfaceName ?? "unknown")")
+
+            // Protection is back. Cancel a "protection is off" banner armed by a
+            // previous stop before it can be delivered — the common case is on-demand
+            // re-arming the tunnel seconds after a transient drop, which the user
+            // should never hear about. Only on success: a failed start leaves the
+            // armed banner in place, because protection really is still off.
+            VPNProtectionAlert.resolve(reason: "tunnel started", logger: self.log)
+
+            self.startTunnelHealthSampling()
+
             completionHandler(nil)
         }
     }
@@ -183,7 +249,11 @@ class PacketTunnelProvider: NEPacketTunnelProvider {
 
     override func stopTunnel(with reason: NEProviderStopReason, completionHandler: @escaping () -> Void) {
         // Add code here to start the process of stopping the tunnel.
-        log.notice("Stopping tunnel")
+        log.notice("Stopping tunnel, reason=\(reason.rawValue)")
+
+        reportProtectionLoss(reason: reason)
+
+        stopTunnelHealthSampling()
 
         stopDnsProxy()
 
@@ -199,6 +269,170 @@ class PacketTunnelProvider: NEPacketTunnelProvider {
         }
     }
     
+    /// Tells the user their VPN protection stopped when they didn't ask for it (issue #204).
+    ///
+    /// This runs in the extension because it is the only process guaranteed to be
+    /// alive when the tunnel goes down — the containing app is normally suspended or
+    /// terminated, which is precisely why the reported `.appUpdate` teardown produced
+    /// no alert. It is also the only place the *reason* is available, which is what
+    /// keeps a deliberate disconnect from being reported as a failure.
+    ///
+    /// The banner is armed rather than posted: `startTunnel` cancels it if the tunnel
+    /// comes back inside the confirmation window, so on-demand re-arming after a
+    /// transient drop stays silent. See `VPNProtectionAlert` for the full rationale.
+    private func reportProtectionLoss(reason: NEProviderStopReason) {
+        switch VPNProtectionAlert.disposition(for: reason) {
+        case .deliberate:
+            VPNProtectionAlert.resolve(reason: "deliberate stop (\(reason.rawValue))", logger: log)
+
+        case .transient:
+            // Expected or ambiguous. Stay silent here and leave the call to the app,
+            // which can weigh the on-demand policy against the live network before
+            // deciding — something this process can't do reliably during teardown.
+            log.notice("[VPNAlert] stop reason \(reason.rawValue) treated as transient — no alert armed")
+
+        case .failure(let kind):
+            VPNProtectionAlert.arm(kind, delay: VPNProtectionAlert.confirmationDelay, logger: log)
+        }
+    }
+
+    // MARK: - Tunnel health sampling
+    //
+    // Diagnostic only.  Nothing acts on these numbers yet, deliberately: the thresholds
+    // for acting have to be set from observation, and there is currently nothing to
+    // observe because nothing has ever recorded them.
+    //
+    // The 2026-09-06 outage is why this exists.  A Wi-Fi to cellular handoff left the
+    // tunnel carrying no user traffic for two and a half hours, and every signal
+    // available read healthy: NEVPNStatus stayed `connected`, the DNS proxy logged no
+    // errors, and DNS resolved perfectly throughout — because the proxy reaches its
+    // upstreams over the physical interface, bypassing the tunnel entirely.  The one
+    // process able to see the truth, this one, never looked.  Afterwards the archive
+    // could not answer "was the tunnel actually wedged?" because the number that would
+    // have said so was never written down.
+    //
+    // Three values together are what separate a wedged tunnel from an idle one.
+    // WireGuard only rekeys when there is traffic, so a stale handshake alone means
+    // nothing.  The signature is tx climbing while rx stays flat *and* the handshake
+    // ageing past the rekey window.  Deltas, not absolutes — that distinction is
+    // exactly what an active reachability probe cannot make.
+
+    private func startTunnelHealthSampling() {
+        pathMonitorQueue.async { [weak self] in
+            guard let self, self.healthSampleTimer == nil else { return }
+            let timer = DispatchSource.makeTimerSource(queue: self.pathMonitorQueue)
+            timer.schedule(deadline: .now() + Constants.healthSampleInterval,
+                           repeating: Constants.healthSampleInterval)
+            timer.setEventHandler { [weak self] in
+                self?.sampleTunnelHealth()
+            }
+            self.healthSampleTimer = timer
+            timer.resume()
+        }
+    }
+
+    private func stopTunnelHealthSampling() {
+        pathMonitorQueue.async { [weak self] in
+            guard let self else { return }
+            self.healthSampleTimer?.cancel()
+            self.healthSampleTimer = nil
+            self.lastHealthSample = nil
+            self.lastHealthHeartbeat = nil
+            self.consecutiveSuspectSamples = 0
+            self.isTunnelSuspect = false
+        }
+    }
+
+    private func sampleTunnelHealth() {
+        adapter.getRuntimeConfiguration { [weak self] settings in
+            guard let self, let settings else { return }
+            self.pathMonitorQueue.async {
+                self.recordTunnelHealth(Self.parseRuntimeCounters(settings))
+            }
+        }
+    }
+
+    /// Pulls the three counters out of WireGuard's UAPI dump without going through the
+    /// full TunnelConfiguration parser — that lives in the app target and throws, and
+    /// neither is worth pulling in for three integers.  rx/tx are summed across peers;
+    /// the handshake is the most recent across peers.
+    private static func parseRuntimeCounters(_ uapi: String) -> (rx: UInt64, tx: UInt64, lastHandshake: Date?) {
+        var rx: UInt64 = 0
+        var tx: UInt64 = 0
+        var newestHandshakeSec: UInt64 = 0
+
+        for line in uapi.split(separator: "\n") {
+            let parts = line.split(separator: "=", maxSplits: 1)
+            guard parts.count == 2, let value = UInt64(parts[1]) else { continue }
+            switch parts[0] {
+            case "rx_bytes": rx &+= value
+            case "tx_bytes": tx &+= value
+            case "last_handshake_time_sec": newestHandshakeSec = max(newestHandshakeSec, value)
+            default: break
+            }
+        }
+
+        // A peer that has never completed a handshake reports 0, which is not a date.
+        let handshake = newestHandshakeSec == 0
+            ? nil
+            : Date(timeIntervalSince1970: TimeInterval(newestHandshakeSec))
+        return (rx, tx, handshake)
+    }
+
+    private func recordTunnelHealth(_ sample: (rx: UInt64, tx: UInt64, lastHandshake: Date?)) {
+        let now = Date()
+        defer { lastHealthSample = (sample.rx, sample.tx, now) }
+
+        guard let previous = lastHealthSample else { return }  // need two points for a delta
+
+        // Counters are monotonic in practice, but a backend restart would reset them;
+        // subtracting saturatingly keeps a reset from reading as enormous throughput.
+        let rxDelta = sample.rx >= previous.rx ? sample.rx - previous.rx : 0
+        let txDelta = sample.tx >= previous.tx ? sample.tx - previous.tx : 0
+        let handshakeAge = sample.lastHandshake.map { now.timeIntervalSince($0) }
+
+        let interval = now.timeIntervalSince(previous.at)
+        let age = handshakeAge.map { String(Int($0)) } ?? "never"
+
+        // Sending real traffic, nothing coming back, and rekey not completing either —
+        // judged only on a sample the timer actually delivered on schedule.
+        let judgeable = interval <= Constants.maxSuspectSampleInterval
+        let qualifies = judgeable
+            && txDelta >= Constants.minSuspectTxBytes
+            && rxDelta == 0
+            && (handshakeAge ?? .greatestFiniteMagnitude) > Constants.staleHandshakeThreshold
+
+        if qualifies {
+            consecutiveSuspectSamples += 1
+        } else if judgeable {
+            // Only a sample we were willing to judge may clear the streak. A
+            // sleep-stretched one carries no information either way.
+            consecutiveSuspectSamples = 0
+        }
+        let suspect = consecutiveSuspectSamples >= Constants.suspectSampleThreshold
+
+        if suspect != isTunnelSuspect {
+            isTunnelSuspect = suspect
+            if suspect {
+                log.notice("[TunnelHealth] SUSPECT — tx +\(txDelta)B, rx +0B over \(Int(interval))s, \(self.consecutiveSuspectSamples) consecutive samples, last handshake \(age, privacy: .public)s ago (no action taken)")
+            } else {
+                log.notice("[TunnelHealth] recovered — tx +\(txDelta)B, rx +\(rxDelta)B over \(Int(interval))s, last handshake \(age, privacy: .public)s ago")
+            }
+            lastHealthHeartbeat = now
+            return
+        }
+
+        // Every line carries the interval: without it the deltas cannot be read, which
+        // was the flaw in the first version of the SUSPECT line.
+        let sinceHeartbeat = lastHealthHeartbeat.map { now.timeIntervalSince($0) } ?? .greatestFiniteMagnitude
+        if sinceHeartbeat >= Constants.healthHeartbeatInterval {
+            lastHealthHeartbeat = now
+            log.notice("[TunnelHealth] tx +\(txDelta)B, rx +\(rxDelta)B over \(Int(interval))s, last handshake \(age, privacy: .public)s ago")
+        } else {
+            log.debug("[TunnelHealth] tx +\(txDelta)B, rx +\(rxDelta)B over \(Int(interval))s, last handshake \(age, privacy: .public)s ago")
+        }
+    }
+
     override func handleAppMessage(_ messageData: Data, completionHandler: ((Data?) -> Void)?) {
         // Add code here to handle the message.
         guard let completionHandler = completionHandler else { return }
@@ -234,10 +468,17 @@ class PacketTunnelProvider: NEPacketTunnelProvider {
             guard let self else { return }
             let timeSinceLast = Date().timeIntervalSince(self.lastPathDrivenRestartDate)
             guard timeSinceLast >= Constants.minWakeDrivenRestartInterval else {
-                self.log.notice("Suppressing wake-driven DNS proxy restart — last restart was \(Int(timeSinceLast))s ago (min wake interval \(Int(Constants.minWakeDrivenRestartInterval))s)")
+                self.suppressedWakeCount += 1
+                self.log.debug("Suppressing wake-driven DNS proxy restart — last restart was \(Int(timeSinceLast))s ago (min wake interval \(Int(Constants.minWakeDrivenRestartInterval))s)")
                 return
             }
-            self.log.notice("Device waking up — refreshing DNS proxy connections")
+            let suppressed = self.suppressedWakeCount
+            self.suppressedWakeCount = 0
+            if suppressed > 0 {
+                self.log.notice("Device waking up — refreshing DNS proxy connections (\(suppressed) wakes suppressed since the last restart)")
+            } else {
+                self.log.notice("Device waking up — refreshing DNS proxy connections")
+            }
             self.lastPathDrivenRestartDate = Date()
             self.restartDnsProxyIfNeeded(forceRestart: true)
         }
@@ -283,6 +524,8 @@ class PacketTunnelProvider: NEPacketTunnelProvider {
                                                             upstreamPort: proxyConfiguration.port,
                                                             upstreamAddresses: proxyConfiguration.resolvedAddresses)
 
+        logUpstreamSetIfChanged(refreshedConfiguration.upstreamAddresses)
+
         // When forceRestart is false, skip the restart if configuration is unchanged.
         // When forceRestart is true (e.g. called after a network interface change or
         // device wake), always restart so upstream TLS connections are refreshed even
@@ -302,6 +545,9 @@ class PacketTunnelProvider: NEPacketTunnelProvider {
                                    },
                                    onUpstreamExhaustion: { [weak self] in
                                        self?.handleUpstreamExhaustion()
+                                   },
+                                   onSustainedFailure: { [weak self] in
+                                       self?.handleSustainedDNSFailure()
                                    }) else {
             log.error("Failed to initialize DNS proxy")
             return
@@ -339,16 +585,6 @@ class PacketTunnelProvider: NEPacketTunnelProvider {
         // IPv6 route or listener. Fall back to IPv6 only when no IPv4 address is
         // present to avoid selecting an unreachable endpoint that would break DNS
         // resolution entirely.
-        /*if let address = settings.ipv4Settings?.addresses.first, !address.isEmpty {
-            return address
-        }
-
-        if let address = settings.ipv6Settings?.addresses.first, !address.isEmpty {
-            return address
-        }
-
-        log.error("Unable to determine tunnel interface address for DNS proxy")
-        return nil*/
     }
 
     private func applyDnsConfiguration(to networkSettings: NETunnelNetworkSettings) {
@@ -454,6 +690,63 @@ class PacketTunnelProvider: NEPacketTunnelProvider {
     // NE to respawn the extension entirely.  After respawn, the new process gets
     // a fresh start and — combined with the 5-min ENOMEM cooldown and the
     // wake-restart rate limit — should not re-enter the same trap.
+    // Every upstream has been failing continuously for long enough, over enough
+    // queries, that the resolved upstream set must be presumed unusable on whatever
+    // interface the device is on now.  Rebuild the proxy with freshly resolved
+    // addresses, bypassing the wake and path rate limiters.
+    //
+    // Deliberately much cheaper than handleUpstreamExhaustion() below: that tears down
+    // the whole extension via cancelTunnelWithError to clear kernel state.  This only
+    // restarts the DNS proxy, which is what a stale address set actually needs — and
+    // forceRestart clears the resolution cache so getaddrinfo() re-runs against the
+    // current interface (NAT64-synthesised IPv6 on cellular instead of cached IPv4
+    // from Wi-Fi, which is precisely the 2026-09-08 failure).
+    /// Records which upstreams the proxy is actually configured with, whenever that set
+    /// changes.
+    ///
+    /// Pool composition previously had to be inferred from failure lines, which is a
+    /// biased sample — only an upstream with a stale connection ever gets named — and that
+    /// inference was wrong at least once, in the opposite direction. It also left the
+    /// 2026-09-08 outage log saying "All 2 DoT upstreams failed" with no way to know which
+    /// two, or when the set had shrunk to two.
+    ///
+    /// Logged on change rather than on every proxy start: restarts run around six an hour,
+    /// so per-start logging would be ~150 repetitive lines a day, while per-change is a
+    /// handful and captures exactly the transitions that matter.
+    ///
+    /// Addresses are `.public`, matching the twenty-odd other sites that already name
+    /// them. They are Glacier's own resolvers, resolvable by anyone from the configured
+    /// hostname, and say nothing about the user. Query contents are never logged anywhere
+    /// in this extension — only byte counts.
+    private func logUpstreamSetIfChanged(_ addresses: [String]) {
+        guard lastLoggedUpstreamSet != addresses else { return }
+        lastLoggedUpstreamSet = addresses
+
+        let ipv6Count = addresses.filter { IPv6Address($0) != nil }.count
+        let ipv4Count = addresses.filter { IPv4Address($0) != nil }.count
+        let list = addresses.joined(separator: ", ")
+        log.notice("DoT upstream set changed: \(list, privacy: .public) — \(ipv4Count) IPv4, \(ipv6Count) IPv6")
+    }
+
+    private func handleSustainedDNSFailure() {
+        pathMonitorQueue.async { [weak self] in
+            guard let self else { return }
+
+            let timeSinceLast = Date().timeIntervalSince(self.lastFailureDrivenRestartDate)
+            guard timeSinceLast >= Constants.minFailureDrivenRestartInterval else {
+                self.log.notice("Suppressing failure-driven DNS proxy restart — last one was \(Int(timeSinceLast))s ago (min \(Int(Constants.minFailureDrivenRestartInterval))s)")
+                return
+            }
+            self.lastFailureDrivenRestartDate = Date()
+
+            self.log.notice("Sustained total DNS failure — forcing DNS proxy restart to re-resolve upstreams against the current interface")
+            // Also stamp the path-driven clock: a restart genuinely happened, and the
+            // path limiter should measure from it like any other.
+            self.lastPathDrivenRestartDate = Date()
+            self.restartDnsProxyIfNeeded(forceRestart: true)
+        }
+    }
+
     private func handleUpstreamExhaustion() {
         log.fault("Sustained DoT upstream exhaustion — calling cancelTunnelWithError to respawn extension with fresh NECP context")
         let error = NSError(domain: NEVPNErrorDomain,

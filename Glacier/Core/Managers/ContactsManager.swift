@@ -112,20 +112,33 @@ final class ContactsManager {
     
     // MARK: - Private methods
     
+    /**
+     Digits of the given number, keeping the leading "+" of an international number so
+     the country code survives into the dial string. A "00" exit prefix means the same
+     thing and is rewritten to "+". Without this, "+47 23 21 20 00" would be stored as
+     ten bare digits and later dialed as the US number "+14723212000".
+     */
     private func normalizeNumber(_ number: String) -> String {
-        var digits = number.filter { $0.isNumber }
+        let trimmed = number.trimmingCharacters(in: .whitespacesAndNewlines)
+        var digits = trimmed.filter { $0.isNumber }
+        var isInternational = trimmed.hasPrefix("+")
+        
         if digits.hasPrefix("00") {
             digits.removeFirst(2)
+            isInternational = true
         }
         
-        return digits
+        guard !digits.isEmpty else { return "" }
+        
+        return isInternational ? "+" + digits : digits
     }
     
     private func matchingKey(from number: String) -> String {
-        if number.count <= matchingDigits {
-            return number
+        let digits = number.filter { $0.isNumber }
+        if digits.count <= matchingDigits {
+            return digits
         }
         
-        return String(number.suffix(matchingDigits))
+        return String(digits.suffix(matchingDigits))
     }
 }

@@ -28,25 +28,60 @@ final class DNSProxy {
     private let resolver: DoTResolver
     private let failureHandler: ((String) -> Void)?
 
-    // Self-respawn escape hatch.  When all four upstreams fail to answer a query
-    // exhaustionWindowThreshold times within exhaustionWindowDuration, the NECP
-    // flow table is saturated kernel-wide and the only reliable recovery is to
-    // ask NE to respawn the extension (cancelTunnelWithError) so the kernel
-    // clears our flows and the new process gets a fresh start.
+    // Self-respawn escape hatch.  When all four upstreams repeatedly fail to answer a
+    // query for a reason other than the network path going away, the NECP flow table
+    // is saturated kernel-wide and the only reliable recovery is to ask NE to respawn
+    // the extension (cancelTunnelWithError) so the kernel clears our flows and the new
+    // process gets a fresh start.
+    // One `.notice` per failure episode replaces the per-attempt lines, which are now
+    // `.debug`.  An episode opens on the first fully exhausted fan-out and closes on the
+    // next answered query (or at teardown), so a storm of failing queries produces one
+    // durable line instead of four per query.  Measured before this change: 132 persisted
+    // dns-proxy lines in a single minute, for one two-minute airplane-mode window.
+    private var episodeStart: Date?
+    private var episodeQueryCount = 0
+    private var episodeLastFailure = ""
+
+    // Escape hatch for an upstream set that has become unusable on the current
+    // interface.  Distinct from the exhaustion callback below: that one asks NE to
+    // respawn the whole extension for a saturated kernel flow table; this one just
+    // rebuilds the proxy so the upstream hostnames are re-resolved against whatever
+    // interface actually exists now.
+    //
+    // Measured 2026-09-08: a wake-driven proxy restart re-resolved upstreams while the
+    // device was still on Wi-Fi, and four seconds later Wi-Fi dropped to IPv6-only 5G
+    // where those addresses had no route.  DNS was dead for 163 s and 794 queries, and
+    // recovery never came, because every mechanism that could have re-resolved declined:
+    // the settings-driven check saw the same address *strings* and skipped, the
+    // path-driven restart was inside its 30 s window, and the wake-driven restart was
+    // inside its 300 s window.  Those limiters gate on time since the last restart and
+    // have no way to know the current configuration stopped working.
+    //
+    // A fan-out that has failed continuously for this long, over this many queries, is
+    // that missing signal.
+    private let sustainedFailureCallback: (() -> Void)?
+    private var hasFiredSustainedFailure = false
+    /// Both must be met.  Duration alone would fire on a quiet interface blip; query
+    /// count alone would fire on a burst.  At the ~5 queries/second observed during the
+    /// 09-08 outage the duration is the binding constraint, which is the intent.
+    private static let sustainedFailureMinDuration: TimeInterval = 20
+    private static let sustainedFailureMinQueries = 25
+
     private let exhaustionCallback: (() -> Void)?
-    private var exhaustionTimestamps: [Date] = []
-    private var hasFiredExhaustionCallback = false
-    private static let exhaustionWindowDuration: TimeInterval = 120.0
-    private static let exhaustionWindowThreshold = 3
+    // Decision logic lives in UpstreamExhaustionTracker so it can be tested without a
+    // network stack; see that type for why path-only fan-outs are excluded.
+    private var exhaustionTracker = UpstreamExhaustionTracker()
 
     init?(configuration: Configuration,
           failureHandler: ((String) -> Void)? = nil,
-          onUpstreamExhaustion: (() -> Void)? = nil) {
+          onUpstreamExhaustion: (() -> Void)? = nil,
+          onSustainedFailure: (() -> Void)? = nil) {
         guard let listenPort = NWEndpoint.Port(rawValue: configuration.listenPort) else { return nil }
 
         self.configuration = configuration
         self.failureHandler = failureHandler
         self.exhaustionCallback = onUpstreamExhaustion
+        self.sustainedFailureCallback = onSustainedFailure
 
         let parameters = NWParameters.udp
         parameters.allowLocalEndpointReuse = true
@@ -105,6 +140,10 @@ final class DNSProxy {
         listener.cancel()
         queue.async { [weak self] in
             guard let self else { return }
+            // Close any open episode here too — the proxy is restarted often enough
+            // (device wake, path change) that an episode ending in a teardown rather
+            // than a successful query is a normal case, not an edge one.
+            self.closeFailureEpisode(recovered: false)
             for connection in self.inboundConnections.values {
                 connection.cancel()
             }
@@ -137,6 +176,44 @@ final class DNSProxy {
         }
     }
 
+    /// Opens an episode on the first exhausted fan-out and counts the rest.
+    private func noteFailureEpisode(lastFailure: String) {
+        if episodeStart == nil {
+            episodeStart = Date()
+            episodeQueryCount = 0
+            hasFiredSustainedFailure = false
+        }
+        episodeQueryCount += 1
+        episodeLastFailure = lastFailure
+
+        guard !hasFiredSustainedFailure,
+              let start = episodeStart,
+              episodeQueryCount >= Self.sustainedFailureMinQueries else {
+            return
+        }
+        let elapsed = Date().timeIntervalSince(start)
+        guard elapsed >= Self.sustainedFailureMinDuration else { return }
+
+        hasFiredSustainedFailure = true
+        logger.fault("Every DoT upstream has failed for \(Int(elapsed))s across \(self.episodeQueryCount) queries — requesting a proxy restart to re-resolve upstreams against the current interface")
+        sustainedFailureCallback?()
+    }
+
+    /// Emits the one durable line for an episode and resets it.  `recovered` separates
+    /// "a query got through again" from "the proxy went away mid-episode", which are
+    /// different enough to be worth telling apart in a field capture.
+    private func closeFailureEpisode(recovered: Bool) {
+        guard let start = episodeStart else { return }
+        let seconds = Date().timeIntervalSince(start)
+        let upstreams = configuration.upstreamAddresses.count
+        let outcome = recovered ? "recovered" : "proxy stopped"
+        logger.notice("All \(upstreams) DoT upstreams failed for \(seconds, format: .fixed(precision: 1))s — \(self.episodeQueryCount) queries unanswered, \(outcome, privacy: .public) (last: \(self.episodeLastFailure, privacy: .public))")
+        episodeStart = nil
+        episodeQueryCount = 0
+        episodeLastFailure = ""
+        hasFiredSustainedFailure = false
+    }
+
     private func removeInboundConnection(with identifier: ObjectIdentifier) {
         inboundConnections.removeValue(forKey: identifier)
     }
@@ -147,19 +224,24 @@ final class DNSProxy {
     // once per DNSProxy instance.  The callback owner (PacketTunnelProvider) is
     // expected to call cancelTunnelWithError so NE respawns the extension with a
     // fresh kernel NECP context.
-    private func noteUpstreamExhaustion() {
-        let now = Date()
-        exhaustionTimestamps.append(now)
-        let cutoff = now.addingTimeInterval(-Self.exhaustionWindowDuration)
-        exhaustionTimestamps.removeAll { $0 < cutoff }
+    //
+    // `hadNonPathFailure` is false when every upstream in the fan-out failed purely
+    // because the network path went away.  Those are excluded: a respawn cannot bring
+    // an interface back, and every query in flight at the moment Wi-Fi drops fails in
+    // the same instant, so a single handoff would otherwise fill the whole window on
+    // its own.  Measured on device — three fan-out failures 4 ms apart tripping the
+    // threshold immediately, for an ordinary Wi-Fi-to-cellular switch.  ENOMEM and
+    // every failure we cannot positively attribute to path loss still count, so the
+    // saturated-flow-table recovery this exists for is unchanged.
+    private func noteUpstreamExhaustion(hadNonPathFailure: Bool) {
+        guard exhaustionTracker.record(hadNonPathFailure: hadNonPathFailure) else { return }
 
-        guard !hasFiredExhaustionCallback,
-              exhaustionTimestamps.count >= Self.exhaustionWindowThreshold else {
-            return
-        }
-
-        hasFiredExhaustionCallback = true
-        logger.fault("Upstream DoT exhaustion threshold reached (\(self.exhaustionTimestamps.count) full-fanout failures within \(Int(Self.exhaustionWindowDuration))s) — requesting tunnel respawn to recover NECP flow table")
+        logger.fault("Upstream DoT exhaustion threshold reached (\(self.exhaustionTracker.countInWindow) full-fanout failures within \(Int(self.exhaustionTracker.window))s) — requesting tunnel respawn to recover NECP flow table")
+        // The decision is made and the extension is about to be torn down.  Everything
+        // still queued will fail against the same condition over the next few hundred
+        // milliseconds; logging it buys nothing and evicts the rest of the app's
+        // history from the device.
+        resolver.quiesceLogging()
         exhaustionCallback?()
     }
 
@@ -183,7 +265,7 @@ final class DNSProxy {
 
             self.logger.debug("Received DNS query of \(data.count) bytes")
 
-            self.resolver.resolve(query: data) { [weak self, weak connection] response in
+            self.resolver.resolve(query: data) { [weak self, weak connection] outcome in
                 guard let self else { return }
                 guard let connection else {
                     return
@@ -194,9 +276,14 @@ final class DNSProxy {
                     self.removeInboundConnection(with: identifier)
                 }
 
-                guard let response else {
-                    self.logger.error("Failed to obtain DNS response from all DoT upstreams")
-                    self.noteUpstreamExhaustion()
+                let response: Data
+                switch outcome {
+                case .answered(let data):
+                    self.closeFailureEpisode(recovered: true)
+                    response = data
+                case .exhausted(let hadNonPathFailure, let lastFailure):
+                    self.noteFailureEpisode(lastFailure: lastFailure)
+                    self.noteUpstreamExhaustion(hadNonPathFailure: hadNonPathFailure)
                     finish()
                     return
                 }
@@ -218,13 +305,38 @@ final class DNSProxy {
 
 private final class DoTResolver {
 
+    /// Result of a full fan-out across every upstream.
+    enum Outcome {
+        case answered(Data)
+        /// Every upstream failed.  `hadNonPathFailure` is true when at least one of
+        /// them failed for a reason other than the path disappearing — the only case
+        /// where the fan-out is evidence of something a respawn could recover from.
+        /// `lastFailure` is the final upstream's error, carried out so the episode
+        /// summary can name a cause now that the per-attempt lines are `.debug`.
+        case exhausted(hadNonPathFailure: Bool, lastFailure: String)
+    }
+
     private let upstreams: [UpstreamConnection]
     private let callbackQueue: DispatchQueue
     private let logger: Logger
 
+    /// Set once the proxy has decided to ask for a respawn.  Everything still queued
+    /// will fail against the same dead path over the next few hundred milliseconds;
+    /// logging each one adds nothing to a decision already taken and, at the volumes
+    /// measured (275 lines in 230 ms), evicts the rest of the app's history from the
+    /// device.  Only mutated on the callback queue.
+    private var isQuiesced = false
+
+    /// Preference order for the fan-out.  An upstream that accepts a connection and then
+    /// stops answering costs the full 8 s query timeout, and without this it costs it
+    /// again on every subsequent query because the walk always restarts at index 0.  See
+    /// `UpstreamFanOutOrder` for the device evidence.  Only mutated on `callbackQueue`.
+    private var fanOutOrder: UpstreamFanOutOrder
+
     init(configuration: DNSProxy.Configuration, callbackQueue: DispatchQueue, logger: Logger) {
         self.callbackQueue = callbackQueue
         self.logger = logger
+        self.fanOutOrder = UpstreamFanOutOrder(upstreamCount: configuration.upstreamAddresses.count)
 
         guard let upstreamPort = NWEndpoint.Port(rawValue: configuration.upstreamPort) else {
             fatalError("Invalid upstream port \(configuration.upstreamPort)")
@@ -239,8 +351,22 @@ private final class DoTResolver {
         }
     }
 
-    func resolve(query: Data, completion: @escaping (Data?) -> Void) {
-        attemptResolve(query: query, upstreamIndex: 0, completion: completion)
+    func resolve(query: Data, completion: @escaping (Outcome) -> Void) {
+        // Resolve the order once, up front, so a penalty landing mid-fan-out cannot
+        // reorder the walk underneath a query that is already in flight.
+        attemptResolve(query: query,
+                       order: fanOutOrder.order(),
+                       position: 0,
+                       sawNonPathFailure: false,
+                       lastFailure: "no upstreams configured",
+                       completion: completion)
+    }
+
+    /// Stop logging per-query failure detail. Irreversible for the life of the
+    /// resolver: it is only called when the extension is already being torn down.
+    func quiesceLogging() {
+        isQuiesced = true
+        upstreams.forEach { $0.quiesceLogging() }
     }
 
     func warmUp() {
@@ -251,23 +377,49 @@ private final class DoTResolver {
         upstreams.forEach { $0.invalidate() }
     }
 
-    private func attemptResolve(query: Data, upstreamIndex: Int, completion: @escaping (Data?) -> Void) {
-        guard upstreamIndex < upstreams.count else {
-            logger.error("Exhausted all upstream DoT addresses without a response")
-            completion(nil)
+    private func attemptResolve(query: Data,
+                                order: [Int],
+                                position: Int,
+                                sawNonPathFailure: Bool,
+                                lastFailure: String,
+                                completion: @escaping (Outcome) -> Void) {
+        guard position < order.count else {
+            if !isQuiesced {
+                // `.debug`: one of these per failed query, four upstreams at a time, is
+                // what evicted the rest of the app's history from the device.  The
+                // episode summary in DNSProxy carries the same information per episode.
+                logger.debug("Exhausted all upstream DoT addresses without a response")
+            }
+            completion(.exhausted(hadNonPathFailure: sawNonPathFailure, lastFailure: lastFailure))
             return
         }
 
+        let upstreamIndex = order[position]
         let upstream = upstreams[upstreamIndex]
         upstream.send(query: query) { [weak self] result in
             guard let self else { return }
             switch result {
             case .success(let response):
-                completion(response)
+                // Evidence beats the penalty: an upstream that just answered is not
+                // one we should keep at the back of the queue.
+                self.fanOutOrder.clearPenalty(upstreamIndex)
+                completion(.answered(response))
             case .failure(let error):
-                self.logger.error("DoT upstream \(upstream.address, privacy: .public) failed: \(error.localizedDescription, privacy: .public)")
-                self.logger.debug("Attempting next DoT upstream after failure at index \(upstreamIndex)")
-                self.attemptResolve(query: query, upstreamIndex: upstreamIndex + 1, completion: completion)
+                if !self.isQuiesced {
+                    self.logger.debug("DoT upstream \(upstream.address, privacy: .public) failed: \(error.localizedDescription, privacy: .public)")
+                }
+                if error.isTimeout, self.fanOutOrder.penalize(upstreamIndex), !self.isQuiesced {
+                    // `.notice`, and only on the transition into a penalty rather than on
+                    // every repeat: during the 09-10 outage that is roughly one line per
+                    // minute, each marking a real change in which upstreams we prefer.
+                    self.logger.notice("DoT upstream \(upstream.address, privacy: .public) timed out — deprioritizing for \(Int(self.fanOutOrder.penaltyDuration))s")
+                }
+                self.attemptResolve(query: query,
+                                    order: order,
+                                    position: position + 1,
+                                    sawNonPathFailure: sawNonPathFailure || !error.isPathRelated,
+                                    lastFailure: error.errorDescription ?? "unknown",
+                                    completion: completion)
             }
         }
     }
@@ -299,14 +451,43 @@ private final class UpstreamConnection {
     private var recycleWorkItem: DispatchWorkItem?
     private var isBackingOffFromENOMEM = false
     private var enomemAttempt = 0
+    /// See `DoTResolver.quiesceLogging()`. Only mutated on `queue`.
+    private var isQuiesced = false
     private var lastPathStatus: NWPath.Status?
     private var lastUsedTime: Date?
     private var connectionCreatedAt: Date?
     private let staleConnectionThreshold: TimeInterval = 5 * 60   // 5 minutes
-    // Cellular NAT tables typically time out TCP sessions after ~10 minutes. Recycle
-    // connections before that happens so we never send a query into a zombie TCP session
-    // that the server has already torn down on its side.
-    private let maxConnectionLifetime: TimeInterval = 8 * 60      // 8 minutes
+
+    // MARK: - Pool de-correlation
+    //
+    // Every upstream is built in DoTResolver.init and warmed by the same warmUp() call,
+    // so without jitter the whole pool is exactly the same age: the connections go idle
+    // together, are closed by the upstream together, and recycle together.  Observed on
+    // device as four "reached max lifetime" lines inside 376 microseconds, and — more
+    // expensively — as all four upstreams reporting a closed connection in the same
+    // millisecond, which is what turns one dead pooled connection into a fully failed
+    // fan-out.  Four upstreams should buy redundancy against a time-correlated failure,
+    // not just against one server being down.
+    //
+    // Both offsets are drawn once per instance.  A proxy restart builds fresh
+    // UpstreamConnections and redraws them, so the pool cannot settle back into phase.
+
+    /// Cellular NAT tables typically time out TCP sessions after ~10 minutes. Recycle
+    /// before that so we never send a query into a session the far side has torn down.
+    private static let baseConnectionLifetime: TimeInterval = 8 * 60   // 8 minutes
+    /// Spread of recycle deadlines across the pool. Kept well under the ~10 minute NAT
+    /// timeout the base value is defending against, so the jitter cannot defeat it.
+    private static let connectionLifetimeJitter: TimeInterval = 90
+    /// Spread of pre-warm start times. Small on purpose: a query arriving inside the
+    /// stagger is served by ensureConnectionReady() creating the connection on demand,
+    /// which is the same path taken when warmUp() has not run at all, so this cannot
+    /// make a cold start worse than the pre-existing fallback.
+    private static let maxWarmUpStagger: TimeInterval = 3
+    /// Ceiling on speculative reconnect backoff. See `scheduleReconnect`.
+    private static let maxReconnectDelay: TimeInterval = 60
+
+    private let maxConnectionLifetime: TimeInterval
+    private let warmUpDelay: TimeInterval
 
     // MARK: - Class-level ENOMEM cooldown
     //
@@ -358,11 +539,24 @@ private final class UpstreamConnection {
         self.serverName = serverName
         self.callbackQueue = callbackQueue
         self.logger = logger
+        maxConnectionLifetime = Self.baseConnectionLifetime
+            + .random(in: 0...Self.connectionLifetimeJitter)
+        warmUpDelay = .random(in: 0...Self.maxWarmUpStagger)
         queue = DispatchQueue(label: "com.theglacierapp.PacketTunnel.dot-upstream.\(address)")
     }
 
-    func warmUp() {
+    /// Stop logging per-attempt connection detail — the extension is being torn down.
+    func quiesceLogging() {
         queue.async { [weak self] in
+            self?.isQuiesced = true
+        }
+    }
+
+    func warmUp() {
+        // Staggered per upstream; see "Pool de-correlation" above.  warmUp() is
+        // speculative, and the connection == nil guard means a query that arrives
+        // during the delay and creates the connection itself simply makes this a no-op.
+        queue.asyncAfter(deadline: .now() + warmUpDelay) { [weak self] in
             guard let self, self.connection == nil else { return }
             // If any upstream recently hit ENOMEM the NECP flow table is (or was just)
             // full.  Creating a speculative connection now would immediately fail again
@@ -415,13 +609,13 @@ private final class UpstreamConnection {
         // will create a fresh connection transparently.
         if isReady, let lastUsed = lastUsedTime,
            Date().timeIntervalSince(lastUsed) > staleConnectionThreshold {
-            logger.info("DoT connection to \(self.address, privacy: .private) idle for >\(Int(self.staleConnectionThreshold))s — resetting preemptively to avoid zombie")
+            logger.info("DoT connection to \(self.address, privacy: .public) idle for >\(Int(self.staleConnectionThreshold))s — resetting preemptively to avoid zombie")
             resetConnection()
         }
 
         if isReady, let createdAt = connectionCreatedAt,
            Date().timeIntervalSince(createdAt) > maxConnectionLifetime {
-            logger.info("DoT connection to \(self.address, privacy: .private) age >\(Int(self.maxConnectionLifetime))s — recycling proactively to prevent cellular NAT timeout")
+            logger.info("DoT connection to \(self.address, privacy: .public) age >\(Int(self.maxConnectionLifetime))s — recycling proactively to prevent cellular NAT timeout")
             resetConnection()
         }
 
@@ -529,7 +723,10 @@ private final class UpstreamConnection {
             // Drive any requests that queued up while the connection was being established.
             processQueue()
         case .waiting(let error):
-            logger.notice("DoT connection waiting for upstream \(self.address, privacy: .public): \(error.localizedDescription, privacy: .public)")
+            if !isQuiesced {
+                // `.debug`: per upstream, per attempt. See the episode summary in DNSProxy.
+                logger.debug("DoT connection waiting for upstream \(self.address, privacy: .public): \(error.localizedDescription, privacy: .public)")
+            }
             isReady = false
             // Cancel the per-request timeout — it was started in processQueue() when the
             // request was dequeued, and fires relative to that moment.  Without cancelling
@@ -541,7 +738,14 @@ private final class UpstreamConnection {
             resetConnection()
             flushReadinessCallbacks(with: false)
             if let request = failedRequest {
-                finish(request: request, with: .failure(.connectionFailed("Connection temporarily unavailable")))
+                // ENOMEM here is the saturated-flow-table condition the respawn escape
+                // hatch exists for, so it must stay classified as a real failure.  A
+                // plain network-down is the opposite: it is what an interface handoff
+                // looks like to whatever was in flight.
+                let failure: ResolverError = isPathLoss(error) && !isENOMEM(error)
+                    ? .pathUnavailable("Connection temporarily unavailable")
+                    : .connectionFailed("Connection temporarily unavailable")
+                finish(request: request, with: .failure(failure))
             }
             if isENOMEM(error) {
                 // The kernel NECP flow table is full.  Two problems to avoid:
@@ -628,11 +832,22 @@ private final class UpstreamConnection {
         case .satisfied:
             logger.debug("Path satisfied for DoT upstream \(self.address, privacy: .public)")
             if connection == nil {
-                reconnectAttempt = 0
+                // Reconnect immediately — a newly satisfied path is worth trying at once.
+                // But deliberately do NOT reset reconnectAttempt here: a satisfied path is
+                // not evidence this upstream is reachable, only that *some* route exists.
+                // On an IPv6-only cellular network an IPv4 upstream literal has no route
+                // at all, while the path still flaps satisfied/unsatisfied with link
+                // quality — and resetting here meant the backoff could never escalate, so
+                // we retried a permanently unroutable address every few seconds for as
+                // long as the device was off Wi-Fi (measured: ~10,000 failed path
+                // evaluations per hour, and zero on Wi-Fi).  Only `.ready` clears it now.
                 scheduleReconnect(after: 0)
             }
         case .requiresConnection, .unsatisfied:
-            logger.notice("Path unavailable for DoT upstream \(self.address, privacy: .public) (status: \(String(describing: status)))")
+            if !isQuiesced {
+                // `.debug`: per upstream, per path change. See the episode summary in DNSProxy.
+                logger.debug("Path unavailable for DoT upstream \(self.address, privacy: .public) (status: \(String(describing: status)))")
+            }
             isReady = false
             // A path/interface change means a different NECP context — clear the ENOMEM
             // backoff so we don't carry stale state from the previous interface into
@@ -645,7 +860,7 @@ private final class UpstreamConnection {
             resetConnection()
             flushReadinessCallbacks(with: false)
             if let request = failedRequest {
-                finish(request: request, with: .failure(.connectionFailed("Network path unavailable")))
+                finish(request: request, with: .failure(.pathUnavailable("Network path unavailable")))
             }
             scheduleReconnect()
             processQueue()  // same rationale as handleStateUpdate(.waiting/.failed) above
@@ -699,7 +914,28 @@ private final class UpstreamConnection {
             return
         }
 
-        logger.info("DoT connection to \(self.address, privacy: .private) reached max lifetime (\(Int(self.maxConnectionLifetime))s) — recycling proactively to prevent cellular NAT timeout")
+        // `.notice` rather than `.info`, permanently.  Two reasons, both learned the
+        // hard way.
+        //
+        // First, `.info` is never written to disk — verified against the 2026-09-11
+        // archive, which holds zero `messageType == info` records from any process on the
+        // device — so this line was unobservable in every field capture by every
+        // collection method available, and the pool jitter shipped in `a4dcca7` went
+        // sixteen days unverified as a result.  Promoting it produced the confirmation
+        // immediately: 26 recycles overnight on 2026-09-12, 22 distinct jittered
+        // lifetimes spanning 481-569 s, tightest pair 34 s apart against the 376 µs
+        // lockstep the jitter was written for.
+        //
+        // Second, and why it stays: proactive recycling is the primary defence against
+        // carrier NAT silently expiring our TCP sessions at ~10 minutes, and it fails
+        // *silently* — a defence that stops firing looks exactly like one that has
+        // nothing to do.  This line is the only signal that it is still running.
+        //
+        // Measured cost is ~4.3 lines/hour, well under the ~680/day ceiling implied by
+        // four upstreams cycling every ~8.5 min, because proxy restarts pre-empt roughly
+        // 80% of connections before they age out.  The same change demoted the
+        // wake-suppression line, and overnight volume still fell 60% net.
+        logger.notice("DoT connection to \(self.address, privacy: .public) reached max lifetime (\(Int(self.maxConnectionLifetime))s) — recycling proactively to prevent cellular NAT timeout")
         resetConnection()
         // Immediately start a fresh connection so it's warm for the next query.
         scheduleReconnect(after: 0)
@@ -749,6 +985,13 @@ private final class UpstreamConnection {
             self.queue.async {
                 guard self.connectionGeneration == generation else { return }
                 if let error {
+                    // A reset here is the other face of a stale pooled connection: the
+                    // upstream tore it down and the kernel answers our read with ECONNRESET
+                    // rather than a clean FIN.  Same cause, same fix.
+                    if self.isConnectionReset(error), self.retryOnDeadConnection() {
+                        self.logger.notice("DoT upstream \(self.address, privacy: .public) reset a pooled connection — replaying query on a fresh one")
+                        return
+                    }
                     self.logger.error("Error receiving DoT response length from \(self.address, privacy: .public): \(error.localizedDescription, privacy: .public)")
                     self.handleFailure(.connectionFailed("Receive error"))
                     return
@@ -756,6 +999,12 @@ private final class UpstreamConnection {
 
                 guard let data, data.count == 2 else {
                     if data == nil || data!.isEmpty {
+                        // Clean FIN with no answer — the upstream had already closed this
+                        // connection while it sat idle.  Replay once on a fresh one.
+                        if self.retryOnDeadConnection() {
+                            self.logger.notice("DoT upstream \(self.address, privacy: .public) closed a pooled connection — replaying query on a fresh one")
+                            return
+                        }
                         self.logger.error("DoT upstream \(self.address, privacy: .public) closed connection before sending response (isComplete: \(isComplete)) — tunnel may be down")
                     } else {
                         self.logger.error("DoT upstream \(self.address, privacy: .public) sent truncated length prefix: \(data!.count) byte(s) (isComplete: \(isComplete))")
@@ -815,6 +1064,51 @@ private final class UpstreamConnection {
         processQueue()
     }
 
+    /// A connection we believed was usable turned out to be dead — the upstream had
+    /// already closed it while it sat idle in the pool, and we only find out when the
+    /// query we just sent comes back as a clean FIN or a reset.  The query itself is
+    /// fine; only the socket was stale.  Re-establish and replay it once.
+    ///
+    /// This matters because it is not a rare edge: all four upstreams go idle together,
+    /// so they go stale together, and `DoTResolver.attemptResolve` walking to the next
+    /// upstream finds it dead for exactly the same reason.  Measured on device at
+    /// roughly one unanswered lookup per 7.5 minutes on healthy Wi-Fi, and reproduced
+    /// as a page that would not load 4m44s after a proxy restart.
+    ///
+    /// Deliberately narrow.  Only a dead-pooled-connection signature qualifies —
+    /// timeouts, path loss and ENOMEM all fall straight through to `handleFailure`,
+    /// because retrying those would add latency without changing the outcome.  The
+    /// per-request flag caps this at one extra attempt.
+    ///
+    /// The two call sites log the recovery at `.notice` rather than `.debug`, against
+    /// the general direction of travel for this category.  It is deliberate: the line
+    /// fires once per stale episode (~1 per 7.5 min at the observed rate), not per
+    /// attempt, and it answers a question worth answering from a user's device — are
+    /// the upstreams closing pooled connections in the field, and are we recovering?
+    /// It is the one line in this path with real diagnostic value per byte.
+    ///
+    /// Returns true when the query has been re-queued, false when the caller should
+    /// fail it normally.
+    private func retryOnDeadConnection() -> Bool {
+        guard var request = currentRequest, !request.hasRetriedOnDeadConnection else { return false }
+        request.hasRetriedOnDeadConnection = true
+
+        cancelTimeout()
+        // Clear currentRequest before resetConnection so the state/path handlers cannot
+        // also observe and fail it, and flush stale readiness callbacks for the same
+        // reason handleFailure does — without this they fire when the replacement
+        // connection becomes ready and cause a double-send.
+        currentRequest = nil
+        resetConnection()
+        flushReadinessCallbacks(with: false)
+
+        // Front of the queue: this query was already dequeued once, so re-queueing it
+        // behind later arrivals would reorder it behind queries it preceded.
+        pendingRequests.insert(request, at: 0)
+        processQueue()
+        return true
+    }
+
     private func handleFailure(_ error: ResolverError) {
         cancelTimeout()
         // Capture and clear currentRequest BEFORE resetConnection so the state/path
@@ -867,6 +1161,23 @@ private final class UpstreamConnection {
         return code == .ENOMEM
     }
 
+    /// The upstream tore down a connection we were holding.  Distinct from path loss:
+    /// the network is fine, the socket is not.
+    private func isConnectionReset(_ error: Error) -> Bool {
+        guard case .posix(let code) = error as? NWError else { return false }
+        return code == .ECONNRESET || code == .ENOTCONN || code == .EPIPE
+    }
+
+    /// The path went away rather than anything being wrong with the upstream or the
+    /// kernel.  ENETDOWN (50) is what every observed Wi-Fi-off transition produces.
+    /// Deliberately narrow: an error we cannot positively identify as path loss keeps
+    /// counting toward exhaustion, so this can only ever suppress a respawn we are
+    /// sure was pointless.
+    private func isPathLoss(_ error: Error) -> Bool {
+        guard case .posix(let code) = error as? NWError else { return false }
+        return code == .ENETDOWN || code == .ENETUNREACH || code == .EHOSTUNREACH
+    }
+
     private func scheduleReconnect(after delay: TimeInterval? = nil) {
         reconnectWorkItem?.cancel()
         let reconnectDelay: TimeInterval
@@ -874,7 +1185,13 @@ private final class UpstreamConnection {
             reconnectDelay = max(0, delay)
         } else {
             reconnectAttempt += 1
-            reconnectDelay = min(pow(2.0, Double(max(reconnectAttempt - 1, 0))), 8)
+            // Cap raised from 8 s: an upstream with no route on the current interface
+            // should settle into a slow poll, not a fast one.  Safe because this backoff
+            // governs *speculative* re-warming only — ensureConnectionReady() creates a
+            // connection immediately when a real query arrives and there is none, so a
+            // long delay here never slows resolution.  A working upstream resets to 0 the
+            // moment it reaches `.ready`, so it never accumulates any of this.
+            reconnectDelay = min(pow(2.0, Double(max(reconnectAttempt - 1, 0))), Self.maxReconnectDelay)
         }
 
         let workItem = DispatchWorkItem { [weak self] in
@@ -890,6 +1207,10 @@ private final class UpstreamConnection {
     private struct Request {
         let query: Data
         let completion: (Result<Data, ResolverError>) -> Void
+        /// Set once this query has already been replayed on a fresh connection after a
+        /// dead pooled connection.  Bounds the retry at exactly one attempt so an
+        /// upstream that closes every connection cannot loop.
+        var hasRetriedOnDeadConnection = false
     }
 }
 
@@ -897,13 +1218,37 @@ private final class UpstreamConnection {
 
 private enum ResolverError: LocalizedError {
     case connectionFailed(String)
+    /// The network path itself went away — an interface dropping, or a POSIX
+    /// network-down/unreachable error while a handoff is in progress.  Kept distinct
+    /// from `connectionFailed` because a fan-out that failed *only* for this reason
+    /// says nothing about upstream or kernel health, and so must not feed the
+    /// respawn escape hatch.  See `DNSProxy.noteUpstreamExhaustion(hadNonPathFailure:)`.
+    case pathUnavailable(String)
     case timeout
     case invalidResponse(String)
     case cancelled
 
+    /// The expensive failure: the upstream took the connection, completed TLS, and then
+    /// never answered, so we paid the whole query timeout to learn nothing.  Every other
+    /// failure mode reports back in milliseconds.  Drives `UpstreamFanOutOrder`.
+    var isTimeout: Bool {
+        if case .timeout = self { return true }
+        return false
+    }
+
+    /// True only for failures we can attribute to the path disappearing underneath us.
+    /// Anything ambiguous deliberately reports false, so it still counts toward
+    /// exhaustion and the existing recovery behaviour is preserved.
+    var isPathRelated: Bool {
+        if case .pathUnavailable = self { return true }
+        return false
+    }
+
     var errorDescription: String? {
         switch self {
         case .connectionFailed(let description):
+            return description
+        case .pathUnavailable(let description):
             return description
         case .timeout:
             return "Request timed out"

@@ -276,7 +276,7 @@ struct VoicemailDetailsScreen<ViewModel: VoiceMailDetailsViewModel & ObservableO
             
             // Name and phone number
             VStack(alignment: .leading, spacing: 8) {
-                if let contact = viewModel.voiceMail.contact, contact.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                if let contact = viewModel.voiceMail.contact, !contact.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                     GlacierLabel(
                         text: contact.name,
                         font: .bodyThick

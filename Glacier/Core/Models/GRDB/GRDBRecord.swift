@@ -43,9 +43,6 @@ public extension GRDBRecord {
         lhs.uniqueId == rhs.uniqueId
     }
     
-    /*func isContentEqual(to source: any GRDBRecord) -> Bool {
-        return uniqueId == source.uniqueId && modified == source.modified
-    }*/
     
     mutating func didInsert(with rowID: Int64, for column: String?) {
         id = rowID

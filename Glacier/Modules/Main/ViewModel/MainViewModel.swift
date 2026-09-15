@@ -146,13 +146,15 @@ final class MainVM: MainViewModel, ObservableObject {
     }
     
     func presentPhoneNumberPlanPurchaseView() {
-        if shouldShowPhoneNumberMenu {
-            setPhoneNumbersMenuVisibility(false)
-        }
-        
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-            self.presentSheet(.phoneNumberPlanPurchase)
-        }
+        presentPhoneNumberPlanPurchase(orWarnWebManaged: {
+            if shouldShowPhoneNumberMenu {
+                setPhoneNumbersMenuVisibility(false)
+            }
+
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                self.presentSheet(.phoneNumberPlanPurchase)
+            }
+        })
     }
     
     func presentManagePhoneNumbersView() {
@@ -236,6 +238,10 @@ final class MainVM: MainViewModel, ObservableObject {
         }
 
         var phoneContact: PhoneContact? = ContactsManager.shared.matchContact(for: phoneNumber)
+        // Contacts are matched on the last 10 digits, so the indexed copy may not be the
+        // exact number that was tapped or typed. Keep that number and use the match only
+        // for the name and avatar, or an international number loses its country code.
+        phoneContact?.phoneNumber = phoneNumber
         if phoneContact == nil {
             phoneContact = PhoneContact(
                 id: UUID().uuidString,

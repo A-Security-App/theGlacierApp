@@ -97,10 +97,30 @@ Glacier/Application/Configuration/amplifyconfiguration.json
 ```
 
 This path is gitignored. At a minimum the configuration must define an
-`awsCognitoAuthPlugin` with both a User Pool and an Identity Pool. If you want
-to use Hosted UI (Apple / Google sign-in), include an `OAuth` block whose
-`SignInRedirectURI` and `SignOutRedirectURI` match the app's URL scheme
-(`glacierapp://`).
+`awsCognitoAuthPlugin` with a User Pool.
+
+Do **not** add a Cognito Identity Pool. Glacier used one until it was traced to
+random forced sign-outs — an expired identity-pool credential surfaced as a
+`.notAuthorized` error that the app treated as a revoked session. The pool was
+removed, stored credentials were migrated off it, and `.notAuthorized` is no
+longer terminal. An `IdentityManager` entry with an empty `Default` is all that
+is needed.
+
+The app registers two URL schemes, and they are not interchangeable:
+
+| Scheme | Used for |
+| --- | --- |
+| `com.theglacierapp.glacier://` | Cognito Hosted UI OAuth redirects |
+| `glacierapp://` | widget deep links (`glacierapp://widget/connect`) |
+
+If you want Hosted UI (Apple / Google sign-in), include an `OAuth` block whose
+`SignInRedirectURI` and `SignOutRedirectURI` use the **reverse-DNS** scheme, and
+change both it and the `CFBundleURLSchemes` entry in `Info.plist` to match your
+own bundle identifier.
+
+The `keychain` block is what lets the app and the network extension share a
+signed-in session; its `accessGroup` must match the keychain access group in
+`Glacier.entitlements`.
 
 A minimal `amplifyconfiguration.json` looks like:
 
@@ -113,24 +133,30 @@ A minimal `amplifyconfiguration.json` looks like:
       "awsCognitoAuthPlugin": {
         "UserAgent": "aws-amplify-cli/2.0",
         "Version": "1.0",
-        "CredentialsProvider": {
-          "CognitoIdentity": { "Default": { "PoolId": "<region:identity-pool-id>", "Region": "<region>" } }
-        },
+        "IdentityManager": { "Default": {} },
         "CognitoUserPool": {
           "Default": { "PoolId": "<user-pool-id>", "AppClientId": "<app-client-id>", "Region": "<region>" }
         },
         "Auth": {
           "Default": {
+            "keychain": {
+              "service": "<your-bundle-id>.auth",
+              "accessGroup": "group.<your-keychain-access-group>"
+            },
             "OAuth": {
               "WebDomain": "<cognito-hosted-ui-domain>",
               "AppClientId": "<app-client-id>",
-              "SignInRedirectURI": "glacierapp://",
-              "SignOutRedirectURI": "glacierapp://",
+              "SignInRedirectURI": "<your-bundle-id>://oauth2redirect/",
+              "SignOutRedirectURI": "<your-bundle-id>://oauth2redirect/",
               "Scopes": ["openid", "email", "profile"],
               "ResponseType": "code"
             },
             "mfaConfiguration": "OFF",
-            "passwordProtectionSettings": { "passwordPolicyMinLength": 8, "passwordPolicyCharacters": [] }
+            "mfaTypes": ["SMS"],
+            "passwordProtectionSettings": {
+              "passwordPolicyMinLength": 8,
+              "passwordPolicyCharacters": ["REQUIRES_LOWERCASE", "REQUIRES_UPPERCASE", "REQUIRES_NUMBERS"]
+            }
           }
         }
       }

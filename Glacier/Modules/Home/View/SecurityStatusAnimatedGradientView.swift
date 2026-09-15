@@ -35,7 +35,7 @@ struct SecurityStatusAnimatedGradientView: View {
         self._isScanningForSecurityStatus = isScanningForSecurityStatus
         self._isSecured = isSecured
         
-        self.gradientOffset = 0
+        self._gradientOffset = State(initialValue: 0)
         self.gradientHeight = height * 3
     }
     // MARK: - UI/UX

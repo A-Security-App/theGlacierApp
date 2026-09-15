@@ -83,19 +83,6 @@ public class DBSchemaCoordinator: NSObject {
         registerSchemaMigrations(migrator: incrementalMigrator)
         try incrementalMigrator.migrate(dbStorage.pool)
         
-        /*if runDataMigrations {
-         // Hack: Load the account state now, so it can be accessed while performing other migrations.
-         // Otherwise one of them might indirectly try to load the account state using a sneaky transaction,
-         // which won't work because migrations use a barrier block to prevent observing database state
-         // before migration.
-         try dbStorage.read { transaction in
-         //_ = self.tsAccountManager.localAddress(with: transaction.asAnyRead)
-         }
-         
-         // Finally, do data migrations.
-         registerDataMigrations(migrator: incrementalMigrator)
-         try incrementalMigrator.migrate(dbStorage.pool)
-         }*/
         
         let allAppliedMigrations = try dbStorage.read { transaction in
             try DatabaseMigrator().appliedIdentifiers(transaction.database)

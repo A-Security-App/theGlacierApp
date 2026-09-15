@@ -300,24 +300,12 @@ open class AWSAcctManager: NSObject
                         Log.auth.debug("Token expires at: \(exp)")
                     }
                 }
-                /*if let jwt = try? decode(jwt: token) {
-                    if let exp = jwt.expiresAt {
-                        print("Token expires at: \(exp)")
-                    }
-                }*/
                 TwilioBackendManager.sharedMgr().setAccessToken(accessToken)
                 SubscriptionAccessCoordinator.shared.handleSubscriptionStatusChange(isSubscribed: GlacierAccountModel.getGlacierAccount()?.hasActivePhoneNumberSubscription ?? false)
                 SubscriptionAccessCoordinator.shared.accessTokenDidUpdate()
                 //do stuff
             }
-            /*let attributes = try await Amplify.Auth.fetchUserAttributes()
-            if let emailAttr = attributes.first(where: { $0.key.rawValue == "email" }) {
-                print("User email is: \(emailAttr.value)")
-            } else {
-                print("Email attribute not found")
-            }*/
             //self.endLogin()
-            //print("User attributes - \(attributes)")
         } catch let error as AuthError{
             Log.auth.error("Fetching user attributes failed with error \(error)")
             self.endLogin()
@@ -327,31 +315,9 @@ open class AWSAcctManager: NSObject
         }
     }
     /// Decode JWT payload into [String:Any]
-    /*private func decode(jwtToken jwt: String) -> [String: Any]? {
-        let segments = jwt.split(separator: ".")
-        guard segments.count == 3 else { return nil }
-        let payloadSegment = String(segments[1])
-        guard let payloadData = base64UrlDecode(payloadSegment) else { return nil }
-        let json = try? JSONSerialization.jsonObject(with: payloadData, options: [])
-        return json as? [String: Any]
-    }
-    /// Decode a base64url string (part of JWT) into Data
-    private func base64UrlDecode(_ base64Url: String) -> Data? {
-        var base64 = base64Url
-            .replacingOccurrences(of: "-", with: "+")
-            .replacingOccurrences(of: "_", with: "/")
-        let padding = 4 - base64.count % 4
-        if padding < 4 {
-            base64 += String(repeating: "=", count: padding)
-        }
-        return Data(base64Encoded: base64)
-    }*/
     func queryProfileInfo() {
         //WireGuardManager.shared().queryForProfiles()
     }
-    /*func getGlacierEnablements() -> GlacierOrg? {
-        return self.glacierOrgInfo
-    }*/
     func getLatestVersions() -> LatestVersions? {
         return self.latestVersions
     }

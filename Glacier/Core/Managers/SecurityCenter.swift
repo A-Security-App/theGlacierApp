@@ -24,10 +24,24 @@ public protocol DNSStatusDelegate:AnyObject {
     /// remaining retries keep running, so if the profile does become live, a later
     /// `dnsStatusUpdated(true)` fires and the UI can dismiss the prompt.
     func dnsVerificationProbeFailedEarly()
+    /// The verification chain finished without ever getting an answer it could trust — as
+    /// opposed to getting a trustworthy "no". Two ways in:
+    ///
+    /// - `hadNetworkPath: true` — a path existed and the lookup itself failed to complete
+    ///   (a captive portal, or a network blocking 853). Real evidence that DoT is not
+    ///   resolving, but NOT evidence that the profile is inactive: it is still installed and
+    ///   still steering every lookup on the device.
+    /// - `hadNetworkPath: false` — no route to probe over at all (airplane mode), so the
+    ///   chain drained without a single probe running. No evidence in either direction.
+    ///
+    /// Distinct from `dnsStatusUpdated(false)`, which means a resolver *did* answer and it
+    /// wasn't Glacier — the profile isn't selected in iOS Settings, i.e. genuinely disconnected.
+    func dnsVerificationUnavailable(hadNetworkPath: Bool)
 }
 
 public extension DNSStatusDelegate {
     func dnsVerificationProbeFailedEarly() {}
+    func dnsVerificationUnavailable(hadNetworkPath: Bool) {}
 }
 
 open class SecurityCenter: NSObject {
@@ -89,13 +103,22 @@ open class SecurityCenter: NSObject {
     /// a moment to take effect. Combined with `dnsCheckRetryDelay` and `dnsCheckMaxAttempts`
     /// this sets the total retry wall-clock the onboarding auto-connect relies on.
     private static let dnsCheckInitialDelay: TimeInterval = 1.0
-    /// Number of negative probes after which we tell the delegate to surface the
+    /// Number of *wrong-resolver* answers after which we tell the delegate to surface the
     /// "select the profile in Settings" prompt early, without waiting for the remaining
     /// retries. 2 gives a genuinely-lagging-but-valid profile a chance to come live
-    /// (it usually does within the first retry) before the prompt appears.
+    /// (it usually does within the first retry) before the prompt appears. Counting only
+    /// wrong-resolver answers — not every negative probe — is what keeps the prompt away
+    /// from networks where the lookup simply cannot complete. See `wrongResolverAnswerCount`.
     private static let dnsEarlyPromptFailureThreshold = 2
     /// Guards `dnsVerificationProbeFailedEarly()` to fire at most once per chain.
     private var didFireEarlyDNSPrompt = false
+    /// Probes in this chain where a resolver answered but the reply was not ours. Only these
+    /// count toward the early prompt: they are the signature of a profile that exists but isn't
+    /// selected in iOS Settings, which is the one problem that prompt can actually fix. A lookup
+    /// that never completed (captive portal, 853 blocked) looks identical in the old
+    /// count-everything scheme, and sending those users to Settings is worse than saying nothing
+    /// — it is what made the portal case end in "switch DNS to Automatic".
+    private var wrongResolverAnswerCount = 0
     private var reachabilityManager: NetworkReachabilityManager?
     private var lastDnsAnalyticsQueryDate: Date?
     private let dnsAnalyticsQueryLock = DispatchQueue(label: "com.theglacierapp.securitycenter.dnsAnalyticsQueryLock")
@@ -106,7 +129,6 @@ open class SecurityCenter: NSObject {
     private static let dnsProfileRetryDelay: TimeInterval = 2
     private var needVersions = false
     
-    //IOSM#48
     let DEVICE_ID = "device"
     let DEVICE = "deviceid"
     let GLACIER_VERSION = "glacier_version"
@@ -120,7 +142,6 @@ open class SecurityCenter: NSObject {
     let BIOMETRIC_LOCK = "biometric_lock"
     let CORE_ENABLED = "core_enabled"
     
-    //IOSM#58
     let COMPROMISED_JAILBROKEN = "jailbroken"
     let COMPROMISED_PROXIED = "proxied"
     let COMPROMISED_REVERSE_ENGINEERED = "reverse engineered"
@@ -193,7 +214,7 @@ open class SecurityCenter: NSObject {
             if jailStatus.jailbroken { reasons.append(jailStatus.failMessage) }
             if glacierJail.jailbroken { reasons.append(glacierJail.indicators.joined(separator: ", ")) }
             let reason = " with reason: \(reasons.joined(separator: "; "))"
-            self.secInfoUtil.securityInfo.compromised_detail = COMPROMISED_JAILBROKEN + reason //IOSM#58
+            self.secInfoUtil.securityInfo.compromised_detail = COMPROMISED_JAILBROKEN + reason
         } else if proxied {
             compromised = true
             self.secInfoUtil.securityInfo.compromised_detail = COMPROMISED_PROXIED
@@ -239,7 +260,6 @@ open class SecurityCenter: NSObject {
         return self.compromisedStatus
     }
     
-    //IOSM#58 (next 2)
     public func shouldIgnoreCompromisedAlert() -> Bool {
         return self.ignoreCompromisedAlert
     }
@@ -566,6 +586,7 @@ open class SecurityCenter: NSObject {
                                  completion: ((Bool) -> Void)? = nil) {
         if isInitialAttempt {
             didFireEarlyDNSPrompt = false
+            wrongResolverAnswerCount = 0
         }
         if self.dnsTester == nil {
             self.dnsTester = DNSTester()
@@ -606,6 +627,11 @@ open class SecurityCenter: NSObject {
                                                       completion: completion)
                             }
                         } else {
+                            // Budget drained without a single probe running. Still not a verdict —
+                            // `isDoTVerifiedActive` is deliberately left alone — but the UI needs to
+                            // know the difference between "we asked and the answer was no" and "we
+                            // never got to ask", so it can stop claiming the profile is disconnected.
+                            self.dnsStatusDelegate?.dnsVerificationUnavailable(hadNetworkPath: false)
                             completion?(false)
                         }
                         return
@@ -638,6 +664,9 @@ open class SecurityCenter: NSObject {
 
                         if case .failure(let error) = result {
                             Log.general.debug("DNS verification lookup failed: \(error.localizedDescription)")
+                        } else {
+                            // A resolver answered, just not with our check IP.
+                            self.wrongResolverAnswerCount += 1
                         }
 
                         // Negative result. The DoT profile may not be the live resolver yet
@@ -650,10 +679,9 @@ open class SecurityCenter: NSObject {
                             // the full retry budget. The retries below keep running, so a profile
                             // that does come live will still flip the status (and dismiss the
                             // prompt) via dnsStatusUpdated(true).
-                            let failuresSoFar = SecurityCenter.dnsCheckMaxAttempts - attemptsRemaining + 1
                             if !suppressEarlyPrompt,
                                !self.didFireEarlyDNSPrompt,
-                               failuresSoFar >= SecurityCenter.dnsEarlyPromptFailureThreshold {
+                               self.wrongResolverAnswerCount >= SecurityCenter.dnsEarlyPromptFailureThreshold {
                                 self.didFireEarlyDNSPrompt = true
                                 self.dnsStatusDelegate?.dnsVerificationProbeFailedEarly()
                             }
@@ -667,7 +695,17 @@ open class SecurityCenter: NSObject {
                         }
 
                         self.isDoTVerifiedActive = false
-                        self.dnsStatusDelegate?.dnsStatusUpdated(false)
+                        if case .failure = result {
+                            // The lookup never completed. On a captive portal that is the expected
+                            // outcome and says nothing about whether the profile is active — it is,
+                            // and it is still steering DNS. Reporting this as "disconnected" is what
+                            // made the card contradict the device's actual behaviour.
+                            self.dnsStatusDelegate?.dnsVerificationUnavailable(hadNetworkPath: true)
+                        } else {
+                            // A resolver answered and it wasn't ours: the profile is not selected in
+                            // iOS Settings. Genuinely disconnected, and the existing prompt is right.
+                            self.dnsStatusDelegate?.dnsStatusUpdated(false)
+                        }
                         completion?(false)
                     }
                 }
@@ -832,62 +870,6 @@ open class SecurityCenter: NSObject {
         }
     }
     
-    /*func handleResults(securityResults: String) {
-        let curVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String
-    
-        do {
-            let securityEl = try XMLElement.init(xmlString: securityResults)
-            let glacierversion = securityEl.element(forName: "glacier")?.stringValue
-            let latestiosversion = securityEl.element(forName: "ios")?.stringValue
-            
-            //check our Glacier version vs latest
-            if (curVersion != self.secInfoUtil.securityInfo.glacier_version) {
-                self.secInfoUtil.secinfoNeedsUpdate = true
-            }
-            self.secInfoUtil.securityInfo.glacier_version = curVersion
-            if let myVersion = curVersion, let latestVersion = glacierversion, myVersion.compare(latestVersion, options: .numeric) == .orderedAscending {
-                self.versionNeedsNotification = true
-                
-                if self.secInfoUtil.securityInfo.glacier_version_outdated == false {
-                    self.secInfoUtil.secinfoNeedsUpdate = true
-                }
-                self.secInfoUtil.securityInfo.glacier_version_outdated = true
-            } else {
-                if self.secInfoUtil.securityInfo.glacier_version_outdated == true {
-                    self.secInfoUtil.secinfoNeedsUpdate = true
-                }
-                self.secInfoUtil.securityInfo.glacier_version_outdated = false
-            }
-            
-            //check our iOS version vs latest
-            let osversion = UIDevice.current.systemVersion
-            if osversion != self.secInfoUtil.securityInfo.os_version {
-                self.secInfoUtil.secinfoNeedsUpdate = true
-            }
-            self.secInfoUtil.securityInfo.os_version = osversion
-            
-            if let latestios = latestiosversion, self.iOS_VERSION_LESS_THAN(version: latestios) {
-                self.versionNeedsNotification = true
-                
-                if self.secInfoUtil.securityInfo.os_version_outdated == false {
-                    self.secInfoUtil.secinfoNeedsUpdate = true
-                }
-                self.secInfoUtil.securityInfo.os_version_outdated = true
-            } else {
-                if self.secInfoUtil.securityInfo.os_version_outdated == true {
-                    self.secInfoUtil.secinfoNeedsUpdate = true
-                }
-                self.secInfoUtil.securityInfo.os_version_outdated = false
-            }
-            
-            if self.versionNeedsNotification {
-                self.needsNotification = true
-            }
-                
-        } catch {
-            Log.general.error("Failure parsing latest iOS/Glacier versions")
-        }
-    }*/
     
     public func setVersionIssue(_ versionIssue: Bool) {
         self.versionNeedsNotification = versionIssue
@@ -945,15 +927,6 @@ public class SecurityInfoUtil:NSObject {
             Log.general.error("Failed to encode securityInfo to JSON: \(error)")
         }
         
-        /*let dict = ["deviceid": sDeviceId, "device": sDevice, "glacier_version": sGlacierVersion,
-                   "glacier_version_outdated": String(sGlacierOutdated), "os_version": sOsVersion, "os_version_outdated": String(sOsOutdated), "os_patch": sOsPatch, "compromised": String(sCompromised), "compromised_detail": sCompromisedDetail, "screen_lock": String(sScreenLock), "biometric_lock": String(sBiometricLock), "core_enabled": String(sCoreEnabled)];
-        
-        let encoder = JSONEncoder()
-        if let jsonData = try? encoder.encode(dict) {
-            if let jsonString = String(data: jsonData, encoding: .utf8) {
-                return jsonString
-            }
-        }*/
         return ""
     }
     
@@ -972,7 +945,6 @@ public class SecurityInfoUtil:NSObject {
     }
 }
 
-//IOSM#48
 public class SecurityInfo:NSObject, Codable {
     var deviceid: String?
     var device: String?

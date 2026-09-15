@@ -343,14 +343,21 @@ final class PhoneSubscriptionLifecycleHandler: NSObject {
    grace window during which the VPN and DoT keep running and the user is softly nagged to renew.
    Re-subscribing at any point clears the grace and everything continues seamlessly.
  - When the grace window elapses without a renewal we **enforce**: disable the DoT profile (via the
-   intent-aware `apply(isEnabled:false)` so the DoT resilience heal can't silently turn it back on)
-   and clear the widget's VPN status. The existing lapse path stops the VPN (`turnOffCore()`) and
-   presents the non-dismissible paywall.
+   intent-aware `apply(isEnabled:false)` so the DoT resilience heal can't silently turn it back on),
+   stop the VPN (`turnOffCore()`), and clear the widget's VPN status. The lapse path then presents
+   the non-dismissible paywall.
+ - Enforcement **records what it turned off** (`dotDisabledByEnforcementKey`,
+   `vpnDisabledByEnforcementKey`) and restore puts back exactly that much. Protection the user had
+   already chosen to leave off is never flagged, so restore can never switch it on for them. The VPN
+   half of this was previously missing: a lapse stopped the VPN and nothing ever re-armed it, so a
+   blip left the VPN off permanently while DNS kept running and the Wi-Fi auto-activation settings
+   still read as enabled.
 
  Deliberate scope boundaries (see PR notes):
- - VPN **tunnel removal** is intentionally not done here. A lapse only needs `turnOffCore()`
-   (already handled by the existing lapse path), which is reversible with no re-permission prompt;
-   `removeAllTunnels()` would force the system "add VPN configurations" prompt on the next renew.
+ - VPN **tunnel removal** is intentionally not done here. A lapse only needs `turnOffCore()`, which
+   is reversible with no re-permission prompt; `removeAllTunnels()` would force the system "add VPN
+   configurations" prompt on the next renew — and would also destroy the on-demand rules that carry
+   the user's trusted networks.
  - Local phone-number cleanup on a full base-plan expiry is unchanged (handled in
    `applyBackendSubscription`). This handler governs the VPN/DoT protection lifecycle only.
  - A base-plan expiry only ever observed at cold launch (the app was never foregrounded while
@@ -379,6 +386,9 @@ final class BaseSubscriptionLifecycleHandler: NSObject {
     /// Set when enforcement disabled a DoT profile that had been enabled, so restore only re-enables
     /// what we turned off — never switches DoT on for a user who never had it.
     private let dotDisabledByEnforcementKey = "com.theglacierapp.baseSubscription.dotDisabledByEnforcement"
+    /// Set when enforcement stopped a VPN that was running, so restore only re-arms what we turned
+    /// off — never switches the VPN on for a user who had deliberately left it off.
+    private let vpnDisabledByEnforcementKey = "com.theglacierapp.baseSubscription.vpnDisabledByEnforcement"
 
     /// How long protection is preserved after a confirmed expiry before enforcement. Tunable.
     private let graceInterval: TimeInterval = 72 * 60 * 60   // 72 hours
@@ -439,10 +449,11 @@ final class BaseSubscriptionLifecycleHandler: NSObject {
     }
 
     /// Called on a confirmed reading that shows the base plan active again (renewed, or Apple billing
-    /// grace recovered). Clears any grace window and re-enables DoT if enforcement disabled it.
+    /// grace recovered). Clears any grace window and puts back whatever enforcement turned off.
     func handleSubscriptionActive() {
         clearPending()
         reEnableDoTIfEnforcementDisabledIt()
+        reArmVPNIfEnforcementDisabledIt()
         Task { @MainActor [weak self] in self?.dismissGraceNagIfPresenting() }
     }
 
@@ -450,6 +461,7 @@ final class BaseSubscriptionLifecycleHandler: NSObject {
     func handleSubscriptionRestored() {
         clearPending()
         reEnableDoTIfEnforcementDisabledIt()
+        reArmVPNIfEnforcementDisabledIt()
         Task { @MainActor [weak self] in self?.dismissGraceNagIfPresenting() }
     }
 
@@ -533,10 +545,29 @@ final class BaseSubscriptionLifecycleHandler: NSObject {
 
     // MARK: - Enforcement / restore
 
-    /// Disables the system DoT profile (intent-aware, so the resilience heal can't re-enable it) and
-    /// clears the widget's VPN status. VPN deactivation is handled by the existing lapse path
-    /// (`turnOffCore()`); tunnels are intentionally not removed.
-    private func performTeardown() {
+    /// Disables the system DoT profile (intent-aware, so the resilience heal can't re-enable it),
+    /// stops the VPN, and clears the widget's VPN status. Tunnels are intentionally not removed.
+    ///
+    /// Both teardowns record whether *enforcement* was what turned them off, so restore puts back
+    /// only what we took away. The VPN stop lives here rather than at the call sites because every
+    /// path that returns `.enforce` runs this method: keeping the stop and the flag in one place is
+    /// what stops them drifting apart, which is how a lapse used to leave the VPN off permanently.
+    ///
+    /// Safe to call more than once: each half is gated on the protection actually being on, so a
+    /// second call neither re-flags nor re-tears-down.
+    ///
+    /// Called from every confirmed `.enforce` decision, and directly by the lapse-notification
+    /// handler to cover `onGlacierPlanPurchaseVerificationFailed()`, which posts without routing
+    /// through `evaluateExpiration()`.
+    ///
+    /// That second caller acts on a reading that may be a StoreKit timeout rather than a real
+    /// lapse, and tearing down anyway is deliberate. Leaving protection up once entitlement is in
+    /// doubt is the worse failure: if the backend has revoked the WireGuard peer, an armed
+    /// on-demand rule keeps reviving a tunnel that blackholes traffic, and a paywalled user's only
+    /// escape is deleting the profile in iOS Settings. `turnOffCore()` disables on-demand as well
+    /// as deactivating, so nothing revives it. A teardown that turns out to be spurious costs the
+    /// user protection only until the next confirmed reading, which re-arms it from the flags below.
+    func performTeardown() {
         DispatchQueue.main.async {
             let saved = DnsOverTlsController.shared.loadSavedConfiguration()
             if saved.isEnabled {
@@ -547,6 +578,13 @@ final class BaseSubscriptionLifecycleHandler: NSObject {
                         Log.general.error("[BaseSubExpiry] DoT disable on enforcement failed: \(error)")
                     }
                 }
+            }
+            // Only flag (and stop) a VPN that is actually running. `tunnelInOperation()` is the
+            // app's own definition of "the VPN is on" — the same one behind the settings toggle —
+            // so a VPN the user had already switched off is never flagged and never comes back.
+            if WireGuardManager.shared().tunnelsManager?.tunnelInOperation() != nil {
+                UserDefaults.standard.set(true, forKey: self.vpnDisabledByEnforcementKey)
+                WireGuardManager.shared().turnOffCore()
             }
             self.clearWidgetVPNStatus()
         }
@@ -574,6 +612,65 @@ final class BaseSubscriptionLifecycleHandler: NSObject {
                 }
             }
         }
+    }
+
+    /// Re-arms the VPN that enforcement stopped, mirroring `reEnableDoTIfEnforcementDisabledIt()`.
+    ///
+    /// Looks the tunnel up by name rather than through `tunnelInOperation()`. Enforcement left the
+    /// tunnel inactive with on-demand disabled, which is precisely the state `tunnelInOperation()`
+    /// reports as nil — keying on it here would silently restore nothing.
+    private func reArmVPNIfEnforcementDisabledIt() {
+        guard UserDefaults.standard.bool(forKey: vpnDisabledByEnforcementKey) else { return }
+
+        DispatchQueue.main.async {
+            // Not ready yet (the WireGuard client initialises lazily). Keep the flag so the next
+            // confirmed-active reading retries, rather than dropping the user's VPN on the floor.
+            guard let tunnelsManager = WireGuardManager.shared().tunnelsManager else { return }
+
+            let installedRegion = UserDefaults.standard.string(forKey: "glacier_vpn_installed_region") ?? "us-east-2"
+            guard let tunnel = tunnelsManager.tunnel(named: installedRegion) else {
+                // The tunnel is genuinely gone (sign-out removed it) — there is nothing to restore.
+                UserDefaults.standard.removeObject(forKey: self.vpnDisabledByEnforcementKey)
+                return
+            }
+
+            // `turnOffCore()` only flips `isOnDemandEnabled`; the on-demand rules — and with them
+            // the user's trusted networks and Wi-Fi/cellular choices — survive untouched. So there
+            // is nothing to reconstruct here, and nothing is invented when there are no rules.
+            let onDemandOption = ActivateOnDemandViewModel(tunnel: tunnel).toOnDemandOption()
+
+            let activate = {
+                // startActivation rejects a tunnel that isn't inactive; on-demand may already have
+                // brought it up between the flag being set and this running.
+                guard tunnel.status == .inactive else { return }
+                tunnelsManager.startActivation(of: tunnel)
+            }
+
+            if case .off = onDemandOption {
+                UserDefaults.standard.removeObject(forKey: self.vpnDisabledByEnforcementKey)
+                activate()
+                return
+            }
+
+            tunnelsManager.setOnDemandEnabled(true, on: tunnel) { error in
+                if let error = error {
+                    // Leave the flag set so the next confirmed-active reading retries, matching
+                    // how the DoT re-enable survives a restore that happens while offline.
+                    Log.general.error("[BaseSubExpiry] VPN re-arm on restore failed (will retry): \(String(describing: error))")
+                    return
+                }
+                UserDefaults.standard.removeObject(forKey: self.vpnDisabledByEnforcementKey)
+                activate()
+            }
+        }
+    }
+
+    /// Drops any record that enforcement turned protection off. Called on sign-out and account
+    /// deletion, where the tunnel and DoT profile are removed outright — a flag left behind could
+    /// otherwise re-arm protection for whoever signs in next on this device.
+    func clearEnforcementRestoreState() {
+        UserDefaults.standard.removeObject(forKey: vpnDisabledByEnforcementKey)
+        UserDefaults.standard.removeObject(forKey: dotDisabledByEnforcementKey)
     }
 
     private func clearWidgetVPNStatus() {
