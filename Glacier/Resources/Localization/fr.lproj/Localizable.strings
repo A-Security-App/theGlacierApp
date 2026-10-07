@@ -61,7 +61,7 @@
 
 "Create your account" = "Créez votre compte";
 "You’ll use this email to log in." = "Vous utiliserez cet e-mail pour vous connecter.";
-"Set your Password" = "Définissez votre mot de passe";
+"Set your Password." = "Définissez votre mot de passe.";
 "Email" = "E-mail";
 "Password" = "Mot de passe";
 "Continue with Google" = "Continuer avec Google";
@@ -75,7 +75,7 @@
 
 "Check your email" = "Vérifiez votre e-mail";
 "We sent you an email to verify you’re you." = "Nous vous avons envoyé un e-mail pour vérifier votre identité.";
-"We sent you email for account confirmation." = "Nous vous avons envoyé un e-mail pour confirmer votre compte.";
+"We sent you email for account verification." = "Nous vous avons envoyé un e-mail pour vérifier votre compte.";
 "Something went wrong while resending the confirmation email. Please try again." = "Une erreur s'est produite lors du renvoi de l'e-mail de confirmation. Veuillez réessayer.";
 "This confirmation email has expired. Please request a new one." = "Cet e-mail de confirmation a expiré. Veuillez en demander un nouveau.";
 
@@ -97,20 +97,20 @@
 
 "Enter Code" = "Saisir le code";
 "Enter the 4-digit code sent to you at %@" = "Saisissez le code à 4 chiffres envoyé à %@";
-"Tip: Make sure to check your inbox and spam folders" = "Conseil : Pensez à vérifier votre boîte de réception et vos spams";
+"Tip: Make sure to check your inbox and spam folders." = "Conseil : Pensez à vérifier votre boîte de réception et vos spams.";
 "Resend" = "Renvoyer";
 "Resent!" = "Renvoyé !";
 "Wrong code. Try again." = "Code incorrect. Réessayez.";
-"Update Password" = "Mettre à jour le mot de passe";
-"Enter your new password" = "Saisissez votre nouveau mot de passe";
+"Update password" = "Mettre à jour le mot de passe";
+"Enter a new password." = "Saisissez un nouveau mot de passe.";
 "• At least 8 characters\n" = "• Au moins 8 caractères\n";
 "• At least one uppercase letter\n" = "• Au moins une lettre majuscule\n";
 "• At least one lowercase letter\n" = "• Au moins une lettre minuscule\n";
 "• At least one number\n" = "• Au moins un chiffre\n";
 "• At least one special character (!@#$%^&*)" = "• Au moins un caractère spécial (!@#$%^&*)";
-"Re-enter password" = "Confirmez le mot de passe";
+"Re-enter Password" = "Confirmez le mot de passe";
 "Passwords don’t match" = "Les mots de passe ne correspondent pas";
-"Something went wrong while sending the password reset link. Please try again." = "Une erreur s'est produite lors de l'envoi du lien de réinitialisation. Veuillez réessayer.";
+"Something went wrong while sending password reset email. Please try again." = "Une erreur s’est produite lors de l’envoi de l’e-mail de réinitialisation du mot de passe. Veuillez réessayer.";
 "Something went wrong while updating your password. Please try again." = "Une erreur s'est produite lors de la mise à jour de votre mot de passe. Veuillez réessayer.";
 "Your password has been updated successfully. Please log in with your new password." = "Votre mot de passe a été mis à jour avec succès. Connectez-vous avec votre nouveau mot de passe.";
 
@@ -144,7 +144,7 @@
 "Setup Secure DNS." = "Configurer le DNS sécurisé.";
 "Hides which sites you're visiting - faster connection, no ads, and enough privacy for everyday use." = "Masque les sites que vous visitez - connexion plus rapide, sans publicités et une confidentialité suffisante pour un usage quotidien.";
 "Enable Glacier DNS in Settings" = "Activer Glacier DNS dans Réglages";
-"In Settings page, navigate to:\n\nGeneral →\nVPN & Device Management →\nDNS →\nGlacier." = "Dans la page Réglages, accédez à :\n\nGénéral →\nVPN et gestion de l'appareil →\nDNS →\nGlacier.";
+"In Settings page, navigate to:\n\nGeneral →\nVPN & Device Management →\nDNS →\n\nThen select Glacier." = "Dans Réglages, accédez à :\n\nGénéral →\nVPN et gestion de l’appareil →\nDNS →\n\nPuis sélectionnez Glacier.";
 "Secure DNS Protection Required" = "Protection DNS sécurisé requise";
 "When your VPN turns off on this trusted network, Secure DNS protection requires our profile to be selected in iOS Settings.\n\nIn Settings page, navigate to:\n\nGeneral →\nVPN & Device Management →\nDNS →\n\nThen select Glacier." = "Lorsque votre VPN se désactive sur ce réseau de confiance, la protection DNS sécurisé nécessite que notre profil soit sélectionné dans les Réglages iOS.\n\nDans la page Réglages, accédez à :\n\nGénéral →\nVPN et gestion de l'appareil →\nDNS →\n\nPuis sélectionnez Glacier.";
 "Something went wrong while adding DNS configuration. Please try again." = "Une erreur s'est produite lors de l'ajout de la configuration DNS. Veuillez réessayer.";
@@ -317,6 +317,10 @@
 "Something went wrong while burning number. Please try again." = "Une erreur s'est produite lors de la suppression du numéro. Veuillez réessayer.";
 "Your plan is managed on the web" = "Votre forfait est géré sur le site web";
 "You subscribed to your phone lines through the Glacier website, so changes to your plan need to be made there. Subscribing here would start a second, separate subscription and you’d be billed for both." = "Vous avez souscrit vos lignes téléphoniques sur le site web de Glacier ; les modifications de votre forfait doivent donc y être effectuées. Souscrire ici créerait un second abonnement distinct et vous seriez facturé pour les deux.";
+"Your plan is on another Apple Account" = "Votre forfait est sur un autre compte Apple";
+"Your phone lines are billed through the App Store on a different Apple Account. To change your plan, sign in to the App Store with that account. Subscribing here would start a second, separate subscription and you’d be billed for both." = "Vos lignes téléphoniques sont facturées via l'App Store sur un autre compte Apple. Pour modifier votre forfait, connectez-vous à l'App Store avec ce compte. Souscrire ici créerait un second abonnement distinct et vous seriez facturé pour les deux.";
+"Your plan is managed in Google Play" = "Votre forfait est géré dans Google Play";
+"You subscribed to your phone lines through Google Play, so changes to your plan need to be made there. Subscribing here would start a second, separate subscription and you’d be billed for both." = "Vous avez souscrit vos lignes téléphoniques via Google Play ; les modifications de votre forfait doivent donc y être effectuées. Souscrire ici créerait un second abonnement distinct et vous seriez facturé pour les deux.";
 "Choose numbers to remove" = "Choisissez les numéros à supprimer";
 "Decide later" = "Décider plus tard";
 "Your plan now includes %d number(s). Select %d to remove. Removing a number permanently deletes its messages and call history." = "Votre forfait comprend désormais %d numéro(s). Sélectionnez-en %d à supprimer. La suppression d’un numéro efface définitivement ses messages et son historique d’appels.";
@@ -325,6 +329,12 @@
 "Remove this number?" = "Supprimer ce numéro ?";
 "Remove these numbers?" = "Supprimer ces numéros ?";
 "%@ will be permanently removed, including its messages and call history. This can't be undone." = "%@ sera définitivement supprimé, y compris ses messages et son historique d’appels. Cette action est irréversible.";
+"%@ will be permanently removed. You can select a replacement number at no additional charge." = "%@ sera définitivement supprimé. Vous pouvez choisir un numéro de remplacement sans frais supplémentaires.";
+"%@ will be permanently removed. To add a new number this month, a one-time %@ fee will apply." = "%@ sera définitivement supprimé. Pour ajouter un nouveau numéro ce mois-ci, des frais uniques de %@ s’appliqueront.";
+"Delete call history" = "Supprimer l’historique d’appels";
+"All call history for %@ will be permanently deleted. This cannot be undone." = "Tout l’historique d’appels de %@ sera définitivement supprimé. Cette action est irréversible.";
+"Delete history" = "Supprimer l’historique";
+"Something went wrong while deleting call history. Please try again." = "Une erreur s’est produite lors de la suppression de l’historique d’appels. Veuillez réessayer.";
 "%@ will be permanently removed, including their messages and call history. This can't be undone." = "%@ seront définitivement supprimés, y compris leurs messages et leurs historiques d’appels. Cette action est irréversible.";
 "Remove permanently" = "Supprimer définitivement";
 
@@ -385,12 +395,34 @@
 "This permanently deletes your Glacier account and associated data. This action cannot be undone." = "Cette action supprime définitivement votre compte Glacier et les données associées. Elle est irréversible.";
 "Yes, Delete" = "Oui, supprimer";
 "Manage Your Subscription" = "Gérer votre abonnement";
-"Your account has been deleted, but your subscription is managed through Apple and remains active." = "Votre compte a été supprimé, mais votre abonnement est géré par Apple et reste actif.";
 "Cancel Your Subscription" = "Résilier votre abonnement";
-"Your account has been deleted, but your subscription was purchased on the Glacier website and is still active. Cancel it there to stop being billed." = "Votre compte a été supprimé, mais votre abonnement a été souscrit sur le site web de Glacier et est toujours actif. Résiliez-le sur le site web pour ne plus être facturé.";
 "Manage" = "Gérer";
 "Couldn't Delete Account" = "Impossible de supprimer le compte";
 "Something went wrong while deleting your account. Please check your connection and try again." = "Une erreur s’est produite lors de la suppression de votre compte. Veuillez vérifier votre connexion et réessayer.";
+
+// MARK: - Account deletion reason
+"Your subscription on the Glacier website will be canceled too." = "Votre abonnement sur le site web de Glacier sera également annulé.";
+"Your account has been deleted, but your subscription is still active. Remember to cancel it where you subscribed so you aren't billed again." = "Votre compte a été supprimé, mais votre abonnement est toujours actif. Pensez à l'annuler là où vous l'avez souscrit pour ne plus être facturé.";
+"Your account has been deleted, but your App Store subscription is still active. Cancel it to stop being billed." = "Votre compte a été supprimé, mais votre abonnement App Store est toujours actif. Annulez-le pour ne plus être facturé.";
+"Your account has been deleted, but your Google Play subscription is still active. Cancel it in the Google Play Store to stop being billed." = "Votre compte a été supprimé, mais votre abonnement Google Play est toujours actif. Annulez-le dans le Google Play Store pour ne plus être facturé.";
+"Your account has been deleted, but your App Store and Google Play subscriptions are still active. Cancel each one to stop being billed." = "Votre compte a été supprimé, mais vos abonnements App Store et Google Play sont toujours actifs. Annulez chacun d'eux pour ne plus être facturé.";
+"Before you go" = "Avant de partir";
+"Why are you deleting your account? Your feedback helps us make Glacier better." = "Pourquoi supprimez-vous votre compte ? Vos commentaires nous aident à améliorer Glacier.";
+"Choose the main reason" = "Choisissez la raison principale";
+"Anything else you'd like us to know?" = "Autre chose à nous dire ?";
+"Optional feedback" = "Commentaire facultatif";
+"Delete Account" = "Supprimer le compte";
+"Never mind" = "Finalement, non";
+"Skip and delete" = "Ignorer et supprimer";
+"Close" = "Fermer";
+"It costs too much" = "C'est trop cher";
+"Sites or apps don't work with the VPN" = "Des sites ou des apps ne fonctionnent pas avec le VPN";
+"Problems with calls on my Glacier number" = "Des problèmes d'appels avec mon numéro Glacier";
+"The app is buggy or hard to use" = "L'app a des bugs ou est difficile à utiliser";
+"I don't use it enough" = "Je ne l'utilise pas assez";
+"I only needed it for a short time" = "J'en avais besoin pour peu de temps";
+"It slows my internet or drains my battery" = "Ça ralentit ma connexion ou vide ma batterie";
+"Other" = "Autre";
 
 // MARK: - Settings Home Screen
 
@@ -418,7 +450,7 @@
 
 "VPN" = "VPN";
 "VPN Connection" = "Connexion VPN";
-"An extra layer of encryption. Ideal for public Wi-Fi, travel, or untrusted networks. Learn more." = "Une couche supplémentaire de chiffrement. Idéal pour le Wi-Fi public, les voyages ou les réseaux non fiables. En savoir plus.";
+"An extra layer of encryption. Ideal for public Wi-Fi, travel, or untrusted networks. " = "Une couche supplémentaire de chiffrement. Idéal pour le Wi-Fi public, les voyages ou les réseaux non fiables. ";
 "Status" = "Statut";
 "Not in Use" = "Non utilisé";
 "In Progress" = "En cours";
@@ -485,3 +517,123 @@
 "Open Glacier" = "Ouvrir Glacier";
 "VPN protection is off after an app update. Finish updating Glacier, then reconnect." = "La protection VPN est désactivée après une mise à jour. Terminez la mise à jour de Glacier, puis reconnectez-vous.";
 "VPN protection stopped unexpectedly. Reconnect to protect your traffic." = "La protection VPN s'est arrêtée de façon inattendue. Reconnectez-vous pour protéger votre trafic.";
+"Couldn’t load numbers" = "Impossible de charger les numéros";
+"Glacier couldn’t load available numbers. Check your connection, then try again." = "Glacier n'a pas pu charger les numéros disponibles. Vérifiez votre connexion, puis réessayez.";
+"Try Again" = "Réessayer";
+
+/* Login: email linked to Google or Apple */
+"This email is linked to %1$@. Sign in with %1$@, or check your password." = "Cette adresse e-mail est associée à %1$@. Connectez-vous avec %1$@ ou vérifiez votre mot de passe.";
+"If you signed up with Apple or Google, use those buttons instead." = "Si votre compte a été créé avec Apple ou Google, utilisez plutôt ces boutons.";
+"You last signed in with %@." = "Dernière connexion avec %@.";
+"This email is linked to %@." = "Cette adresse e-mail est associée à %@.";
+"Log in with a password instead" = "Se connecter avec un mot de passe";
+"Linked to %@" = "Associé à %@";
+"Couldn't log in" = "Connexion impossible";
+"Account already exists" = "Ce compte existe déjà";
+"Couldn't create account" = "Création du compte impossible";
+"Verify your account" = "Vérifiez votre compte";
+"Couldn't sign in" = "Connexion impossible";
+"This email already has a Glacier account that isn't verified yet. Log in with your email and password to finish verifying it, then try %@ again." = "Cette adresse e-mail a déjà un compte Glacier qui n'est pas encore vérifié. Connectez-vous avec votre e-mail et votre mot de passe pour terminer la vérification, puis réessayez avec %@.";
+"An account with this email already uses %1$@. Continue with %1$@ instead." = "Un compte associé à cette adresse e-mail utilise déjà %1$@. Continuez plutôt avec %1$@.";
+
+// MARK: - Previously untranslated
+"Emergency Services are not available through Glacier." = "Les services d’urgence ne sont pas disponibles via Glacier.";
+"'%@' is not a valid URL." = "'%@' n’est pas une URL valide.";
+"DNS URLs must use the tls:// scheme (got '%@')." = "Les URL DNS doivent utiliser le schéma tls:// (reçu : '%@').";
+"Enter a DNS server hostname." = "Saisissez le nom d’hôte d’un serveur DNS.";
+"Custom DNS ports aren't supported." = "Les ports DNS personnalisés ne sont pas pris en charge.";
+"Unable to resolve '%@'. Check the hostname and try again." = "Impossible de résoudre '%@'. Vérifiez le nom d’hôte et réessayez.";
+"Update Glacier: \n→ Open the App Store \n→ On the Glacier page, tap “Update”" = "Mettre à jour Glacier : \n→ Ouvrez l’App Store \n→ Sur la page de Glacier, touchez « Mettre à jour »";
+"Update iOS: \n→ Open Settings \n→ General \n→ Software Update" = "Mettre à jour iOS : \n→ Ouvrez Réglages \n→ Général \n→ Mise à jour logicielle";
+"Open App Store" = "Ouvrir l’App Store";
+"Update Glacier & iOS" = "Mettre à jour Glacier et iOS";
+"Connecting" = "Connexion";
+"Audio Route" = "Sortie audio";
+"Keypad" = "Clavier";
+"Hide" = "Masquer";
+"Add phone number" = "Ajouter un numéro de téléphone";
+"Notifications" = "Notifications";
+"Learn more." = "En savoir plus.";
+"VPN will automatically turn off on this network.\nUpdate anytime." = "Le VPN se désactivera automatiquement sur ce réseau.\nModifiable à tout moment.";
+"Reboot Reminder" = "Rappel de redémarrage";
+"Get a weekly reminder to restart your device. Regular reboots clear out memory-resident threats and keep your protection running smoothly." = "Recevez un rappel hebdomadaire pour redémarrer votre appareil. Des redémarrages réguliers éliminent les menaces résidant en mémoire et assurent le bon fonctionnement de votre protection.";
+"Weekly Privacy Report" = "Rapport hebdomadaire de confidentialité";
+"Get a weekly email recapping your protection — including how many web trackers Glacier’s private DNS blocked over the past week." = "Recevez un e-mail hebdomadaire récapitulant votre protection, y compris le nombre de traqueurs web bloqués par le DNS privé de Glacier au cours de la semaine écoulée.";
+"Something went wrong while switching VPN location. Please try again." = "Une erreur s’est produite lors du changement d’emplacement du VPN. Veuillez réessayer.";
+"Add Anyway" = "Ajouter quand même";
+"Authentication failed. Please try again." = "Échec de l’authentification. Veuillez réessayer.";
+"Authentication cancelled. Please try again." = "Authentification annulée. Veuillez réessayer.";
+"We sent you an email to reset your password." = "Nous vous avons envoyé un e-mail pour réinitialiser votre mot de passe.";
+"Enter the 6-digit code from your email" = "Saisissez le code à 6 chiffres reçu par e-mail";
+"Enter the 6-digit code we sent to your email." = "Saisissez le code à 6 chiffres que nous vous avons envoyé par e-mail.";
+"Enter the 6-digit code we sent to %@." = "Saisissez le code à 6 chiffres envoyé à %@.";
+"Log in with a different account" = "Se connecter avec un autre compte";
+"That code didn't work. Log in again to get a new one." = "Ce code n’a pas fonctionné. Reconnectez-vous pour en recevoir un nouveau.";
+"Your account has been verified. Please log in to continue." = "Votre compte a été vérifié. Connectez-vous pour continuer.";
+"Hides which sites you're visiting.\n\nFaster connection, no ads, and enough privacy for everyday use." = "Masque les sites que vous visitez.\n\nConnexion plus rapide, sans publicités et une confidentialité suffisante pour un usage quotidien.";
+"Manage Subscription" = "Gérer l’abonnement";
+"Hides where you're going and everything you do along the way.\n\nIdeal for public Wi-Fi, travel, or untrusted networks.\n\nHeads up - can sometimes slow your connection or limit browsing." = "Masque votre destination et tout ce que vous faites en chemin.\n\nIdéal pour le Wi-Fi public, les voyages ou les réseaux non fiables.\n\nÀ noter : peut parfois ralentir votre connexion ou limiter la navigation.";
+"Coming Soon" = "Bientôt disponible";
+"Acquiring numbers and calling is currently not supported in this pilot." = "L’obtention de numéros et les appels ne sont pas encore pris en charge dans ce pilote.";
+"You’ve used all the free number slots included with your plan. Add %@ for a one-time charge of %@?" = "Vous avez utilisé tous les numéros gratuits inclus dans votre forfait. Ajouter %@ pour un paiement unique de %@ ?";
+"Add a new number — %@" = "Ajouter un nouveau numéro — %@";
+"Purchase for %@" = "Acheter pour %@";
+"To enable, go to Glacier Settings." = "Pour l’activer, accédez aux réglages de Glacier.";
+
+/***************************
+ Subscription Settings
+ ***************************/
+
+"Subscription" = "Abonnement";
+"YOUR PLAN" = "VOTRE FORFAIT";
+"Glacier plan" = "Forfait Glacier";
+"Phone lines" = "Lignes téléphoniques";
+"Renews" = "Renouvellement";
+"MANAGE" = "GÉRER";
+"Renew your Glacier plan" = "Renouveler votre forfait Glacier";
+"Renew your phone lines" = "Renouveler vos lignes téléphoniques";
+"Change your phone-line plan" = "Modifier votre forfait de lignes téléphoniques";
+"Change or cancel in the App Store" = "Modifier ou résilier dans l’App Store";
+"Manage on the Glacier website" = "Gérer sur le site web de Glacier";
+"Restore purchases" = "Restaurer les achats";
+"App Store" = "App Store";
+"Google Play" = "Google Play";
+"Glacier website" = "site web de Glacier";
+"Family plan" = "Forfait familial";
+"through the App Store" = "via l’App Store";
+"through Google Play" = "via Google Play";
+"on the Glacier website" = "sur le site web de Glacier";
+"outside the App Store" = "en dehors de l’App Store";
+"No Purchases Found" = "Aucun achat trouvé";
+"We couldn't find an active subscription for this Apple Account or your Glacier account." = "Nous n’avons trouvé aucun abonnement actif pour ce compte Apple ni pour votre compte Glacier.";
+"Expired" = "Expiré";
+"Expired (phone lines)" = "Expirées";
+"Yearly" = "Annuel";
+"Monthly" = "Mensuel";
+"Active" = "Actif";
+"None" = "Aucun";
+"None (phone lines)" = "Aucune";
+"Subscriptions renew automatically unless canceled at least 24 hours before the end of the current period. Manage or cancel anytime in your App Store account settings." = "Les abonnements se renouvellent automatiquement sauf annulation au moins 24 heures avant la fin de la période en cours. Gérez ou résiliez à tout moment dans les réglages de votre compte App Store.";
+"Subscriptions renew automatically unless canceled at least 24 hours before the end of the current period. Manage or cancel wherever you bought it." = "Les abonnements se renouvellent automatiquement sauf annulation au moins 24 heures avant la fin de la période en cours. Gérez ou résiliez là où vous l’avez acheté.";
+"Your App Store subscription ended on %@." = "Votre abonnement App Store a pris fin le %@.";
+"Your Glacier plan has ended." = "Votre forfait Glacier a pris fin.";
+"Your VPN and encrypted DNS protection stays on until %@. Renew to keep it." = "Votre VPN et votre protection DNS chiffrée restent actifs jusqu’au %@. Renouvelez pour les conserver.";
+"Renew to keep your VPN and encrypted DNS protection." = "Renouvelez pour conserver votre VPN et votre protection DNS chiffrée.";
+"Your subscription has expired" = "Votre abonnement a expiré";
+"Your phone lines have expired" = "Vos lignes téléphoniques ont expiré";
+"Your App Store subscription for phone lines ended on %@. Choose a phone-line plan to keep using your numbers." = "Votre abonnement App Store pour les lignes téléphoniques a pris fin le %@. Choisissez un forfait de lignes téléphoniques pour continuer à utiliser vos numéros.";
+"Shared through a family plan" = "Partagé via un forfait familial";
+"Your subscription is active and shared with you through a Glacier family plan. The person who manages the family plan can change it." = "Votre abonnement est actif et partagé avec vous via un forfait familial Glacier. La personne qui gère le forfait familial peut le modifier.";
+"Your subscription is active. Your Glacier plan was bought %1$@ and your phone lines %2$@, so neither can be changed here. Manage each one where it was bought." = "Votre abonnement est actif. Votre forfait Glacier a été acheté %1$@ et vos lignes téléphoniques %2$@, donc aucun des deux ne peut être modifié ici. Gérez chacun là où il a été acheté.";
+"Managed outside the App Store" = "Géré en dehors de l’App Store";
+"Your Glacier plan is active." = "Votre forfait Glacier est actif.";
+"Your phone lines are active." = "Vos lignes téléphoniques sont actives.";
+"Your subscription is active." = "Votre abonnement est actif.";
+"Bought with a different Apple Account" = "Acheté avec un autre compte Apple";
+"The purchase was made with a different Apple Account than the one this iPhone uses for App Store purchases, so its details can't be shown or changed here. To manage it, sign in with that Apple Account under Settings → your name → Media & Purchases, or tap Restore purchases." = "L’achat a été effectué avec un compte Apple différent de celui que cet iPhone utilise pour les achats dans l’App Store ; ses détails ne peuvent donc pas être affichés ni modifiés ici. Pour le gérer, connectez-vous avec ce compte Apple dans Réglages → votre nom → Contenu multimédia et achats, ou touchez Restaurer les achats.";
+"Managed in Google Play" = "Géré dans Google Play";
+"Plans bought through Google Play can't be changed here. To change or cancel, open the Google Play Store on an Android device signed in to the Google account that made the purchase." = "Les forfaits achetés via Google Play ne peuvent pas être modifiés ici. Pour modifier ou résilier, ouvrez le Google Play Store sur un appareil Android connecté au compte Google qui a effectué l’achat.";
+"Managed on the Glacier website" = "Géré sur le site web de Glacier";
+"Plans bought on the Glacier website can't be changed here. Sign in on the Glacier website to change or cancel." = "Les forfaits achetés sur le site web de Glacier ne peuvent pas être modifiés ici. Connectez-vous sur le site web de Glacier pour modifier ou résilier.";
+"Plans bought outside the App Store can't be changed here. Manage or cancel where you made the purchase." = "Les forfaits achetés en dehors de l’App Store ne peuvent pas être modifiés ici. Gérez ou résiliez là où vous avez effectué l’achat.";
+"Go to Website" = "Aller sur le site web";

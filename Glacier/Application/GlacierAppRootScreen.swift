@@ -356,7 +356,13 @@ struct GlacierAppRootScreen: View {
                 rootCoodinator: glacierAppCoordinator,
                 service: SKGlacierPlanPurchaseService()
             )
-            GlacierPlanPurchaseScreen(viewModel: viewModel, isLapsePaywall: true)
+            // Settings is unreachable behind this cover, so hand the paywall the account actions
+            // (manage/cancel subscription, sign out, delete account) the user would find there.
+            GlacierPlanPurchaseScreen(
+                viewModel: viewModel,
+                isLapsePaywall: true,
+                lapseAccountActions: SettingsVM(rootCoordinator: glacierAppCoordinator)
+            )
         }
         .fullScreenCover(isPresented: $showGraceRenewPaywall) {
             let viewModel = GlacierPlanPurchaseVM(
@@ -375,6 +381,13 @@ struct GlacierAppRootScreen: View {
         }
         .onChange(of: showSubscriptionLapsedPaywall) { _ in
             BaseSubscriptionLifecycleHandler.shared.setPaywallPresented(showGraceRenewPaywall || showSubscriptionLapsedPaywall)
+        }
+        // Sign-out / account deletion from the lapse paywall route to login via setRootScreen, but
+        // the paywall is our own cover, not coordinator state — drop it so it doesn't sit over login.
+        .onChange(of: glacierAppCoordinator.currentScreen) { screen in
+            guard screen == .userAuthentication else { return }
+            showSubscriptionLapsedPaywall = false
+            showGraceRenewPaywall = false
         }
     }
 

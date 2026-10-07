@@ -85,8 +85,8 @@ final class ManagePhoneNumbersVM: ManagePhoneNumbersViewModel, ObservableObject 
     }
     
     func presentPhoneNumberPlanPurchaseView() {
-        presentPhoneNumberPlanPurchase(orWarnWebManaged: {
-            presentSheet(.phoneNumberPlanPurchase)
+        presentPhoneNumberPlanPurchase(orWarnManagedElsewhere: {
+            self.presentSheet(.phoneNumberPlanPurchase)
         })
     }
     

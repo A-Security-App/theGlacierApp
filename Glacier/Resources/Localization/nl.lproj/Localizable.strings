@@ -61,7 +61,7 @@
 
 "Create your account" = "Maak je account aan";
 "You’ll use this email to log in." = "Je gebruikt dit e-mailadres om in te loggen.";
-"Set your Password" = "Stel je wachtwoord in";
+"Set your Password." = "Stel je wachtwoord in.";
 "Email" = "E-mail";
 "Password" = "Wachtwoord";
 "Continue with Google" = "Doorgaan met Google";
@@ -75,7 +75,7 @@
 
 "Check your email" = "Controleer je e-mail";
 "We sent you an email to verify you’re you." = "We hebben je een e-mail gestuurd om je identiteit te verifiëren.";
-"We sent you email for account confirmation." = "We hebben je een e-mail gestuurd voor accountbevestiging.";
+"We sent you email for account verification." = "We hebben je een e-mail gestuurd om je account te verifiëren.";
 "Something went wrong while resending the confirmation email. Please try again." = "Er is iets misgegaan bij het opnieuw verzenden van de bevestigingsmail. Probeer het opnieuw.";
 "This confirmation email has expired. Please request a new one." = "Deze bevestigingsmail is verlopen. Vraag een nieuwe aan.";
 
@@ -97,20 +97,20 @@
 
 "Enter Code" = "Code invoeren";
 "Enter the 4-digit code sent to you at %@" = "Voer de 4-cijferige code in die naar %@ is verzonden";
-"Tip: Make sure to check your inbox and spam folders" = "Tip: Vergeet niet je inbox en spammap te controleren";
+"Tip: Make sure to check your inbox and spam folders." = "Tip: Vergeet niet je inbox en spammap te controleren.";
 "Resend" = "Opnieuw verzenden";
 "Resent!" = "Opnieuw verzonden!";
 "Wrong code. Try again." = "Verkeerde code. Probeer opnieuw.";
-"Update Password" = "Wachtwoord bijwerken";
-"Enter your new password" = "Voer je nieuwe wachtwoord in";
+"Update password" = "Wachtwoord bijwerken";
+"Enter a new password." = "Voer een nieuw wachtwoord in.";
 "• At least 8 characters\n" = "• Minimaal 8 tekens\n";
 "• At least one uppercase letter\n" = "• Minimaal één hoofdletter\n";
 "• At least one lowercase letter\n" = "• Minimaal één kleine letter\n";
 "• At least one number\n" = "• Minimaal één cijfer\n";
 "• At least one special character (!@#$%^&*)" = "• Minimaal één speciaal teken (!@#$%^&*)";
-"Re-enter password" = "Herhaal wachtwoord";
+"Re-enter Password" = "Herhaal wachtwoord";
 "Passwords don’t match" = "Wachtwoorden komen niet overeen";
-"Something went wrong while sending the password reset link. Please try again." = "Er is iets misgegaan bij het verzenden van de link voor wachtwoordherstel. Probeer het opnieuw.";
+"Something went wrong while sending password reset email. Please try again." = "Er ging iets mis bij het versturen van de e-mail om je wachtwoord opnieuw in te stellen. Probeer het opnieuw.";
 "Something went wrong while updating your password. Please try again." = "Er is iets misgegaan bij het bijwerken van je wachtwoord. Probeer het opnieuw.";
 "Your password has been updated successfully. Please log in with your new password." = "Je wachtwoord is succesvol bijgewerkt. Log in met je nieuwe wachtwoord.";
 
@@ -144,7 +144,7 @@
 "Setup Secure DNS." = "Beveiligde DNS instellen.";
 "Hides which sites you're visiting - faster connection, no ads, and enough privacy for everyday use." = "Verbergt welke sites je bezoekt - snellere verbinding, geen advertenties en voldoende privacy voor dagelijks gebruik.";
 "Enable Glacier DNS in Settings" = "Activeer Glacier DNS in Instellingen";
-"In Settings page, navigate to:\n\nGeneral →\nVPN & Device Management →\nDNS →\nGlacier." = "Ga op de pagina Instellingen naar:\n\nAlgemeen →\nVPN en apparaatbeheer →\nDNS →\nGlacier.";
+"In Settings page, navigate to:\n\nGeneral →\nVPN & Device Management →\nDNS →\n\nThen select Glacier." = "Ga in Instellingen naar:\n\nAlgemeen →\nVPN en apparaatbeheer →\nDNS →\n\nKies daarna Glacier.";
 "Secure DNS Protection Required" = "Beveiligde DNS-bescherming vereist";
 "When your VPN turns off on this trusted network, Secure DNS protection requires our profile to be selected in iOS Settings.\n\nIn Settings page, navigate to:\n\nGeneral →\nVPN & Device Management →\nDNS →\n\nThen select Glacier." = "Wanneer je VPN wordt uitgeschakeld op dit vertrouwde netwerk, vereist beveiligde DNS-bescherming dat ons profiel is geselecteerd in iOS-instellingen.\n\nGa op de pagina Instellingen naar:\n\nAlgemeen →\nVPN en apparaatbeheer →\nDNS →\n\nSelecteer vervolgens Glacier.";
 "Something went wrong while adding DNS configuration. Please try again." = "Er is iets misgegaan bij het toevoegen van de DNS-configuratie. Probeer het opnieuw.";
@@ -317,6 +317,10 @@
 "Something went wrong while burning number. Please try again." = "Er is iets misgegaan bij het verwijderen van het nummer. Probeer het opnieuw.";
 "Your plan is managed on the web" = "Je abonnement wordt op het web beheerd";
 "You subscribed to your phone lines through the Glacier website, so changes to your plan need to be made there. Subscribing here would start a second, separate subscription and you’d be billed for both." = "Je hebt je telefoonlijnen via de website van Glacier aangeschaft, dus wijzigingen in je abonnement moeten daar worden doorgevoerd. Als je hier een abonnement neemt, start je een tweede, apart abonnement en betaal je voor beide.";
+"Your plan is on another Apple Account" = "Je abonnement staat op een ander Apple-account";
+"Your phone lines are billed through the App Store on a different Apple Account. To change your plan, sign in to the App Store with that account. Subscribing here would start a second, separate subscription and you’d be billed for both." = "Je telefoonlijnen worden via de App Store gefactureerd op een ander Apple-account. Log met dat account in bij de App Store om je abonnement te wijzigen. Als je je hier abonneert, start je een tweede, apart abonnement en betaal je voor beide.";
+"Your plan is managed in Google Play" = "Je abonnement wordt beheerd in Google Play";
+"You subscribed to your phone lines through Google Play, so changes to your plan need to be made there. Subscribing here would start a second, separate subscription and you’d be billed for both." = "Je hebt je telefoonlijnen via Google Play afgesloten, dus wijzigingen in je abonnement moeten daar worden gedaan. Als je je hier abonneert, start je een tweede, apart abonnement en betaal je voor beide.";
 "Choose numbers to remove" = "Kies de nummers die je wilt verwijderen";
 "Decide later" = "Later beslissen";
 "Your plan now includes %d number(s). Select %d to remove. Removing a number permanently deletes its messages and call history." = "Je abonnement omvat nu %d nummer(s). Selecteer %d om te verwijderen. Als je een nummer verwijdert, worden de berichten en gespreksgeschiedenis permanent verwijderd.";
@@ -325,6 +329,12 @@
 "Remove this number?" = "Dit nummer verwijderen?";
 "Remove these numbers?" = "Deze nummers verwijderen?";
 "%@ will be permanently removed, including its messages and call history. This can't be undone." = "%@ wordt permanent verwijderd, inclusief de berichten en gespreksgeschiedenis. Dit kan niet worden ongedaan gemaakt.";
+"%@ will be permanently removed. You can select a replacement number at no additional charge." = "%@ wordt permanent verwijderd. Je kunt zonder extra kosten een vervangend nummer kiezen.";
+"%@ will be permanently removed. To add a new number this month, a one-time %@ fee will apply." = "%@ wordt permanent verwijderd. Als je deze maand een nieuw nummer wilt toevoegen, betaal je eenmalig %@.";
+"Delete call history" = "Gespreksgeschiedenis verwijderen";
+"All call history for %@ will be permanently deleted. This cannot be undone." = "Alle gespreksgeschiedenis van %@ wordt permanent verwijderd. Dit kan niet worden ongedaan gemaakt.";
+"Delete history" = "Geschiedenis verwijderen";
+"Something went wrong while deleting call history. Please try again." = "Er ging iets mis bij het verwijderen van de gespreksgeschiedenis. Probeer het opnieuw.";
 "%@ will be permanently removed, including their messages and call history. This can't be undone." = "%@ worden permanent verwijderd, inclusief hun berichten en gespreksgeschiedenis. Dit kan niet worden ongedaan gemaakt.";
 "Remove permanently" = "Permanent verwijderen";
 
@@ -385,12 +395,34 @@
 "This permanently deletes your Glacier account and associated data. This action cannot be undone." = "Hiermee worden je Glacier-account en de bijbehorende gegevens permanent verwijderd. Deze actie kan niet worden ongedaan gemaakt.";
 "Yes, Delete" = "Ja, verwijderen";
 "Manage Your Subscription" = "Beheer je abonnement";
-"Your account has been deleted, but your subscription is managed through Apple and remains active." = "Je account is verwijderd, maar je abonnement wordt via Apple beheerd en blijft actief.";
 "Cancel Your Subscription" = "Zeg je abonnement op";
-"Your account has been deleted, but your subscription was purchased on the Glacier website and is still active. Cancel it there to stop being billed." = "Je account is verwijderd, maar je abonnement is via de website van Glacier aangeschaft en is nog actief. Zeg het daar op om verdere kosten te voorkomen.";
 "Manage" = "Beheren";
 "Couldn't Delete Account" = "Account kan niet worden verwijderd";
 "Something went wrong while deleting your account. Please check your connection and try again." = "Er is iets misgegaan bij het verwijderen van je account. Controleer je verbinding en probeer het opnieuw.";
+
+// MARK: - Account deletion reason
+"Your subscription on the Glacier website will be canceled too." = "Je abonnement op de website van Glacier wordt ook opgezegd.";
+"Your account has been deleted, but your subscription is still active. Remember to cancel it where you subscribed so you aren't billed again." = "Je account is verwijderd, maar je abonnement is nog actief. Vergeet niet het op te zeggen waar je het hebt afgesloten, zodat je niet opnieuw betaalt.";
+"Your account has been deleted, but your App Store subscription is still active. Cancel it to stop being billed." = "Je account is verwijderd, maar je App Store-abonnement is nog actief. Zeg het op om niet langer te betalen.";
+"Your account has been deleted, but your Google Play subscription is still active. Cancel it in the Google Play Store to stop being billed." = "Je account is verwijderd, maar je Google Play-abonnement is nog actief. Zeg het op in de Google Play Store om niet langer te betalen.";
+"Your account has been deleted, but your App Store and Google Play subscriptions are still active. Cancel each one to stop being billed." = "Je account is verwijderd, maar je App Store- en Google Play-abonnementen zijn nog actief. Zeg ze allebei op om niet langer te betalen.";
+"Before you go" = "Voordat je gaat";
+"Why are you deleting your account? Your feedback helps us make Glacier better." = "Waarom verwijder je je account? Je feedback helpt ons Glacier te verbeteren.";
+"Choose the main reason" = "Kies de belangrijkste reden";
+"Anything else you'd like us to know?" = "Wil je ons nog iets laten weten?";
+"Optional feedback" = "Optionele feedback";
+"Delete Account" = "Account verwijderen";
+"Never mind" = "Laat maar";
+"Skip and delete" = "Overslaan en verwijderen";
+"Close" = "Sluiten";
+"It costs too much" = "Het is te duur";
+"Sites or apps don't work with the VPN" = "Sites of apps werken niet met de VPN";
+"Problems with calls on my Glacier number" = "Problemen met bellen via mijn Glacier-nummer";
+"The app is buggy or hard to use" = "De app heeft fouten of is lastig te gebruiken";
+"I don't use it enough" = "Ik gebruik het te weinig";
+"I only needed it for a short time" = "Ik had het maar even nodig";
+"It slows my internet or drains my battery" = "Het vertraagt mijn internet of kost veel batterij";
+"Other" = "Anders";
 
 // MARK: - Settings Home Screen
 
@@ -418,7 +450,7 @@
 
 "VPN" = "VPN";
 "VPN Connection" = "VPN-verbinding";
-"An extra layer of encryption. Ideal for public Wi-Fi, travel, or untrusted networks. Learn more." = "Een extra beveiligingslaag. Ideaal voor openbare Wi-Fi, reizen of niet-vertrouwde netwerken. Meer informatie.";
+"An extra layer of encryption. Ideal for public Wi-Fi, travel, or untrusted networks. " = "Een extra beveiligingslaag. Ideaal voor openbare Wi-Fi, reizen of niet-vertrouwde netwerken. ";
 "Status" = "Status";
 "Not in Use" = "Niet in gebruik";
 "In Progress" = "Bezig";
@@ -487,3 +519,123 @@
 "Open Glacier" = "Glacier openen";
 "VPN protection is off after an app update. Finish updating Glacier, then reconnect." = "VPN-bescherming is uit na een app-update. Werk Glacier bij en maak opnieuw verbinding.";
 "VPN protection stopped unexpectedly. Reconnect to protect your traffic." = "VPN-bescherming is onverwacht gestopt. Maak opnieuw verbinding om je verkeer te beschermen.";
+"Couldn’t load numbers" = "Kan nummers niet laden";
+"Glacier couldn’t load available numbers. Check your connection, then try again." = "Glacier kon de beschikbare nummers niet laden. Controleer je verbinding en probeer het opnieuw.";
+"Try Again" = "Opnieuw proberen";
+
+/* Login: email linked to Google or Apple */
+"This email is linked to %1$@. Sign in with %1$@, or check your password." = "Dit e-mailadres is gekoppeld aan %1$@. Log in met %1$@ of controleer je wachtwoord.";
+"If you signed up with Apple or Google, use those buttons instead." = "Heb je je geregistreerd met Apple of Google? Gebruik dan die knoppen.";
+"You last signed in with %@." = "Je hebt de vorige keer ingelogd met %@.";
+"This email is linked to %@." = "Dit e-mailadres is gekoppeld aan %@.";
+"Log in with a password instead" = "Liever inloggen met een wachtwoord";
+"Linked to %@" = "Gekoppeld aan %@";
+"Couldn't log in" = "Inloggen mislukt";
+"Account already exists" = "Account bestaat al";
+"Couldn't create account" = "Account aanmaken mislukt";
+"Verify your account" = "Verifieer je account";
+"Couldn't sign in" = "Inloggen mislukt";
+"This email already has a Glacier account that isn't verified yet. Log in with your email and password to finish verifying it, then try %@ again." = "Dit e-mailadres heeft al een Glacier-account dat nog niet is geverifieerd. Log in met je e-mailadres en wachtwoord om de verificatie af te ronden en probeer het daarna opnieuw met %@.";
+"An account with this email already uses %1$@. Continue with %1$@ instead." = "Er is al een account met dit e-mailadres dat %1$@ gebruikt. Ga in plaats daarvan verder met %1$@.";
+
+// MARK: - Previously untranslated
+"Emergency Services are not available through Glacier." = "Hulpdiensten zijn niet beschikbaar via Glacier.";
+"'%@' is not a valid URL." = "'%@' is geen geldige URL.";
+"DNS URLs must use the tls:// scheme (got '%@')." = "DNS-URL’s moeten het tls://-schema gebruiken (ontvangen: '%@').";
+"Enter a DNS server hostname." = "Voer een hostnaam voor een DNS-server in.";
+"Custom DNS ports aren't supported." = "Aangepaste DNS-poorten worden niet ondersteund.";
+"Unable to resolve '%@'. Check the hostname and try again." = "Kan '%@' niet omzetten. Controleer de hostnaam en probeer het opnieuw.";
+"Update Glacier: \n→ Open the App Store \n→ On the Glacier page, tap “Update”" = "Glacier bijwerken: \n→ Open de App Store \n→ Tik op de pagina van Glacier op ‘Werk bij’";
+"Update iOS: \n→ Open Settings \n→ General \n→ Software Update" = "iOS bijwerken: \n→ Open Instellingen \n→ Algemeen \n→ Software-update";
+"Open App Store" = "App Store openen";
+"Update Glacier & iOS" = "Glacier en iOS bijwerken";
+"Connecting" = "Verbinden";
+"Audio Route" = "Audio-uitvoer";
+"Keypad" = "Toetsen";
+"Hide" = "Verberg";
+"Add phone number" = "Telefoonnummer toevoegen";
+"Notifications" = "Meldingen";
+"Learn more." = "Meer informatie.";
+"VPN will automatically turn off on this network.\nUpdate anytime." = "VPN schakelt automatisch uit op dit netwerk.\nJe kunt dit altijd wijzigen.";
+"Reboot Reminder" = "Herinnering om opnieuw op te starten";
+"Get a weekly reminder to restart your device. Regular reboots clear out memory-resident threats and keep your protection running smoothly." = "Ontvang wekelijks een herinnering om je apparaat opnieuw op te starten. Regelmatig herstarten verwijdert bedreigingen die in het geheugen zitten en houdt je bescherming soepel draaiende.";
+"Weekly Privacy Report" = "Wekelijks privacyrapport";
+"Get a weekly email recapping your protection — including how many web trackers Glacier’s private DNS blocked over the past week." = "Ontvang wekelijks een e-mail met een overzicht van je bescherming, inclusief hoeveel webtrackers de privé-DNS van Glacier de afgelopen week heeft geblokkeerd.";
+"Something went wrong while switching VPN location. Please try again." = "Er ging iets mis bij het wijzigen van de VPN-locatie. Probeer het opnieuw.";
+"Add Anyway" = "Toch toevoegen";
+"Authentication failed. Please try again." = "Verificatie mislukt. Probeer het opnieuw.";
+"Authentication cancelled. Please try again." = "Verificatie geannuleerd. Probeer het opnieuw.";
+"We sent you an email to reset your password." = "We hebben je een e-mail gestuurd om je wachtwoord opnieuw in te stellen.";
+"Enter the 6-digit code from your email" = "Voer de 6-cijferige code uit je e-mail in";
+"Enter the 6-digit code we sent to your email." = "Voer de 6-cijferige code in die we naar je e-mail hebben gestuurd.";
+"Enter the 6-digit code we sent to %@." = "Voer de 6-cijferige code in die we naar %@ hebben gestuurd.";
+"Log in with a different account" = "Inloggen met een ander account";
+"That code didn't work. Log in again to get a new one." = "Die code werkte niet. Log opnieuw in om een nieuwe te krijgen.";
+"Your account has been verified. Please log in to continue." = "Je account is geverifieerd. Log in om verder te gaan.";
+"Hides which sites you're visiting.\n\nFaster connection, no ads, and enough privacy for everyday use." = "Verbergt welke sites je bezoekt.\n\nSnellere verbinding, geen advertenties en voldoende privacy voor dagelijks gebruik.";
+"Manage Subscription" = "Abonnement beheren";
+"Hides where you're going and everything you do along the way.\n\nIdeal for public Wi-Fi, travel, or untrusted networks.\n\nHeads up - can sometimes slow your connection or limit browsing." = "Verbergt waar je naartoe gaat en alles wat je onderweg doet.\n\nIdeaal voor openbare Wi-Fi, reizen of niet-vertrouwde netwerken.\n\nLet op: kan soms je verbinding vertragen of browsen beperken.";
+"Coming Soon" = "Binnenkort beschikbaar";
+"Acquiring numbers and calling is currently not supported in this pilot." = "Nummers aanvragen en bellen wordt in deze pilot nog niet ondersteund.";
+"You’ve used all the free number slots included with your plan. Add %@ for a one-time charge of %@?" = "Je hebt alle gratis nummers uit je abonnement gebruikt. %@ toevoegen voor een eenmalig bedrag van %@?";
+"Add a new number — %@" = "Nieuw nummer toevoegen — %@";
+"Purchase for %@" = "Kopen voor %@";
+"To enable, go to Glacier Settings." = "Ga naar de instellingen van Glacier om dit in te schakelen.";
+
+/***************************
+ Subscription Settings
+ ***************************/
+
+"Subscription" = "Abonnement";
+"YOUR PLAN" = "JE ABONNEMENT";
+"Glacier plan" = "Glacier-abonnement";
+"Phone lines" = "Telefoonlijnen";
+"Renews" = "Verlengt op";
+"MANAGE" = "BEHEREN";
+"Renew your Glacier plan" = "Verleng je Glacier-abonnement";
+"Renew your phone lines" = "Verleng je telefoonlijnen";
+"Change your phone-line plan" = "Wijzig je abonnement voor telefoonlijnen";
+"Change or cancel in the App Store" = "Wijzigen of opzeggen in de App Store";
+"Manage on the Glacier website" = "Beheren op de Glacier-website";
+"Restore purchases" = "Aankopen herstellen";
+"App Store" = "App Store";
+"Google Play" = "Google Play";
+"Glacier website" = "Glacier-website";
+"Family plan" = "Gezinsabonnement";
+"through the App Store" = "via de App Store";
+"through Google Play" = "via Google Play";
+"on the Glacier website" = "op de Glacier-website";
+"outside the App Store" = "buiten de App Store";
+"No Purchases Found" = "Geen aankopen gevonden";
+"We couldn't find an active subscription for this Apple Account or your Glacier account." = "We konden geen actief abonnement vinden voor dit Apple-account of je Glacier-account.";
+"Expired" = "Verlopen";
+"Expired (phone lines)" = "Verlopen";
+"Yearly" = "Jaarlijks";
+"Monthly" = "Maandelijks";
+"Active" = "Actief";
+"None" = "Geen";
+"None (phone lines)" = "Geen";
+"Subscriptions renew automatically unless canceled at least 24 hours before the end of the current period. Manage or cancel anytime in your App Store account settings." = "Abonnementen worden automatisch verlengd, tenzij ze minstens 24 uur voor het einde van de huidige periode worden opgezegd. Beheer of zeg op wanneer je wilt in de instellingen van je App Store-account.";
+"Subscriptions renew automatically unless canceled at least 24 hours before the end of the current period. Manage or cancel wherever you bought it." = "Abonnementen worden automatisch verlengd, tenzij ze minstens 24 uur voor het einde van de huidige periode worden opgezegd. Beheer of zeg op waar je het hebt gekocht.";
+"Your App Store subscription ended on %@." = "Je App Store-abonnement is beëindigd op %@.";
+"Your Glacier plan has ended." = "Je Glacier-abonnement is beëindigd.";
+"Your VPN and encrypted DNS protection stays on until %@. Renew to keep it." = "Je VPN en versleutelde DNS-bescherming blijven aan tot %@. Verleng om ze te behouden.";
+"Renew to keep your VPN and encrypted DNS protection." = "Verleng om je VPN en versleutelde DNS-bescherming te behouden.";
+"Your subscription has expired" = "Je abonnement is verlopen";
+"Your phone lines have expired" = "Je telefoonlijnen zijn verlopen";
+"Your App Store subscription for phone lines ended on %@. Choose a phone-line plan to keep using your numbers." = "Je App Store-abonnement voor telefoonlijnen is beëindigd op %@. Kies een abonnement voor telefoonlijnen om je nummers te blijven gebruiken.";
+"Shared through a family plan" = "Gedeeld via een gezinsabonnement";
+"Your subscription is active and shared with you through a Glacier family plan. The person who manages the family plan can change it." = "Je abonnement is actief en wordt met je gedeeld via een Glacier-gezinsabonnement. De persoon die het gezinsabonnement beheert, kan het wijzigen.";
+"Your subscription is active. Your Glacier plan was bought %1$@ and your phone lines %2$@, so neither can be changed here. Manage each one where it was bought." = "Je abonnement is actief. Je Glacier-abonnement is gekocht %1$@ en je telefoonlijnen %2$@, dus geen van beide kan hier worden gewijzigd. Beheer elk ervan waar het is gekocht.";
+"Managed outside the App Store" = "Beheerd buiten de App Store";
+"Your Glacier plan is active." = "Je Glacier-abonnement is actief.";
+"Your phone lines are active." = "Je telefoonlijnen zijn actief.";
+"Your subscription is active." = "Je abonnement is actief.";
+"Bought with a different Apple Account" = "Gekocht met een ander Apple-account";
+"The purchase was made with a different Apple Account than the one this iPhone uses for App Store purchases, so its details can't be shown or changed here. To manage it, sign in with that Apple Account under Settings → your name → Media & Purchases, or tap Restore purchases." = "De aankoop is gedaan met een ander Apple-account dan het account dat deze iPhone gebruikt voor App Store-aankopen, dus de details kunnen hier niet worden getoond of gewijzigd. Log om het te beheren in met dat Apple-account via Instellingen → je naam → Media en aankopen, of tik op Aankopen herstellen.";
+"Managed in Google Play" = "Beheerd in Google Play";
+"Plans bought through Google Play can't be changed here. To change or cancel, open the Google Play Store on an Android device signed in to the Google account that made the purchase." = "Abonnementen die via Google Play zijn gekocht, kunnen hier niet worden gewijzigd. Open om te wijzigen of op te zeggen de Google Play Store op een Android-apparaat dat is ingelogd met het Google-account waarmee de aankoop is gedaan.";
+"Managed on the Glacier website" = "Beheerd op de Glacier-website";
+"Plans bought on the Glacier website can't be changed here. Sign in on the Glacier website to change or cancel." = "Abonnementen die op de Glacier-website zijn gekocht, kunnen hier niet worden gewijzigd. Log in op de Glacier-website om te wijzigen of op te zeggen.";
+"Plans bought outside the App Store can't be changed here. Manage or cancel where you made the purchase." = "Abonnementen die buiten de App Store zijn gekocht, kunnen hier niet worden gewijzigd. Beheer of zeg op waar je de aankoop hebt gedaan.";
+"Go to Website" = "Naar de website";

@@ -31,7 +31,7 @@ struct UserLoginScreen<ViewModel: UserLoginViewModel & ObservableObject, Coordin
     private var subHeaderText: String {
         if viewModel.isAwaitingVerificationCode {
             verificationCodeSubHeaderText
-        } else if viewModel.shouldShowPasswordTextField {
+        } else if viewModel.shouldShowPasswordTextField, !viewModel.shouldShowLinkedProviderOnly {
             NSLocalizedString("Enter your password.", comment: "User login screen sub header password")
         } else {
             NSLocalizedString("Enter your email.", comment: "User login screen sub header email")
@@ -98,8 +98,14 @@ struct UserLoginScreen<ViewModel: UserLoginViewModel & ObservableObject, Coordin
                             text: $viewModel.email
                         )
                         .padding(.top, 24)
+
+                        if viewModel.shouldShowPasswordTextField, let provider = viewModel.linkedProvider {
+                            LinkedProviderNotice(provider: provider) {
+                                viewModel.signInWith(provider.authProvider)
+                            }
+                        }
                     
-                        if viewModel.shouldShowPasswordTextField {
+                        if viewModel.shouldShowPasswordTextField, !viewModel.shouldShowLinkedProviderOnly {
                             GlacierTextField(
                                 placeholder: NSLocalizedString("Password", comment: "User login screen password place holder"),
                                 isSecured: true,
@@ -109,31 +115,61 @@ struct UserLoginScreen<ViewModel: UserLoginViewModel & ObservableObject, Coordin
                             )
                         }
                     
-                        VStack(alignment: .leading, spacing: 16) {
-                            GlacierButton(
-                                style: .secondary,
-                                title: NSLocalizedString("Continue", comment: "Continue button title"),
-                                isEnabled: $viewModel.isContinueButtonEnabled,
-                                action: {
-                                    UIApplication.shared.dismissKeyboard()
-                                    viewModel.signInWithEmail()
-                                }
-                            )
-                        
+                        if viewModel.shouldShowLinkedProviderOnly {
                             GlacierLabelButton(
-                                text: NSLocalizedString("Forgot password?", comment: "User login screen forgot password button title"),
+                                text: NSLocalizedString(
+                                    "Log in with a password instead",
+                                    comment: "User login screen link that brings back the password field for an email linked to Google or Apple"
+                                ),
                                 font: .bodyThick,
-                                alignment: .leading,
                                 isEnabled: .constant(true),
                                 action: {
-                                    viewModel.presentPasswordResetScreen()
+                                    viewModel.usePasswordInstead()
                                 }
                             )
+                        } else {
+                            VStack(alignment: .leading, spacing: 16) {
+                                GlacierButton(
+                                    style: .secondary,
+                                    title: NSLocalizedString("Continue", comment: "Continue button title"),
+                                    isEnabled: $viewModel.isContinueButtonEnabled,
+                                    action: {
+                                        UIApplication.shared.dismissKeyboard()
+                                        viewModel.signInWithEmail()
+                                    }
+                                )
+
+                                GlacierLabelButton(
+                                    text: NSLocalizedString("Forgot password?", comment: "User login screen forgot password button title"),
+                                    font: .bodyThick,
+                                    alignment: .leading,
+                                    isEnabled: .constant(true),
+                                    action: {
+                                        viewModel.presentPasswordResetScreen()
+                                    }
+                                )
+                            }
                         }
                     
-                        if !viewModel.shouldShowPasswordTextField {
+                        if !viewModel.shouldShowPasswordTextField || viewModel.shouldShowFederatedSignInOptions {
                             GlacierLineSeparator(label: NSLocalizedString("or", comment: "Or text"))
                                 .padding(.top, 24)
+
+                            if !viewModel.shouldShowPasswordTextField, let provider = viewModel.lastSignInProvider {
+                                GlacierLabel(
+                                    text: String(
+                                        format: NSLocalizedString(
+                                            "You last signed in with %@.",
+                                            comment: "User login screen reminder of the last provider used on this device. %@ is Google or Apple."
+                                        ),
+                                        provider.displayName
+                                    ),
+                                    font: .bodyRegular,
+                                    textAlignment: .center,
+                                    customTextColor: .constant(.grey60)
+                                )
+                                .padding(.top, 16)
+                            }
                         
                             GlacierButton(
                                 style: .tertiary,

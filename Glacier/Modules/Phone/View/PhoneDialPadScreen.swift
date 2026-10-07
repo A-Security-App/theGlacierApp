@@ -41,8 +41,25 @@ struct PhoneDialPadScreen<ViewModel: PhoneDialPadViewModel & ObservableObject>: 
             let fixedVertical: CGFloat = 40 + 60 + 40 + 16 + 74  // topPad + numberDisplay + gridTopPad + dialPad topPad + dialButton
             let availableWidth = geo.size.width - hPad * 2
             let availableGridHeight = geo.size.height - bottomReserve - fixedVertical
-            let buttonDiameter = min(74, floor(availableWidth / 3))
-            let rowSpacing = min(20, max(8, floor((availableGridHeight - buttonDiameter * 4) / 3)))
+            let regularDiameter = min(74, floor(availableWidth / 3))
+            let regularRowSpacing = min(20, max(8, floor((availableGridHeight - regularDiameter * 4) / 3)))
+
+            // Short screens (iPhone SE/8): the regular layout runs past the bottom of the
+            // frame and pushes the Dial button under the tab bar. Only when it doesn't fit,
+            // tighten the paddings and shrink the buttons to fill the real height. Every
+            // device where the regular layout fits keeps it unchanged.
+            let regularContentHeight = 40 + 60 + 40 + 16 + regularDiameter * 5 + regularRowSpacing * 3
+            let isCompact = regularContentHeight > geo.size.height
+            let numberTopPad: CGFloat = isCompact ? 12 : 40
+            let gridTopPad: CGFloat = isCompact ? 16 : 40
+            let dialTopPad: CGFloat = isCompact ? 12 : 16
+            let compactRowSpacing: CGFloat = 8
+            let compactDiameter = max(52, min(regularDiameter, floor(
+                (geo.size.height - numberTopPad - 60 - gridTopPad - dialTopPad - compactRowSpacing * 3) / 5
+            )))
+            let buttonDiameter = isCompact ? compactDiameter : regularDiameter
+            let rowSpacing = isCompact ? compactRowSpacing : regularRowSpacing
+            let titleFontSize: CGFloat = isCompact ? floor(34 * buttonDiameter / 74) : 34
 
             VStack(alignment: .center, spacing: 0) {
 
@@ -73,32 +90,32 @@ struct PhoneDialPadScreen<ViewModel: PhoneDialPadViewModel & ObservableObject>: 
                     )
                 }
                 .padding(.horizontal, 16)
-                .padding(.top, 40)
+                .padding(.top, numberTopPad)
 
                 // Alpha-numeric digits
                 LazyVGrid(columns: columns, spacing: rowSpacing) {
-                    PhoneDialPadButton(title: "1", subTitle: nil, diameter: buttonDiameter, action: { viewModel.appendDigit("1") })
-                    PhoneDialPadButton(title: "2", subTitle: "ABC", diameter: buttonDiameter, action: { viewModel.appendDigit("2") })
-                    PhoneDialPadButton(title: "3", subTitle: "DEF", diameter: buttonDiameter, action: { viewModel.appendDigit("3") })
+                    PhoneDialPadButton(title: "1", subTitle: nil, diameter: buttonDiameter, titleFontSize: titleFontSize, action: { viewModel.appendDigit("1") })
+                    PhoneDialPadButton(title: "2", subTitle: "ABC", diameter: buttonDiameter, titleFontSize: titleFontSize, action: { viewModel.appendDigit("2") })
+                    PhoneDialPadButton(title: "3", subTitle: "DEF", diameter: buttonDiameter, titleFontSize: titleFontSize, action: { viewModel.appendDigit("3") })
 
-                    PhoneDialPadButton(title: "4", subTitle: "GHI", diameter: buttonDiameter, action: { viewModel.appendDigit("4") })
-                    PhoneDialPadButton(title: "5", subTitle: "JKL", diameter: buttonDiameter, action: { viewModel.appendDigit("5") })
-                    PhoneDialPadButton(title: "6", subTitle: "MNO", diameter: buttonDiameter, action: { viewModel.appendDigit("6") })
+                    PhoneDialPadButton(title: "4", subTitle: "GHI", diameter: buttonDiameter, titleFontSize: titleFontSize, action: { viewModel.appendDigit("4") })
+                    PhoneDialPadButton(title: "5", subTitle: "JKL", diameter: buttonDiameter, titleFontSize: titleFontSize, action: { viewModel.appendDigit("5") })
+                    PhoneDialPadButton(title: "6", subTitle: "MNO", diameter: buttonDiameter, titleFontSize: titleFontSize, action: { viewModel.appendDigit("6") })
 
-                    PhoneDialPadButton(title: "7", subTitle: "PQRS", diameter: buttonDiameter, action: { viewModel.appendDigit("7") })
-                    PhoneDialPadButton(title: "8", subTitle: "TUV", diameter: buttonDiameter, action: { viewModel.appendDigit("8") })
-                    PhoneDialPadButton(title: "9", subTitle: "WXYZ", diameter: buttonDiameter, action: { viewModel.appendDigit("9") })
+                    PhoneDialPadButton(title: "7", subTitle: "PQRS", diameter: buttonDiameter, titleFontSize: titleFontSize, action: { viewModel.appendDigit("7") })
+                    PhoneDialPadButton(title: "8", subTitle: "TUV", diameter: buttonDiameter, titleFontSize: titleFontSize, action: { viewModel.appendDigit("8") })
+                    PhoneDialPadButton(title: "9", subTitle: "WXYZ", diameter: buttonDiameter, titleFontSize: titleFontSize, action: { viewModel.appendDigit("9") })
 
-                    PhoneDialPadButton(icon: "star-icon", diameter: buttonDiameter, action: { viewModel.appendDigit("*") })
-                    PhoneDialPadButton(title: "0", subTitle: "+", diameter: buttonDiameter, action: {
+                    PhoneDialPadButton(icon: "star-icon", diameter: buttonDiameter, titleFontSize: titleFontSize, action: { viewModel.appendDigit("*") })
+                    PhoneDialPadButton(title: "0", subTitle: "+", diameter: buttonDiameter, titleFontSize: titleFontSize, action: {
                         viewModel.appendDigit("0")
                     }, longPressAction: {
                         viewModel.addPlusSign()
                     })
-                    PhoneDialPadButton(title: "#", diameter: buttonDiameter, action: { viewModel.appendDigit("#") })
+                    PhoneDialPadButton(title: "#", diameter: buttonDiameter, titleFontSize: titleFontSize, action: { viewModel.appendDigit("#") })
                 }
                 .padding(.horizontal, hPad)
-                .padding(.top, 40)
+                .padding(.top, gridTopPad)
 
                 ZStack {
                     // Dial button
@@ -155,7 +172,7 @@ struct PhoneDialPadScreen<ViewModel: PhoneDialPadViewModel & ObservableObject>: 
                         }
                     }
                 }
-                .padding(.top, 16)
+                .padding(.top, dialTopPad)
                 .padding(.horizontal, 62)
             }
             .ignoresSafeArea()

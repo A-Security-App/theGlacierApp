@@ -19,6 +19,7 @@ enum GlacierScreen: Identifiable, Hashable {
     case main
     case settings
     case vpnSettings
+    case subscriptionSettings
     case wifiSettings
     case cellularSetup
     case wifiSetup
@@ -36,6 +37,7 @@ enum GlacierScreen: Identifiable, Hashable {
         case .main: return "main"
         case .settings: return "settings"
         case .vpnSettings: return "vpnSettings"
+        case .subscriptionSettings: return "subscriptionSettings"
         case .wifiSettings: return "wifiSettings"
         case .cellularSetup: return "cellularSetup"
         case .wifiSetup: return "wifiSetup"
@@ -59,6 +61,7 @@ enum GlacierScreen: Identifiable, Hashable {
         case .main: return "main"
         case .settings: return "settings"
         case .vpnSettings: return "vpnSettings"
+        case .subscriptionSettings: return "subscriptionSettings"
         case .wifiSettings: return "wifiSettings"
         case .cellularSetup: return "cellularSetup"
         case .wifiSetup: return "wifiSetup"

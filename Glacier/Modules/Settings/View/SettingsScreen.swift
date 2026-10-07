@@ -62,6 +62,29 @@ struct SettingsScreen<ViewModel: SettingsViewModel & ObservableObject>: View {
                         .padding(.vertical, 8)
                     }
                     .padding(.top, 24)
+
+                    GlacierViewContainer {
+                        HStack(alignment: .center) {
+                            GlacierLabel(
+                                text: NSLocalizedString("Subscription", comment: "Settings screen subscription"),
+                                font: .bodyThick,
+                                textAlignment: .leading
+                            )
+
+                            Spacer()
+
+                            GlacierImage(
+                                name: .constant("right-arrow-small-icon"),
+                                width: 16,
+                                height: 16,
+                                shouldAdaptToColorSchemeChange: true
+                            )
+                        }
+                        .padding(.vertical, 6)
+                    }
+                    .onTapGesture {
+                        viewModel.presentSubscriptionSettingsScreen()
+                    }
                     
                     if viewModel.shouldShowVPNSettingsOption {
                         GlacierViewContainer {

@@ -126,6 +126,64 @@ extension PhoneAccountModel {
         }
         return account
     }
+    /// Inserts `account` unless a row for the same phone number already exists, checking and
+    /// inserting inside one synchronous write transaction. Returns the stored account (the
+    /// existing row when there was one) and whether a new row was inserted.
+    ///
+    /// Checking with a read and then saving with `asyncWrite` let two back-to-back
+    /// `queryForNumbers` responses both miss the pending insert and store the same number twice —
+    /// which the downgrade handler then counted as two lines.
+    public static func insertIfAbsent(_ account: PhoneAccountModel) -> (account: PhoneAccountModel, inserted: Bool) {
+        guard let record = account.grdbRecord, let phoneNumber = record.phoneNumber else {
+            return (account, false)
+        }
+        let sql = "SELECT * FROM \(PhoneAccount.databaseTableName) WHERE phoneNumber == ? ORDER BY id ASC LIMIT 1"
+        do {
+            return try DBManager.sharedDB().grdbStorage.write(block: { transaction -> (account: PhoneAccountModel, inserted: Bool) in
+                if let existing = try PhoneAccount.fetchOne(transaction.database, sql: sql, arguments: [phoneNumber]) {
+                    return (PhoneAccountModel(account: existing), false)
+                }
+                record.grdbSave(transaction: transaction)
+                return (account, true)
+            })
+        } catch {
+            // Nothing was written. The caller keeps the in-memory account; the next sync retries.
+            Log.database.error("PhoneAccountModel.insertIfAbsent error: \(error)")
+            return (account, false)
+        }
+    }
+    /// Deletes duplicate rows for the same phone number, keeping the oldest (lowest id). Repairs
+    /// databases that picked up duplicates before `insertIfAbsent` existed. Nothing else in the
+    /// database references an account row, so the duplicates hold no unique data. Returns the
+    /// kept rows that had duplicates removed.
+    @discardableResult
+    static func removeDuplicateAccounts() -> [PhoneAccount] {
+        do {
+            return try DBManager.sharedDB().grdbStorage.write(block: { transaction -> [PhoneAccount] in
+                let records = try PhoneAccount
+                    .order(Column("id").asc)
+                    .fetchAll(transaction.database)
+                var kept: [String: PhoneAccount] = [:]
+                var repaired: [String: PhoneAccount] = [:]
+                for record in records {
+                    guard let phoneNumber = record.phoneNumber else { continue }
+                    if let keeper = kept[phoneNumber] {
+                        record.grdbRemove(transaction: transaction)
+                        repaired[phoneNumber] = keeper
+                    } else {
+                        kept[phoneNumber] = record
+                    }
+                }
+                if !repaired.isEmpty {
+                    Log.database.notice("[PhoneAccount] Removed duplicate rows for \(repaired.count) number(s)")
+                }
+                return Array(repaired.values)
+            })
+        } catch {
+            Log.database.error("PhoneAccountModel.removeDuplicateAccounts error: \(error)")
+            return []
+        }
+    }
     public static func allAccounts() -> [PhoneAccountModel] {
         var accounts:[PhoneAccountModel] = []
         do {

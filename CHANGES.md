@@ -6,6 +6,22 @@ users a day or two later.
 ## Unreleased
 
 
+## Version 1.2 (October 6, 2026)
+
+* Settings → Subscription screen, reasons asked on account deletion, clearer
+  phone plan management, Google sign-in fix, remaining strings translated.
+
+## Version 1.1.1 (October 1, 2026)
+
+* Google and Apple sign-in guidance on the login screen, clearer sign-in and
+  sign-up messages, unverified accounts routed to the code screen, Dial button
+  fix on short devices.
+
+## Version 1.1 (September 24, 2026)
+
+* Manage subscription, sign out and delete account from the lapse paywall,
+  paywall layout fixes, duplicate phone-account fix, purchase flow fixes.
+
 ## Version 1.0.9 (September 14, 2026)
 
 * DNS-over-TLS reliability work, alert when VPN protection stops unexpectedly,

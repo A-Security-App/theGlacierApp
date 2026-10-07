@@ -61,7 +61,7 @@
 
 "Create your account" = "Opret din konto";
 "You’ll use this email to log in." = "Du bruger denne e-mailadresse til at logge ind.";
-"Set your Password" = "Angiv din adgangskode";
+"Set your Password." = "Angiv din adgangskode.";
 "Email" = "E-mail";
 "Password" = "Adgangskode";
 "Continue with Google" = "Fortsæt med Google";
@@ -75,7 +75,7 @@
 
 "Check your email" = "Tjek din e-mail";
 "We sent you an email to verify you’re you." = "Vi sendte dig en e-mail for at bekræfte din identitet.";
-"We sent you email for account confirmation." = "Vi sendte dig en e-mail til kontobekræftelse.";
+"We sent you email for account verification." = "Vi har sendt dig en e-mail, så du kan bekræfte din konto.";
 "Something went wrong while resending the confirmation email. Please try again." = "Noget gik galt under genafsendelse af bekræftelses-e-mailen. Prøv venligst igen.";
 "This confirmation email has expired. Please request a new one." = "Denne bekræftelses-e-mail er udløbet. Anmod venligst om en ny.";
 
@@ -97,20 +97,20 @@
 
 "Enter Code" = "Indtast kode";
 "Enter the 4-digit code sent to you at %@" = "Indtast den 4-cifrede kode sendt til %@";
-"Tip: Make sure to check your inbox and spam folders" = "Tip: Husk at tjekke din indbakke og spammapper";
+"Tip: Make sure to check your inbox and spam folders." = "Tip: Husk at tjekke din indbakke og spammapper.";
 "Resend" = "Send igen";
 "Resent!" = "Sendt igen!";
 "Wrong code. Try again." = "Forkert kode. Prøv igen.";
-"Update Password" = "Opdater adgangskode";
-"Enter your new password" = "Indtast din nye adgangskode";
+"Update password" = "Opdater adgangskode";
+"Enter a new password." = "Indtast en ny adgangskode.";
 "• At least 8 characters\n" = "• Mindst 8 tegn\n";
 "• At least one uppercase letter\n" = "• Mindst ét stort bogstav\n";
 "• At least one lowercase letter\n" = "• Mindst ét lille bogstav\n";
 "• At least one number\n" = "• Mindst ét tal\n";
 "• At least one special character (!@#$%^&*)" = "• Mindst ét specialtegn (!@#$%^&*)";
-"Re-enter password" = "Gentag adgangskode";
+"Re-enter Password" = "Gentag adgangskode";
 "Passwords don’t match" = "Adgangskoderne stemmer ikke overens";
-"Something went wrong while sending the password reset link. Please try again." = "Noget gik galt under afsendelsen af linket til nulstilling af adgangskoden. Prøv venligst igen.";
+"Something went wrong while sending password reset email. Please try again." = "Noget gik galt under afsendelsen af e-mailen til nulstilling af adgangskoden. Prøv igen.";
 "Something went wrong while updating your password. Please try again." = "Noget gik galt under opdateringen af din adgangskode. Prøv venligst igen.";
 "Your password has been updated successfully. Please log in with your new password." = "Din adgangskode er blevet opdateret. Log ind med din nye adgangskode.";
 
@@ -144,7 +144,7 @@
 "Setup Secure DNS." = "Konfigurer sikker DNS.";
 "Hides which sites you're visiting - faster connection, no ads, and enough privacy for everyday use." = "Skjuler hvilke websteder du besøger - hurtigere forbindelse, ingen reklamer og tilstrækkelig privathed til daglig brug.";
 "Enable Glacier DNS in Settings" = "Aktiver Glacier DNS i Indstillinger";
-"In Settings page, navigate to:\n\nGeneral →\nVPN & Device Management →\nDNS →\nGlacier." = "På siden Indstillinger, naviger til:\n\nGenerelt →\nVPN og enhedsstyring →\nDNS →\nGlacier.";
+"In Settings page, navigate to:\n\nGeneral →\nVPN & Device Management →\nDNS →\n\nThen select Glacier." = "Gå til følgende i Indstillinger:\n\nGenerelt →\nVPN og enhedsadministration →\nDNS →\n\nVælg derefter Glacier.";
 "Secure DNS Protection Required" = "Sikker DNS-beskyttelse kræves";
 "When your VPN turns off on this trusted network, Secure DNS protection requires our profile to be selected in iOS Settings.\n\nIn Settings page, navigate to:\n\nGeneral →\nVPN & Device Management →\nDNS →\n\nThen select Glacier." = "Når VPN slås fra på dette betroede netværk, kræver sikker DNS-beskyttelse, at vores profil er valgt i iOS-indstillingerne.\n\nPå siden Indstillinger, naviger til:\n\nGenerelt →\nVPN og enhedsstyring →\nDNS →\n\nVælg derefter Glacier.";
 "Something went wrong while adding DNS configuration. Please try again." = "Noget gik galt under tilføjelse af DNS-konfigurationen. Prøv venligst igen.";
@@ -317,6 +317,10 @@
 "Something went wrong while burning number. Please try again." = "Noget gik galt under sletning af nummeret. Prøv venligst igen.";
 "Your plan is managed on the web" = "Dit abonnement administreres på nettet";
 "You subscribed to your phone lines through the Glacier website, so changes to your plan need to be made there. Subscribing here would start a second, separate subscription and you’d be billed for both." = "Du har abonneret på dine telefonlinjer via Glaciers website, så ændringer af dit abonnement skal foretages der. Hvis du abonnerer her, starter du et nyt, separat abonnement, og du vil blive opkrævet for begge.";
+"Your plan is on another Apple Account" = "Dit abonnement er på en anden Apple-konto";
+"Your phone lines are billed through the App Store on a different Apple Account. To change your plan, sign in to the App Store with that account. Subscribing here would start a second, separate subscription and you’d be billed for both." = "Dine telefonlinjer betales via App Store på en anden Apple-konto. Log ind i App Store med den konto for at ændre dit abonnement. Hvis du abonnerer her, starter du et andet, separat abonnement, og du bliver opkrævet for begge.";
+"Your plan is managed in Google Play" = "Dit abonnement administreres i Google Play";
+"You subscribed to your phone lines through Google Play, so changes to your plan need to be made there. Subscribing here would start a second, separate subscription and you’d be billed for both." = "Du har tegnet dine telefonlinjer via Google Play, så ændringer i dit abonnement skal foretages dér. Hvis du abonnerer her, starter du et andet, separat abonnement, og du bliver opkrævet for begge.";
 "Choose numbers to remove" = "Vælg numre, der skal fjernes";
 "Decide later" = "Beslut senere";
 "Your plan now includes %d number(s). Select %d to remove. Removing a number permanently deletes its messages and call history." = "Dit abonnement omfatter nu %d nummer/numre. Vælg %d, der skal fjernes. Når du fjerner et nummer, slettes dets beskeder og opkaldshistorik permanent.";
@@ -325,6 +329,12 @@
 "Remove this number?" = "Fjern dette nummer?";
 "Remove these numbers?" = "Fjern disse numre?";
 "%@ will be permanently removed, including its messages and call history. This can't be undone." = "%@ vil blive fjernet permanent, inklusive dets beskeder og opkaldshistorik. Dette kan ikke fortrydes.";
+"%@ will be permanently removed. You can select a replacement number at no additional charge." = "%@ vil blive fjernet permanent. Du kan vælge et nyt nummer uden ekstra omkostninger.";
+"%@ will be permanently removed. To add a new number this month, a one-time %@ fee will apply." = "%@ vil blive fjernet permanent. Hvis du vil tilføje et nyt nummer denne måned, betaler du et engangsgebyr på %@.";
+"Delete call history" = "Slet opkaldshistorik";
+"All call history for %@ will be permanently deleted. This cannot be undone." = "Al opkaldshistorik for %@ vil blive slettet permanent. Dette kan ikke fortrydes.";
+"Delete history" = "Slet historik";
+"Something went wrong while deleting call history. Please try again." = "Noget gik galt under sletning af opkaldshistorikken. Prøv igen.";
 "%@ will be permanently removed, including their messages and call history. This can't be undone." = "%@ vil blive fjernet permanent, inklusive deres beskeder og opkaldshistorik. Dette kan ikke fortrydes.";
 "Remove permanently" = "Fjern permanent";
 
@@ -385,12 +395,34 @@
 "This permanently deletes your Glacier account and associated data. This action cannot be undone." = "Dette sletter din Glacier-konto og tilhørende data permanent. Denne handling kan ikke fortrydes.";
 "Yes, Delete" = "Ja, slet";
 "Manage Your Subscription" = "Administrer dit abonnement";
-"Your account has been deleted, but your subscription is managed through Apple and remains active." = "Din konto er blevet slettet, men dit abonnement administreres via Apple og er fortsat aktivt.";
 "Cancel Your Subscription" = "Opsig dit abonnement";
-"Your account has been deleted, but your subscription was purchased on the Glacier website and is still active. Cancel it there to stop being billed." = "Din konto er blevet slettet, men dit abonnement blev købt på Glacier-websitet og er stadig aktivt. Opsig det der for at undgå yderligere opkrævninger.";
 "Manage" = "Administrer";
 "Couldn't Delete Account" = "Kontoen kunne ikke slettes";
 "Something went wrong while deleting your account. Please check your connection and try again." = "Noget gik galt under sletning af din konto. Kontroller din forbindelse og prøv igen.";
+
+// MARK: - Account deletion reason
+"Your subscription on the Glacier website will be canceled too." = "Dit abonnement på Glaciers website bliver også opsagt.";
+"Your account has been deleted, but your subscription is still active. Remember to cancel it where you subscribed so you aren't billed again." = "Din konto er slettet, men dit abonnement er stadig aktivt. Husk at opsige det dér, hvor du tegnede det, så du ikke bliver opkrævet igen.";
+"Your account has been deleted, but your App Store subscription is still active. Cancel it to stop being billed." = "Din konto er slettet, men dit App Store-abonnement er stadig aktivt. Opsig det for at stoppe betalingerne.";
+"Your account has been deleted, but your Google Play subscription is still active. Cancel it in the Google Play Store to stop being billed." = "Din konto er slettet, men dit Google Play-abonnement er stadig aktivt. Opsig det i Google Play Butik for at stoppe betalingerne.";
+"Your account has been deleted, but your App Store and Google Play subscriptions are still active. Cancel each one to stop being billed." = "Din konto er slettet, men dine App Store- og Google Play-abonnementer er stadig aktive. Opsig hvert af dem for at stoppe betalingerne.";
+"Before you go" = "Før du går";
+"Why are you deleting your account? Your feedback helps us make Glacier better." = "Hvorfor sletter du din konto? Din feedback hjælper os med at gøre Glacier bedre.";
+"Choose the main reason" = "Vælg den vigtigste årsag";
+"Anything else you'd like us to know?" = "Er der andet, du gerne vil fortælle os?";
+"Optional feedback" = "Valgfri feedback";
+"Delete Account" = "Slet konto";
+"Never mind" = "Glem det";
+"Skip and delete" = "Spring over og slet";
+"Close" = "Luk";
+"It costs too much" = "Det er for dyrt";
+"Sites or apps don't work with the VPN" = "Websites eller apps virker ikke med VPN'en";
+"Problems with calls on my Glacier number" = "Problemer med opkald på mit Glacier-nummer";
+"The app is buggy or hard to use" = "Appen har fejl eller er svær at bruge";
+"I don't use it enough" = "Jeg bruger den ikke nok";
+"I only needed it for a short time" = "Jeg havde kun brug for den i kort tid";
+"It slows my internet or drains my battery" = "Den gør mit internet langsomt eller dræner mit batteri";
+"Other" = "Andet";
 
 // MARK: - Settings Home Screen
 
@@ -418,7 +450,7 @@
 
 "VPN" = "VPN";
 "VPN Connection" = "VPN-forbindelse";
-"An extra layer of encryption. Ideal for public Wi-Fi, travel, or untrusted networks. Learn more." = "Et ekstra lag kryptering. Ideelt til offentlig Wi-Fi, rejser eller ikke-betroede netværk. Læs mere.";
+"An extra layer of encryption. Ideal for public Wi-Fi, travel, or untrusted networks. " = "Et ekstra lag kryptering. Ideelt til offentlig Wi-Fi, rejser eller ikke-betroede netværk. ";
 "Status" = "Status";
 "Not in Use" = "Ikke i brug";
 "In Progress" = "I gang";
@@ -487,3 +519,123 @@
 "Open Glacier" = "Åbn Glacier";
 "VPN protection is off after an app update. Finish updating Glacier, then reconnect." = "VPN-beskyttelsen er slået fra efter en appopdatering. Fuldfør opdateringen af Glacier, og opret forbindelse igen.";
 "VPN protection stopped unexpectedly. Reconnect to protect your traffic." = "VPN-beskyttelsen stoppede uventet. Opret forbindelse igen for at beskytte din trafik.";
+"Couldn’t load numbers" = "Kunne ikke indlæse numre";
+"Glacier couldn’t load available numbers. Check your connection, then try again." = "Glacier kunne ikke indlæse tilgængelige numre. Tjek din forbindelse, og prøv igen.";
+"Try Again" = "Prøv igen";
+
+/* Login: email linked to Google or Apple */
+"This email is linked to %1$@. Sign in with %1$@, or check your password." = "Denne e-mail er knyttet til %1$@. Log ind med %1$@, eller tjek din adgangskode.";
+"If you signed up with Apple or Google, use those buttons instead." = "Hvis du oprettede dig med Apple eller Google, skal du bruge de knapper i stedet.";
+"You last signed in with %@." = "Du loggede sidst ind med %@.";
+"This email is linked to %@." = "Denne e-mail er knyttet til %@.";
+"Log in with a password instead" = "Log ind med adgangskode i stedet";
+"Linked to %@" = "Knyttet til %@";
+"Couldn't log in" = "Kunne ikke logge ind";
+"Account already exists" = "Kontoen findes allerede";
+"Couldn't create account" = "Kunne ikke oprette konto";
+"Verify your account" = "Bekræft din konto";
+"Couldn't sign in" = "Kunne ikke logge ind";
+"This email already has a Glacier account that isn't verified yet. Log in with your email and password to finish verifying it, then try %@ again." = "Denne e-mail har allerede en Glacier-konto, som ikke er bekræftet endnu. Log ind med din e-mail og adgangskode for at bekræfte den, og prøv derefter %@ igen.";
+"An account with this email already uses %1$@. Continue with %1$@ instead." = "En konto med denne e-mail bruger allerede %1$@. Fortsæt med %1$@ i stedet.";
+
+// MARK: - Previously untranslated
+"Emergency Services are not available through Glacier." = "Alarmtjenester er ikke tilgængelige via Glacier.";
+"'%@' is not a valid URL." = "'%@' er ikke en gyldig URL.";
+"DNS URLs must use the tls:// scheme (got '%@')." = "DNS-URL'er skal bruge tls://-skemaet (modtog '%@').";
+"Enter a DNS server hostname." = "Indtast et værtsnavn for en DNS-server.";
+"Custom DNS ports aren't supported." = "Brugerdefinerede DNS-porte understøttes ikke.";
+"Unable to resolve '%@'. Check the hostname and try again." = "Kunne ikke slå '%@' op. Tjek værtsnavnet, og prøv igen.";
+"Update Glacier: \n→ Open the App Store \n→ On the Glacier page, tap “Update”" = "Opdater Glacier: \n→ Åbn App Store \n→ Tryk på “Opdater” på Glaciers side";
+"Update iOS: \n→ Open Settings \n→ General \n→ Software Update" = "Opdater iOS: \n→ Åbn Indstillinger \n→ Generelt \n→ Softwareopdatering";
+"Open App Store" = "Åbn App Store";
+"Update Glacier & iOS" = "Opdater Glacier og iOS";
+"Connecting" = "Forbinder";
+"Audio Route" = "Lydudgang";
+"Keypad" = "Tastatur";
+"Hide" = "Skjul";
+"Add phone number" = "Tilføj telefonnummer";
+"Notifications" = "Notifikationer";
+"Learn more." = "Læs mere.";
+"VPN will automatically turn off on this network.\nUpdate anytime." = "VPN slukkes automatisk på dette netværk.\nDu kan ændre det når som helst.";
+"Reboot Reminder" = "Påmindelse om genstart";
+"Get a weekly reminder to restart your device. Regular reboots clear out memory-resident threats and keep your protection running smoothly." = "Få en ugentlig påmindelse om at genstarte din enhed. Regelmæssige genstarter fjerner trusler, der ligger i hukommelsen, og holder din beskyttelse kørende.";
+"Weekly Privacy Report" = "Ugentlig privatlivsrapport";
+"Get a weekly email recapping your protection — including how many web trackers Glacier’s private DNS blocked over the past week." = "Få en ugentlig e-mail med et overblik over din beskyttelse – herunder hvor mange webtrackere Glaciers private DNS har blokeret i den forgangne uge.";
+"Something went wrong while switching VPN location. Please try again." = "Noget gik galt under skift af VPN-placering. Prøv igen.";
+"Add Anyway" = "Tilføj alligevel";
+"Authentication failed. Please try again." = "Godkendelse mislykkedes. Prøv igen.";
+"Authentication cancelled. Please try again." = "Godkendelse annulleret. Prøv igen.";
+"We sent you an email to reset your password." = "Vi har sendt dig en e-mail, så du kan nulstille din adgangskode.";
+"Enter the 6-digit code from your email" = "Indtast den 6-cifrede kode fra din e-mail";
+"Enter the 6-digit code we sent to your email." = "Indtast den 6-cifrede kode, vi har sendt til din e-mail.";
+"Enter the 6-digit code we sent to %@." = "Indtast den 6-cifrede kode, vi har sendt til %@.";
+"Log in with a different account" = "Log ind med en anden konto";
+"That code didn't work. Log in again to get a new one." = "Koden virkede ikke. Log ind igen for at få en ny.";
+"Your account has been verified. Please log in to continue." = "Din konto er bekræftet. Log ind for at fortsætte.";
+"Hides which sites you're visiting.\n\nFaster connection, no ads, and enough privacy for everyday use." = "Skjuler hvilke websteder du besøger.\n\nHurtigere forbindelse, ingen reklamer og tilstrækkeligt privatliv til daglig brug.";
+"Manage Subscription" = "Administrer abonnement";
+"Hides where you're going and everything you do along the way.\n\nIdeal for public Wi-Fi, travel, or untrusted networks.\n\nHeads up - can sometimes slow your connection or limit browsing." = "Skjuler hvor du går hen og alt, hvad du gør undervejs.\n\nIdeelt til offentligt Wi-Fi, rejser eller ikke-betroede netværk.\n\nBemærk: Kan nogle gange gøre din forbindelse langsommere eller begrænse browsing.";
+"Coming Soon" = "Kommer snart";
+"Acquiring numbers and calling is currently not supported in this pilot." = "Det er endnu ikke muligt at få numre eller ringe i dette pilotprojekt.";
+"You’ve used all the free number slots included with your plan. Add %@ for a one-time charge of %@?" = "Du har brugt alle de gratis numre, der er inkluderet i dit abonnement. Vil du tilføje %@ for et engangsbeløb på %@?";
+"Add a new number — %@" = "Tilføj et nyt nummer — %@";
+"Purchase for %@" = "Køb for %@";
+"To enable, go to Glacier Settings." = "Gå til Glaciers indstillinger for at aktivere det.";
+
+/***************************
+ Subscription Settings
+ ***************************/
+
+"Subscription" = "Abonnement";
+"YOUR PLAN" = "DIT ABONNEMENT";
+"Glacier plan" = "Glacier-abonnement";
+"Phone lines" = "Telefonlinjer";
+"Renews" = "Fornyes";
+"MANAGE" = "ADMINISTRER";
+"Renew your Glacier plan" = "Forny dit Glacier-abonnement";
+"Renew your phone lines" = "Forny dine telefonlinjer";
+"Change your phone-line plan" = "Skift abonnement for telefonlinjer";
+"Change or cancel in the App Store" = "Skift eller opsig i App Store";
+"Manage on the Glacier website" = "Administrer på Glacier-webstedet";
+"Restore purchases" = "Gendan køb";
+"App Store" = "App Store";
+"Google Play" = "Google Play";
+"Glacier website" = "Glacier-webstedet";
+"Family plan" = "Familieabonnement";
+"through the App Store" = "via App Store";
+"through Google Play" = "via Google Play";
+"on the Glacier website" = "på Glacier-webstedet";
+"outside the App Store" = "uden for App Store";
+"No Purchases Found" = "Ingen køb fundet";
+"We couldn't find an active subscription for this Apple Account or your Glacier account." = "Vi kunne ikke finde et aktivt abonnement for denne Apple-konto eller din Glacier-konto.";
+"Expired" = "Udløbet";
+"Expired (phone lines)" = "Udløbet";
+"Yearly" = "Årligt";
+"Monthly" = "Månedligt";
+"Active" = "Aktivt";
+"None" = "Ingen";
+"None (phone lines)" = "Ingen";
+"Subscriptions renew automatically unless canceled at least 24 hours before the end of the current period. Manage or cancel anytime in your App Store account settings." = "Abonnementer fornyes automatisk, medmindre de opsiges mindst 24 timer før udløbet af den aktuelle periode. Administrer eller opsig når som helst i indstillingerne for din App Store-konto.";
+"Subscriptions renew automatically unless canceled at least 24 hours before the end of the current period. Manage or cancel wherever you bought it." = "Abonnementer fornyes automatisk, medmindre de opsiges mindst 24 timer før udløbet af den aktuelle periode. Administrer eller opsig der, hvor du købte det.";
+"Your App Store subscription ended on %@." = "Dit App Store-abonnement udløb den %@.";
+"Your Glacier plan has ended." = "Dit Glacier-abonnement er ophørt.";
+"Your VPN and encrypted DNS protection stays on until %@. Renew to keep it." = "Din VPN- og krypterede DNS-beskyttelse forbliver slået til indtil %@. Forny for at bevare den.";
+"Renew to keep your VPN and encrypted DNS protection." = "Forny for at bevare din VPN- og krypterede DNS-beskyttelse.";
+"Your subscription has expired" = "Dit abonnement er udløbet";
+"Your phone lines have expired" = "Dine telefonlinjer er udløbet";
+"Your App Store subscription for phone lines ended on %@. Choose a phone-line plan to keep using your numbers." = "Dit App Store-abonnement på telefonlinjer udløb den %@. Vælg et abonnement for telefonlinjer for at fortsætte med at bruge dine numre.";
+"Shared through a family plan" = "Delt via et familieabonnement";
+"Your subscription is active and shared with you through a Glacier family plan. The person who manages the family plan can change it." = "Dit abonnement er aktivt og deles med dig via et Glacier-familieabonnement. Den person, der administrerer familieabonnementet, kan ændre det.";
+"Your subscription is active. Your Glacier plan was bought %1$@ and your phone lines %2$@, so neither can be changed here. Manage each one where it was bought." = "Dit abonnement er aktivt. Dit Glacier-abonnement blev købt %1$@ og dine telefonlinjer %2$@, så ingen af dem kan ændres her. Administrer hvert af dem der, hvor det blev købt.";
+"Managed outside the App Store" = "Administreres uden for App Store";
+"Your Glacier plan is active." = "Dit Glacier-abonnement er aktivt.";
+"Your phone lines are active." = "Dine telefonlinjer er aktive.";
+"Your subscription is active." = "Dit abonnement er aktivt.";
+"Bought with a different Apple Account" = "Købt med en anden Apple-konto";
+"The purchase was made with a different Apple Account than the one this iPhone uses for App Store purchases, so its details can't be shown or changed here. To manage it, sign in with that Apple Account under Settings → your name → Media & Purchases, or tap Restore purchases." = "Købet blev foretaget med en anden Apple-konto end den, denne iPhone bruger til App Store-køb, så detaljerne kan ikke vises eller ændres her. Log ind med den Apple-konto under Indstillinger → dit navn → Medier og køb, eller tryk på Gendan køb for at administrere det.";
+"Managed in Google Play" = "Administreres i Google Play";
+"Plans bought through Google Play can't be changed here. To change or cancel, open the Google Play Store on an Android device signed in to the Google account that made the purchase." = "Abonnementer købt via Google Play kan ikke ændres her. Åbn Google Play Butik på en Android-enhed, der er logget ind med den Google-konto, som foretog købet, for at ændre eller opsige.";
+"Managed on the Glacier website" = "Administreres på Glacier-webstedet";
+"Plans bought on the Glacier website can't be changed here. Sign in on the Glacier website to change or cancel." = "Abonnementer købt på Glacier-webstedet kan ikke ændres her. Log ind på Glacier-webstedet for at ændre eller opsige.";
+"Plans bought outside the App Store can't be changed here. Manage or cancel where you made the purchase." = "Abonnementer købt uden for App Store kan ikke ændres her. Administrer eller opsig der, hvor du foretog købet.";
+"Go to Website" = "Gå til webstedet";

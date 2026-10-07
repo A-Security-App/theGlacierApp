@@ -61,7 +61,7 @@
 
 "Create your account" = "Create your account";
 "You’ll use this email to log in." = "You’ll use this email to log in.";
-"Set your Password" = "Set your Password";
+"Set your Password." = "Set your Password.";
 "Email" = "Email";
 "Password" = "Password";
 "Continue with Google" = "Continue with Google";
@@ -75,7 +75,7 @@
 
 "Check your email" = "Check your email";
 "We sent you an email to verify you’re you." = "We sent you an email to verify you’re you.";
-"We sent you email for account confirmation." = "We sent you email for account confirmation.";
+"We sent you email for account verification." = "We sent you email for account verification.";
 "Something went wrong while resending the confirmation email. Please try again." = "Something went wrong while resending the confirmation email. Please try again.";
 "This confirmation email has expired. Please request a new one." = "This confirmation email has expired. Please request a new one.";
 
@@ -97,20 +97,20 @@
 
 "Enter Code" = "Enter Code";
 "Enter the 4-digit code sent to you at %@" = "Enter the 4-digit code sent to you at %@";
-"Tip: Make sure to check your inbox and spam folders" = "Tip: Make sure to check your inbox and spam folders";
+"Tip: Make sure to check your inbox and spam folders." = "Tip: Make sure to check your inbox and spam folders.";
 "Resend" = "Resend";
 "Resent!" = "Resent!";
 "Wrong code. Try again." = "Wrong code. Try again.";
-"Update Password" = "Update Password";
-"Enter your new password" = "Enter your new password";
+"Update password" = "Update password";
+"Enter a new password." = "Enter a new password.";
 "• At least 8 characters\n" = "• At least 8 characters\n";
 "• At least one uppercase letter\n" = "• At least one uppercase letter\n";
 "• At least one lowercase letter\n" = "• At least one lowercase letter\n";
 "• At least one number\n" = "• At least one number\n";
 "• At least one special character (!@#$%^&*)" = "• At least one special character (!@#$%^&*)";
-"Re-enter password" = "Re-enter password";
+"Re-enter Password" = "Re-enter Password";
 "Passwords don’t match" = "Passwords don’t match";
-"Something went wrong while sending the password reset link. Please try again." = "Something went wrong while sending the password reset link. Please try again.";
+"Something went wrong while sending password reset email. Please try again." = "Something went wrong while sending password reset email. Please try again.";
 "Something went wrong while updating your password. Please try again." = "Something went wrong while updating your password. Please try again.";
 "Your password has been updated successfully. Please log in with your new password." = "Your password has been updated successfully. Please log in with your new password.";
 
@@ -144,7 +144,7 @@
 "Setup Secure DNS." = "Setup Secure DNS.";
 "Hides which sites you're visiting - faster connection, no ads, and enough privacy for everyday use." = "Hides which sites you're visiting - faster connection, no ads, and enough privacy for everyday use.";
 "Enable Glacier DNS in Settings" = "Enable Glacier DNS in Settings";
-"In Settings page, navigate to:\n\nGeneral →\nVPN & Device Management →\nDNS →\nGlacier." = "In Settings page, navigate to:\n\nGeneral →\nVPN & Device Management →\nDNS →\nGlacier.";
+"In Settings page, navigate to:\n\nGeneral →\nVPN & Device Management →\nDNS →\n\nThen select Glacier." = "In Settings page, navigate to:\n\nGeneral →\nVPN & Device Management →\nDNS →\n\nThen select Glacier.";
 "Secure DNS Protection Required" = "Secure DNS Protection Required";
 "When your VPN turns off on this trusted network, Secure DNS protection requires our profile to be selected in iOS Settings.\n\nIn Settings page, navigate to:\n\nGeneral →\nVPN & Device Management →\nDNS →\n\nThen select Glacier." = "When your VPN turns off on this trusted network, Secure DNS protection requires our profile to be selected in iOS Settings.\n\nIn Settings page, navigate to:\n\nGeneral →\nVPN & Device Management →\nDNS →\n\nThen select Glacier.";
 "Something went wrong while adding DNS configuration. Please try again." = "Something went wrong while adding DNS configuration. Please try again.";
@@ -317,6 +317,10 @@
 "Something went wrong while burning number. Please try again." = "Something went wrong while burning number. Please try again.";
 "Your plan is managed on the web" = "Your plan is managed on the web";
 "You subscribed to your phone lines through the Glacier website, so changes to your plan need to be made there. Subscribing here would start a second, separate subscription and you’d be billed for both." = "You subscribed to your phone lines through the Glacier website, so changes to your plan need to be made there. Subscribing here would start a second, separate subscription and you’d be billed for both.";
+"Your plan is on another Apple Account" = "Your plan is on another Apple Account";
+"Your phone lines are billed through the App Store on a different Apple Account. To change your plan, sign in to the App Store with that account. Subscribing here would start a second, separate subscription and you’d be billed for both." = "Your phone lines are billed through the App Store on a different Apple Account. To change your plan, sign in to the App Store with that account. Subscribing here would start a second, separate subscription and you’d be billed for both.";
+"Your plan is managed in Google Play" = "Your plan is managed in Google Play";
+"You subscribed to your phone lines through Google Play, so changes to your plan need to be made there. Subscribing here would start a second, separate subscription and you’d be billed for both." = "You subscribed to your phone lines through Google Play, so changes to your plan need to be made there. Subscribing here would start a second, separate subscription and you’d be billed for both.";
 "Choose numbers to remove" = "Choose numbers to remove";
 "Decide later" = "Decide later";
 "Your plan now includes %d number(s). Select %d to remove. Removing a number permanently deletes its messages and call history." = "Your plan now includes %d number(s). Select %d to remove. Removing a number permanently deletes its messages and call history.";
@@ -325,6 +329,12 @@
 "Remove this number?" = "Remove this number?";
 "Remove these numbers?" = "Remove these numbers?";
 "%@ will be permanently removed, including its messages and call history. This can't be undone." = "%@ will be permanently removed, including its messages and call history. This can't be undone.";
+"%@ will be permanently removed. You can select a replacement number at no additional charge." = "%@ will be permanently removed. You can select a replacement number at no additional charge.";
+"%@ will be permanently removed. To add a new number this month, a one-time %@ fee will apply." = "%@ will be permanently removed. To add a new number this month, a one-time %@ fee will apply.";
+"Delete call history" = "Delete call history";
+"All call history for %@ will be permanently deleted. This cannot be undone." = "All call history for %@ will be permanently deleted. This cannot be undone.";
+"Delete history" = "Delete history";
+"Something went wrong while deleting call history. Please try again." = "Something went wrong while deleting call history. Please try again.";
 "%@ will be permanently removed, including their messages and call history. This can't be undone." = "%@ will be permanently removed, including their messages and call history. This can't be undone.";
 "Remove permanently" = "Remove permanently";
 
@@ -385,12 +395,34 @@
 "This permanently deletes your Glacier account and associated data. This action cannot be undone." = "This permanently deletes your Glacier account and associated data. This action cannot be undone.";
 "Yes, Delete" = "Yes, Delete";
 "Manage Your Subscription" = "Manage Your Subscription";
-"Your account has been deleted, but your subscription is managed through Apple and remains active." = "Your account has been deleted, but your subscription is managed through Apple and remains active.";
 "Cancel Your Subscription" = "Cancel Your Subscription";
-"Your account has been deleted, but your subscription was purchased on the Glacier website and is still active. Cancel it there to stop being billed." = "Your account has been deleted, but your subscription was purchased on the Glacier website and is still active. Cancel it there to stop being billed.";
 "Manage" = "Manage";
 "Couldn't Delete Account" = "Couldn't Delete Account";
 "Something went wrong while deleting your account. Please check your connection and try again." = "Something went wrong while deleting your account. Please check your connection and try again.";
+
+// MARK: - Account deletion reason
+"Your subscription on the Glacier website will be canceled too." = "Your subscription on the Glacier website will be canceled too.";
+"Your account has been deleted, but your subscription is still active. Remember to cancel it where you subscribed so you aren't billed again." = "Your account has been deleted, but your subscription is still active. Remember to cancel it where you subscribed so you aren't billed again.";
+"Your account has been deleted, but your App Store subscription is still active. Cancel it to stop being billed." = "Your account has been deleted, but your App Store subscription is still active. Cancel it to stop being billed.";
+"Your account has been deleted, but your Google Play subscription is still active. Cancel it in the Google Play Store to stop being billed." = "Your account has been deleted, but your Google Play subscription is still active. Cancel it in the Google Play Store to stop being billed.";
+"Your account has been deleted, but your App Store and Google Play subscriptions are still active. Cancel each one to stop being billed." = "Your account has been deleted, but your App Store and Google Play subscriptions are still active. Cancel each one to stop being billed.";
+"Before you go" = "Before you go";
+"Why are you deleting your account? Your feedback helps us make Glacier better." = "Why are you deleting your account? Your feedback helps us make Glacier better.";
+"Choose the main reason" = "Choose the main reason";
+"Anything else you'd like us to know?" = "Anything else you'd like us to know?";
+"Optional feedback" = "Optional feedback";
+"Delete Account" = "Delete Account";
+"Never mind" = "Never mind";
+"Skip and delete" = "Skip and delete";
+"Close" = "Close";
+"It costs too much" = "It costs too much";
+"Sites or apps don't work with the VPN" = "Sites or apps don't work with the VPN";
+"Problems with calls on my Glacier number" = "Problems with calls on my Glacier number";
+"The app is buggy or hard to use" = "The app is buggy or hard to use";
+"I don't use it enough" = "I don't use it enough";
+"I only needed it for a short time" = "I only needed it for a short time";
+"It slows my internet or drains my battery" = "It slows my internet or drains my battery";
+"Other" = "Other";
 
 // MARK: - Settings Home Screen
 
@@ -418,7 +450,7 @@
 
 "VPN" = "VPN";
 "VPN Connection" = "VPN Connection";
-"An extra layer of encryption. Ideal for public Wi-Fi, travel, or untrusted networks. Learn more." = "An extra layer of encryption. Ideal for public Wi-Fi, travel, or untrusted networks. Learn more.";
+"An extra layer of encryption. Ideal for public Wi-Fi, travel, or untrusted networks. " = "An extra layer of encryption. Ideal for public Wi-Fi, travel, or untrusted networks. ";
 "Status" = "Status";
 "Not in Use" = "Not in Use";
 "In Progress" = "In Progress";
@@ -487,3 +519,123 @@
 "Open Glacier" = "Open Glacier";
 "VPN protection is off after an app update. Finish updating Glacier, then reconnect." = "VPN protection is off after an app update. Finish updating Glacier, then reconnect.";
 "VPN protection stopped unexpectedly. Reconnect to protect your traffic." = "VPN protection stopped unexpectedly. Reconnect to protect your traffic.";
+"Couldn’t load numbers" = "Couldn’t load numbers";
+"Glacier couldn’t load available numbers. Check your connection, then try again." = "Glacier couldn’t load available numbers. Check your connection, then try again.";
+"Try Again" = "Try Again";
+
+/* Login: email linked to Google or Apple */
+"This email is linked to %1$@. Sign in with %1$@, or check your password." = "This email is linked to %1$@. Sign in with %1$@, or check your password.";
+"If you signed up with Apple or Google, use those buttons instead." = "If you signed up with Apple or Google, use those buttons instead.";
+"You last signed in with %@." = "You last signed in with %@.";
+"This email is linked to %@." = "This email is linked to %@.";
+"Log in with a password instead" = "Log in with a password instead";
+"Linked to %@" = "Linked to %@";
+"Couldn't log in" = "Couldn't log in";
+"Account already exists" = "Account already exists";
+"Couldn't create account" = "Couldn't create account";
+"Verify your account" = "Verify your account";
+"Couldn't sign in" = "Couldn't sign in";
+"This email already has a Glacier account that isn't verified yet. Log in with your email and password to finish verifying it, then try %@ again." = "This email already has a Glacier account that isn't verified yet. Log in with your email and password to finish verifying it, then try %@ again.";
+"An account with this email already uses %1$@. Continue with %1$@ instead." = "An account with this email already uses %1$@. Continue with %1$@ instead.";
+
+// MARK: - Previously untranslated
+"Emergency Services are not available through Glacier." = "Emergency Services are not available through Glacier.";
+"'%@' is not a valid URL." = "'%@' is not a valid URL.";
+"DNS URLs must use the tls:// scheme (got '%@')." = "DNS URLs must use the tls:// scheme (got '%@').";
+"Enter a DNS server hostname." = "Enter a DNS server hostname.";
+"Custom DNS ports aren't supported." = "Custom DNS ports aren't supported.";
+"Unable to resolve '%@'. Check the hostname and try again." = "Unable to resolve '%@'. Check the hostname and try again.";
+"Update Glacier: \n→ Open the App Store \n→ On the Glacier page, tap “Update”" = "Update Glacier: \n→ Open the App Store \n→ On the Glacier page, tap “Update”";
+"Update iOS: \n→ Open Settings \n→ General \n→ Software Update" = "Update iOS: \n→ Open Settings \n→ General \n→ Software Update";
+"Open App Store" = "Open App Store";
+"Update Glacier & iOS" = "Update Glacier & iOS";
+"Connecting" = "Connecting";
+"Audio Route" = "Audio Route";
+"Keypad" = "Keypad";
+"Hide" = "Hide";
+"Add phone number" = "Add phone number";
+"Notifications" = "Notifications";
+"Learn more." = "Learn more.";
+"VPN will automatically turn off on this network.\nUpdate anytime." = "VPN will automatically turn off on this network.\nUpdate anytime.";
+"Reboot Reminder" = "Reboot Reminder";
+"Get a weekly reminder to restart your device. Regular reboots clear out memory-resident threats and keep your protection running smoothly." = "Get a weekly reminder to restart your device. Regular reboots clear out memory-resident threats and keep your protection running smoothly.";
+"Weekly Privacy Report" = "Weekly Privacy Report";
+"Get a weekly email recapping your protection — including how many web trackers Glacier’s private DNS blocked over the past week." = "Get a weekly email recapping your protection — including how many web trackers Glacier’s private DNS blocked over the past week.";
+"Something went wrong while switching VPN location. Please try again." = "Something went wrong while switching VPN location. Please try again.";
+"Add Anyway" = "Add Anyway";
+"Authentication failed. Please try again." = "Authentication failed. Please try again.";
+"Authentication cancelled. Please try again." = "Authentication cancelled. Please try again.";
+"We sent you an email to reset your password." = "We sent you an email to reset your password.";
+"Enter the 6-digit code from your email" = "Enter the 6-digit code from your email";
+"Enter the 6-digit code we sent to your email." = "Enter the 6-digit code we sent to your email.";
+"Enter the 6-digit code we sent to %@." = "Enter the 6-digit code we sent to %@.";
+"Log in with a different account" = "Log in with a different account";
+"That code didn't work. Log in again to get a new one." = "That code didn't work. Log in again to get a new one.";
+"Your account has been verified. Please log in to continue." = "Your account has been verified. Please log in to continue.";
+"Hides which sites you're visiting.\n\nFaster connection, no ads, and enough privacy for everyday use." = "Hides which sites you're visiting.\n\nFaster connection, no ads, and enough privacy for everyday use.";
+"Manage Subscription" = "Manage Subscription";
+"Hides where you're going and everything you do along the way.\n\nIdeal for public Wi-Fi, travel, or untrusted networks.\n\nHeads up - can sometimes slow your connection or limit browsing." = "Hides where you're going and everything you do along the way.\n\nIdeal for public Wi-Fi, travel, or untrusted networks.\n\nHeads up - can sometimes slow your connection or limit browsing.";
+"Coming Soon" = "Coming Soon";
+"Acquiring numbers and calling is currently not supported in this pilot." = "Acquiring numbers and calling is currently not supported in this pilot.";
+"You’ve used all the free number slots included with your plan. Add %@ for a one-time charge of %@?" = "You’ve used all the free number slots included with your plan. Add %@ for a one-time charge of %@?";
+"Add a new number — %@" = "Add a new number — %@";
+"Purchase for %@" = "Purchase for %@";
+"To enable, go to Glacier Settings." = "To enable, go to Glacier Settings.";
+
+/***************************
+ Subscription Settings
+ ***************************/
+
+"Subscription" = "Subscription";
+"YOUR PLAN" = "YOUR PLAN";
+"Glacier plan" = "Glacier plan";
+"Phone lines" = "Phone lines";
+"Renews" = "Renews";
+"MANAGE" = "MANAGE";
+"Renew your Glacier plan" = "Renew your Glacier plan";
+"Renew your phone lines" = "Renew your phone lines";
+"Change your phone-line plan" = "Change your phone-line plan";
+"Change or cancel in the App Store" = "Change or cancel in the App Store";
+"Manage on the Glacier website" = "Manage on the Glacier website";
+"Restore purchases" = "Restore purchases";
+"App Store" = "App Store";
+"Google Play" = "Google Play";
+"Glacier website" = "Glacier website";
+"Family plan" = "Family plan";
+"through the App Store" = "through the App Store";
+"through Google Play" = "through Google Play";
+"on the Glacier website" = "on the Glacier website";
+"outside the App Store" = "outside the App Store";
+"No Purchases Found" = "No Purchases Found";
+"We couldn't find an active subscription for this Apple Account or your Glacier account." = "We couldn't find an active subscription for this Apple Account or your Glacier account.";
+"Expired" = "Expired";
+"Expired (phone lines)" = "Expired";
+"Yearly" = "Yearly";
+"Monthly" = "Monthly";
+"Active" = "Active";
+"None" = "None";
+"None (phone lines)" = "None";
+"Subscriptions renew automatically unless canceled at least 24 hours before the end of the current period. Manage or cancel anytime in your App Store account settings." = "Subscriptions renew automatically unless canceled at least 24 hours before the end of the current period. Manage or cancel anytime in your App Store account settings.";
+"Subscriptions renew automatically unless canceled at least 24 hours before the end of the current period. Manage or cancel wherever you bought it." = "Subscriptions renew automatically unless canceled at least 24 hours before the end of the current period. Manage or cancel wherever you bought it.";
+"Your App Store subscription ended on %@." = "Your App Store subscription ended on %@.";
+"Your Glacier plan has ended." = "Your Glacier plan has ended.";
+"Your VPN and encrypted DNS protection stays on until %@. Renew to keep it." = "Your VPN and encrypted DNS protection stays on until %@. Renew to keep it.";
+"Renew to keep your VPN and encrypted DNS protection." = "Renew to keep your VPN and encrypted DNS protection.";
+"Your subscription has expired" = "Your subscription has expired";
+"Your phone lines have expired" = "Your phone lines have expired";
+"Your App Store subscription for phone lines ended on %@. Choose a phone-line plan to keep using your numbers." = "Your App Store subscription for phone lines ended on %@. Choose a phone-line plan to keep using your numbers.";
+"Shared through a family plan" = "Shared through a family plan";
+"Your subscription is active and shared with you through a Glacier family plan. The person who manages the family plan can change it." = "Your subscription is active and shared with you through a Glacier family plan. The person who manages the family plan can change it.";
+"Your subscription is active. Your Glacier plan was bought %1$@ and your phone lines %2$@, so neither can be changed here. Manage each one where it was bought." = "Your subscription is active. Your Glacier plan was bought %1$@ and your phone lines %2$@, so neither can be changed here. Manage each one where it was bought.";
+"Managed outside the App Store" = "Managed outside the App Store";
+"Your Glacier plan is active." = "Your Glacier plan is active.";
+"Your phone lines are active." = "Your phone lines are active.";
+"Your subscription is active." = "Your subscription is active.";
+"Bought with a different Apple Account" = "Bought with a different Apple Account";
+"The purchase was made with a different Apple Account than the one this iPhone uses for App Store purchases, so its details can't be shown or changed here. To manage it, sign in with that Apple Account under Settings → your name → Media & Purchases, or tap Restore purchases." = "The purchase was made with a different Apple Account than the one this iPhone uses for App Store purchases, so its details can't be shown or changed here. To manage it, sign in with that Apple Account under Settings → your name → Media & Purchases, or tap Restore purchases.";
+"Managed in Google Play" = "Managed in Google Play";
+"Plans bought through Google Play can't be changed here. To change or cancel, open the Google Play Store on an Android device signed in to the Google account that made the purchase." = "Plans bought through Google Play can't be changed here. To change or cancel, open the Google Play Store on an Android device signed in to the Google account that made the purchase.";
+"Managed on the Glacier website" = "Managed on the Glacier website";
+"Plans bought on the Glacier website can't be changed here. Sign in on the Glacier website to change or cancel." = "Plans bought on the Glacier website can't be changed here. Sign in on the Glacier website to change or cancel.";
+"Plans bought outside the App Store can't be changed here. Manage or cancel where you made the purchase." = "Plans bought outside the App Store can't be changed here. Manage or cancel where you made the purchase.";
+"Go to Website" = "Go to Website";

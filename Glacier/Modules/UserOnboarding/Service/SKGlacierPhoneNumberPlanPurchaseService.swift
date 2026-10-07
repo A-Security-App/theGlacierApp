@@ -60,7 +60,20 @@ final class SKGlacierPhoneNumberPlanPurchaseService: GlacierPlanPurchaseService 
     }
 
     func purchasePlan(_ product: Product) async throws {
-        let result = try await product.purchase()
+        // Attach the signed-in account's UUID (Cognito `sub`) so App Store Server
+        // notifications about this add-on can be mapped back to the user. Without it the
+        // server has nothing to resolve against — Apple never sends the Apple ID — so the
+        // notification lands unattributed and mobile_line_count is never set, leaving an
+        // actively-billed subscriber at 0 lines on the backend. The base plan has always
+        // done this; the add-on never did.
+        //
+        // Resolving the token must never block the purchase: resolveAppAccountToken caps
+        // itself at 3s and returns nil on any failure, in which case we purchase without it.
+        var purchaseOptions: Set<Product.PurchaseOption> = []
+        if let accountToken = await resolveAppAccountToken() {
+            purchaseOptions.insert(.appAccountToken(accountToken))
+        }
+        let result = try await product.purchase(options: purchaseOptions)
 
         switch result {
         case .success(let verificationResult):

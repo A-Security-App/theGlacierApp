@@ -20,6 +20,7 @@ protocol SettingsViewModel: GlacierViewModelWithRootCoordinator {
     var shouldShowResetPasswordOption: Bool { get }
 
     func presentVPNSettingsScreen()
+    func presentSubscriptionSettingsScreen()
     func presentAppearanceSettingsScreen()
     func presentWidgetSettingsScreen()
     func presentNotificationSettingsScreen()
@@ -31,6 +32,9 @@ protocol SettingsViewModel: GlacierViewModelWithRootCoordinator {
 
     @MainActor
     func deleteAccount()
+
+    @MainActor
+    func manageSubscription()
 }
 
 /**
@@ -62,6 +66,10 @@ final class SettingsVM: SettingsViewModel, ObservableObject {
         presentScreen(.vpnSettings)
     }
     
+    func presentSubscriptionSettingsScreen() {
+        presentScreen(.subscriptionSettings)
+    }
+
     func presentAppearanceSettingsScreen() {
         presentSheet(.appearanceSettings)
     }
@@ -125,12 +133,21 @@ final class SettingsVM: SettingsViewModel, ObservableObject {
 
     @MainActor
     func deleteAccount() {
+        // Capture where any subscription is billed now: the persisted values are read before
+        // local cleanup clears the account record, and no network call belongs on this path.
+        let billingRoute = DeletionBillingRoute(account: GlacierAccountModel.getGlacierAccount())
+
+        var description = NSLocalizedString(
+            "This permanently deletes your Glacier account and associated data. This action cannot be undone.",
+            comment: "Settings screen delete account confirmation description"
+        )
+        if let note = billingRoute.confirmationNote {
+            description += "\n\n" + note
+        }
+
         let popupConfiguration = PopupConfiguration(
             title: NSLocalizedString("Delete Account?", comment: "Settings screen delete account confirmation title"),
-            description: NSLocalizedString(
-                "This permanently deletes your Glacier account and associated data. This action cannot be undone.",
-                comment: "Settings screen delete account confirmation description"
-            ),
+            description: description,
             buttons: [
                 PopupButton(
                     style: .tertiary,
@@ -144,60 +161,22 @@ final class SettingsVM: SettingsViewModel, ObservableObject {
                     title: NSLocalizedString("Yes, Delete", comment: "Yes delete account button title"),
                     titleColor: .ember,
                     onTap: {
-                        Task { @MainActor in
-                            self.dismissPopup()
-
-                            // Capture subscription state before we tear down local state,
-                            // since the local account record is cleared during cleanup.
-                            // `lastKnownBackendSubscribed` also tells us the *source*: the
-                            // follow-up popup must not tell a website subscriber their plan is
-                            // managed by Apple. Read from the persisted value — no network call
-                            // belongs on this path.
-                            let account = GlacierAccountModel.getGlacierAccount()
-                            let hasActiveSubscription = account?.hasActiveSubscription ?? false
-                            let isWebManagedSubscription = account?.lastKnownBackendSubscribed ?? false
-
-                            // Tear down and remove the VPN + DoT DNS before deleting so no
-                            // tunnel keeps running and no DNS profile stays installed for an
-                            // account that no longer exists.
-                            self.teardownVPNAndDNS()
-
-                            // Delete the account on the Glacier backend. The backend
-                            // deletes the Cognito user *and* performs the associated
-                            // server-side cleanup (subscription, phone numbers, etc.).
-                            let didDelete = await AccountDeletionManager.shared.deleteAccount()
-                            guard didDelete else {
-                                // The account still exists, so leave local state intact and
-                                // let the user retry instead of stranding them on the login screen.
-                                self.presentAccountDeletionFailurePopup()
-                                return
-                            }
-
-                            // The backend deleted the Cognito user, but this device still
-                            // holds a cached Amplify session. Sign out locally to clear it
-                            // before local cleanup so the next login starts clean.
-                            let service = AmplifyAuthenticationService()
-                            _ = await service.signOut()
-
-                            // Neither an App Store nor a website subscription can be cancelled
-                            // programmatically, so if one is still active we tell the user where
-                            // it lives before navigating away. Otherwise finish immediately.
-                            if hasActiveSubscription {
-                                if isWebManagedSubscription {
-                                    self.presentWebManagedSubscriptionFollowUp()
-                                } else {
-                                    self.presentManageSubscriptionFollowUp()
-                                }
-                            } else {
-                                self.clearLocalUserStateAndNavigateToLogin()
-                            }
-                        }
+                        self.presentDeletionReasonPopup(billingRoute: billingRoute)
                     }
                 )
             ],
             buttonsAlignment: .horizontal
         )
         presentPopup(with: popupConfiguration)
+    }
+
+    /// Opens Apple's manage-subscriptions sheet so the user can cancel or change their plan.
+    /// Also offered on the lapse paywall, where Settings is unreachable.
+    @MainActor
+    func manageSubscription() {
+        Task { @MainActor in
+            await showManageSubscriptionsSheet()
+        }
     }
 
     // MARK: - Private methods
@@ -217,23 +196,103 @@ final class SettingsVM: SettingsViewModel, ObservableObject {
         UIApplication.shared.open(url)
     }
 
-    /// Shown after a successful account deletion when the user still has an active
-    /// subscription purchased **through Apple**. App Store subscriptions can't be
-    /// cancelled programmatically, so we offer to open Apple's native
-    /// manage-subscriptions sheet. Either choice finishes local cleanup and routes
-    /// the user back to the login screen.
+    /// Swaps the delete confirmation for the "why are you leaving?" question. Answering is
+    /// optional; only backing out of it leaves the account in place.
     ///
-    /// Website (Stripe) subscribers get `presentWebManagedSubscriptionFollowUp()`
-    /// instead — Apple's sheet has nothing to show them.
+    /// Talks to `OverlayViewManager` directly because the coordinator's popup calls are
+    /// asynchronous: dismissing through it and presenting straight after would present first,
+    /// get ignored (a popup is still up), and then dismiss.
     @MainActor
-    private func presentManageSubscriptionFollowUp() {
-        let popupConfiguration = PopupConfiguration(
-            title: NSLocalizedString("Manage Your Subscription", comment: "Manage subscription follow-up title"),
-            description: NSLocalizedString(
-                "Your account has been deleted, but your subscription is managed through Apple and remains active.",
-                comment: "Manage subscription follow-up description"
-            ),
-            buttons: [
+    private func presentDeletionReasonPopup(billingRoute: DeletionBillingRoute) {
+        let overlay = OverlayViewManager.shared
+        overlay.dismissPopupView()
+        overlay.presentPopupView(
+            AccountDeletionReasonPopup(
+                onDelete: { feedback in
+                    overlay.dismissPopupView()
+                    Task { @MainActor in
+                        await self.performAccountDeletion(feedback: feedback, billingRoute: billingRoute)
+                    }
+                },
+                onCancel: {
+                    overlay.dismissPopupView()
+                }
+            )
+        )
+    }
+
+    /// Deletes the account, sending the user's answer with the request, then tells them about
+    /// any subscription that outlives it before returning to the login screen.
+    @MainActor
+    private func performAccountDeletion(feedback: AccountDeletionFeedback?, billingRoute: DeletionBillingRoute) async {
+        // Tear down and remove the VPN + DoT DNS before deleting so no
+        // tunnel keeps running and no DNS profile stays installed for an
+        // account that no longer exists.
+        teardownVPNAndDNS()
+
+        // Delete the account on the Glacier backend. The backend
+        // deletes the Cognito user *and* performs the associated
+        // server-side cleanup (website subscription, phone numbers, etc.).
+        presentProgressIndicator()
+        let didDelete = await AccountDeletionManager.shared.deleteAccount(feedback: feedback)
+        dismissProgressIndicator()
+        guard didDelete else {
+            // The account still exists, so leave local state intact and
+            // let the user retry instead of stranding them on the login screen.
+            presentAccountDeletionFailurePopup()
+            return
+        }
+
+        // The backend deleted the Cognito user, but this device still
+        // holds a cached Amplify session. Sign out locally to clear it
+        // before local cleanup so the next login starts clean.
+        let service = AmplifyAuthenticationService()
+        _ = await service.signOut()
+
+        // App Store and Google Play subscriptions can't be cancelled for the user, so if one is
+        // still billing we say where before navigating away. Otherwise finish immediately.
+        if billingRoute.outlivingStores.isEmpty {
+            clearLocalUserStateAndNavigateToLogin()
+        } else {
+            presentStillSubscribedNotice(for: billingRoute)
+        }
+    }
+
+    /// Shown after a successful account deletion when a subscription is still billing.
+    ///
+    /// When Apple bills any of it, the user is offered Apple's manage-subscriptions sheet.
+    /// Otherwise the notice only names where the subscription lives: a purchase-adjacent popup
+    /// that links out to another store or payment flow is what App Store Review Guideline 3.1.1
+    /// targets. Either way the user ends up on the login screen.
+    @MainActor
+    private func presentStillSubscribedNotice(for billingRoute: DeletionBillingRoute) {
+        let stores = billingRoute.outlivingStores
+        let description: String
+        if stores.contains(.unknown) {
+            description = NSLocalizedString(
+                "Your account has been deleted, but your subscription is still active. Remember to cancel it where you subscribed so you aren't billed again.",
+                comment: "Still-subscribed notice when the billing store isn't known"
+            )
+        } else if stores == [.apple] {
+            description = NSLocalizedString(
+                "Your account has been deleted, but your App Store subscription is still active. Cancel it to stop being billed.",
+                comment: "Still-subscribed notice for an App Store subscription"
+            )
+        } else if stores == [.googlePlay] {
+            description = NSLocalizedString(
+                "Your account has been deleted, but your Google Play subscription is still active. Cancel it in the Google Play Store to stop being billed.",
+                comment: "Still-subscribed notice for a Google Play subscription"
+            )
+        } else {
+            description = NSLocalizedString(
+                "Your account has been deleted, but your App Store and Google Play subscriptions are still active. Cancel each one to stop being billed.",
+                comment: "Still-subscribed notice for App Store and Google Play subscriptions"
+            )
+        }
+
+        let buttons: [PopupButton]
+        if stores.contains(.apple) {
+            buttons = [
                 PopupButton(
                     style: .tertiary,
                     title: NSLocalizedString("Not Now", comment: "Not now button title"),
@@ -255,39 +314,9 @@ final class SettingsVM: SettingsViewModel, ObservableObject {
                         }
                     }
                 )
-            ],
-            buttonsAlignment: .horizontal
-        )
-        presentPopup(with: popupConfiguration)
-    }
-
-    /// Shown after a successful account deletion when the still-active subscription was
-    /// purchased on the Glacier website rather than through Apple.
-    ///
-    /// The Apple variant of this popup would be actively misleading here: it asserts the
-    /// plan is "managed through Apple" and opens a manage-subscriptions sheet that has
-    /// nothing to show, so the user leaves believing they were pointed at the cancel path
-    /// while the website subscription keeps billing.
-    ///
-    /// No link out to the website: a purchase-adjacent popup steering to an external
-    /// payment flow is what App Store Review Guideline 3.1.1 targets. Naming where the
-    /// subscription lives is enough to get the user to the right place.
-    ///
-    /// Only the base plan is branched. A website subscriber never sees the in-app base
-    /// paywall (reconciliation grants access from either source), so holding an Apple
-    /// base subscription *and* a website one is not a reachable state.
-    @MainActor
-    private func presentWebManagedSubscriptionFollowUp() {
-        let popupConfiguration = PopupConfiguration(
-            title: NSLocalizedString(
-                "Cancel Your Subscription",
-                comment: "Web-managed subscription follow-up title"
-            ),
-            description: NSLocalizedString(
-                "Your account has been deleted, but your subscription was purchased on the Glacier website and is still active. Cancel it there to stop being billed.",
-                comment: "Web-managed subscription follow-up description"
-            ),
-            buttons: [
+            ]
+        } else {
+            buttons = [
                 PopupButton(
                     style: .tertiary,
                     title: NSLocalizedString("Ok", comment: "Ok button title"),
@@ -296,10 +325,17 @@ final class SettingsVM: SettingsViewModel, ObservableObject {
                         self.clearLocalUserStateAndNavigateToLogin()
                     }
                 )
-            ],
+            ]
+        }
+
+        presentPopup(with: PopupConfiguration(
+            title: stores.contains(.apple)
+                ? NSLocalizedString("Manage Your Subscription", comment: "Manage subscription follow-up title")
+                : NSLocalizedString("Cancel Your Subscription", comment: "Still-subscribed notice title"),
+            description: description,
+            buttons: buttons,
             buttonsAlignment: .horizontal
-        )
-        presentPopup(with: popupConfiguration)
+        ))
     }
 
     /// Presents Apple's native manage-subscriptions sheet, falling back to the
@@ -431,5 +467,75 @@ final class SettingsVM: SettingsViewModel, ObservableObject {
         internalQueue.async {
             PhoneAccount.allSMSAccounts().forEach { $0.remove {} }
         }
+    }
+}
+
+// MARK: - Deletion billing route
+
+/**
+ Where the account's subscriptions are billed, captured when the user confirms deletion, to say
+ what happens to them. Built from persisted values only (`mobile/status` sources, the last-known
+ backend state, and the reconciled StoreKit + backend flags), so it never waits on the network.
+
+ Deleting the account cancels a website (Stripe) subscription on the backend (console#563).
+ App Store and Google Play subscriptions can only be cancelled by the user, so they outlive it.
+ */
+struct DeletionBillingRoute: Equatable {
+
+    enum OutlivingStore: Hashable {
+        case apple, googlePlay
+        /// Something is billing but the backend didn't say which store.
+        case unknown
+    }
+
+    /// Stores that keep billing after the account is deleted.
+    let outlivingStores: Set<OutlivingStore>
+    /// `true` when part of the plan is billed on the website and is cancelled with the account.
+    let cancelsWebsitePlan: Bool
+
+    init(account: GlacierAccountModel?) {
+        var stores = Set<OutlivingStore>()
+        var cancelsWebsitePlan = false
+
+        func add(_ source: BillingStore?, unknownMeansApple: Bool) {
+            switch source {
+            case .stripe: cancelsWebsitePlan = true
+            case .apple: stores.insert(.apple)
+            case .googlePlay: stores.insert(.googlePlay)
+            case nil: stores.insert(unknownMeansApple ? .apple : .unknown)
+            }
+        }
+
+        if let account {
+            // A family member's plan is billed to whoever runs the family plan, not to them.
+            if account.hasActiveSubscription && !account.lastKnownBackendFamilyMember {
+                // No source (a backend before console#573, or no successful status call yet):
+                // if the backend doesn't see a subscription either, StoreKit is what granted it.
+                add(account.lastKnownBackendSubscriptionSource,
+                    unknownMeansApple: !account.lastKnownBackendSubscribed)
+            }
+            if account.hasActivePhoneNumberSubscription {
+                add(account.lastKnownBackendPhoneLineSource,
+                    unknownMeansApple: account.lastKnownBackendPhoneNumbers == 0)
+            }
+        }
+
+        self.outlivingStores = stores
+        self.cancelsWebsitePlan = cancelsWebsitePlan
+    }
+
+    /// Added to the delete confirmation when part of the plan is billed on the website, which
+    /// the backend cancels along with the account. `nil` otherwise.
+    ///
+    /// App Store, Google Play and unknown-store subscriptions aren't mentioned here: the notice
+    /// after deletion (`presentStillSubscribedNotice`) tells the user about those, with a Manage
+    /// button for Apple, so saying it here too would say it twice. The website plan gets no
+    /// notice afterwards, so this is the only place it's mentioned.
+    var confirmationNote: String? {
+        guard cancelsWebsitePlan else { return nil }
+        return NSLocalizedString(
+            "Your subscription on the Glacier website will be canceled too.",
+            comment: "Delete confirmation note for a website subscription"
+        )
     }
 }

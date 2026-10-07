@@ -211,6 +211,63 @@ final class SKGlacierPlanPurchaseService: GlacierPlanPurchaseService {
         }
     }
 
+    /// `true` when this device's App Store account bought a Glacier plan for the signed-in Glacier
+    /// account and that subscription expired within `window`.
+    ///
+    /// Lets the foreground lapse check trust StoreKit's "no entitlement" over a backend that still
+    /// reports the Apple plan as active during its own 3-day grace. Both conditions guard against
+    /// cutting off someone who is still paying:
+    /// - The transaction must carry this account's `appAccountToken`, so a purchase made for
+    ///   another Glacier account on the same Apple Account doesn't count.
+    /// - It must have ended recently. If the backend's "active" came from this subscription, it
+    ///   ended within the backend's 3-day grace; an older one means the backend is reporting a
+    ///   different subscription, such as one on another Apple Account.
+    ///
+    /// Refunds aren't treated as an end here. The backend decides those, as before: if it kept
+    /// a refunded plan active, trusting StoreKit for a few days would only show the paywall and
+    /// then restore access once `window` passed.
+    ///
+    /// Returns `false` whenever it can't tell: no token, no matching purchase, or StoreKit didn't
+    /// answer within the timeout.
+    func didAccountSubscriptionEndRecently(within window: TimeInterval = 4 * 24 * 60 * 60) async -> Bool {
+        guard let accountToken = await resolveAppAccountToken() else { return false }
+        let identifiers = productIdentifiers  // Set<String> is Sendable
+
+        // Same off-main-actor + timeout pattern as evaluateCurrentEntitlements(): the history
+        // sequence has no timeout of its own.
+        let historyTask = Task.detached(priority: .utility) { () -> Date? in
+            // Expiry of the most recent subscription for this account (in the future if it's
+            // still running), or nil when there's no matching purchase.
+            var latestExpiration: Date?
+            for await result in Transaction.all {
+                guard case .verified(let transaction) = result,
+                      identifiers.contains(transaction.productID),
+                      transaction.appAccountToken == accountToken,
+                      !transaction.isUpgraded,
+                      let expiration = transaction.expirationDate else { continue }
+                if let latest = latestExpiration, expiration < latest { continue }
+                latestExpiration = expiration
+            }
+            return latestExpiration
+        }
+
+        let expiredAt: Date?? = await withTaskGroup(of: Date??.self) { group in
+            group.addTask { .some(await historyTask.value) }   // StoreKit finished
+            group.addTask {
+                try? await Task.sleep(nanoseconds: 5_000_000_000)  // 5-second timeout
+                return .none                                        // Timeout: can't tell
+            }
+            let result = await group.next() ?? .none
+            group.cancelAll()
+            historyTask.cancel()
+            return result
+        }
+
+        guard case .some(.some(let expired)) = expiredAt else { return false }
+        let now = Date()
+        return expired <= now && now.timeIntervalSince(expired) <= window
+    }
+
     /// Returns `true` when StoreKit gave a definitive answer (sequence ended naturally),
     /// `false` when the 5-second timeout fired before StoreKit could respond.
     @MainActor
@@ -345,36 +402,6 @@ final class SKGlacierPlanPurchaseService: GlacierPlanPurchaseService {
                     }
                     continuation.resume()
                 }
-        }
-    }
-
-    /// Resolves the current Glacier account's stable UUID (Cognito `sub`) for use as the App Store
-    /// `appAccountToken`. Returns `nil` — never blocks or throws into the purchase flow — when
-    /// Amplify is not configured, no user is signed in, or the user id is not a UUID.
-    private func resolveAppAccountToken() async -> UUID? {
-        guard GlacierApplicationDelegate.shared?.amplifyIsConfigured == true else { return nil }
-
-        // getCurrentUser() reads local Cognito state (no network round-trip), but bound it with a
-        // short timeout anyway so the purchase sheet is never delayed on a bad connection. On
-        // timeout, error, or a non-UUID id we return nil and purchase without the token — the
-        // backend link still attributes the subscription by its original transaction ID.
-        return await withTaskGroup(of: UUID?.self) { group in
-            group.addTask {
-                do {
-                    let user = try await Amplify.Auth.getCurrentUser()
-                    return UUID(uuidString: user.userId)
-                } catch {
-                    Log.general.info("[AppleSubLink] no signed-in user for appAccountToken — purchasing without it")
-                    return nil
-                }
-            }
-            group.addTask {
-                try? await Task.sleep(nanoseconds: 3_000_000_000)
-                return nil
-            }
-            let result = await group.next() ?? nil
-            group.cancelAll()
-            return result
         }
     }
 }

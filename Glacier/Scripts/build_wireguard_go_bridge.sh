@@ -37,4 +37,7 @@ wireguard_go_dir="$checkouts_dir"/Sources/WireGuardKitGo
 # Homebrew generally installs executables
 export PATH=${PATH}:/opt/homebrew/bin:/usr/local/bin:/usr/local/go/bin
 
-cd "$wireguard_go_dir" && /usr/bin/make
+# The upstream Makefile only maps macosx and iphoneos to a GOOS, so Simulator
+# builds fall back to GOOS=darwin and fail to link (undefined
+# darwin_arm_init_* symbols). Simulator needs GOOS=ios too.
+cd "$wireguard_go_dir" && /usr/bin/make GOOS_iphonesimulator=ios

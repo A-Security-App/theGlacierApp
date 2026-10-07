@@ -25,11 +25,25 @@ extension GlacierApplicationDelegate {
 
     /// Payload within the backend subscription response.
     struct BackendSubscriptionData: Codable {
-        /// `true` when the user holds an active subscription purchased through the website.
+        /// `true` when the backend sees an active base plan from any store it knows about
+        /// (website, Apple, Google Play, or a family plan). `subscriptionSource` says which.
         let subscribed: Bool
-        /// Number of phone lines included in the web subscription: 0, 1, 2, or 5.
+        /// Number of phone lines the backend sees billed: 0, 1, 2, or 5, the largest count across
+        /// stores, so Apple lines are included. `phoneLineSource` says which store.
         /// `0` indicates no phone-number add-on.
         let phoneNumbers: Int
+        /// Store billing the base plan (`stripe` / `apple` / `google_play`), or absent/null when
+        /// none does. Optional so a backend older than console#573 still decodes.
+        let subscriptionSource: String?
+        /// Store billing the phone-line add-on, with the same values as `subscriptionSource`.
+        let phoneLineSource: String?
+        /// `true` when the plan comes from someone else's family plan. Absent otherwise.
+        let familyMember: Bool?
+        /// End of the paid period as an ISO-8601 timestamp, or absent when the backend doesn't
+        /// report one (not yet sent by the console as of 2026-10; see console `fix/mobile-status-expiry`).
+        let expiryTime: String?
+        /// Whether the plan renews as it stands. Absent means "not said", never `false`.
+        let autoRenewing: Bool?
     }
 
     // MARK: - Public entry points
@@ -71,24 +85,32 @@ extension GlacierApplicationDelegate {
             // re-check here can race against currentEntitlements propagation and clear it.
             // Capture the base plan's definitiveness (was the entitlement enumeration a real result,
             // or a 5-second timeout?). Base-plan expiration enforcement / teardown must never act off
-            // a timeout — for an IAP-only subscriber the backend always returns subscribed=false, so
-            // StoreKit is the only real signal. Previously this bool was discarded for the base plan.
+            // a timeout: StoreKit is the only source that sees an Apple subscription the moment it
+            // ends, and a timeout looks exactly like "no entitlement". Previously this bool was
+            // discarded for the base plan.
             var baseStoreKitWasDefinitive = false
+            // Set when StoreKit has confirmed the Apple plan ended on this device; used below to
+            // stop the backend's 3-day Apple grace from delaying lapse detection.
+            var appleLapseConfirmedOnDevice = false
             if !justPurchased {
                 account?.hasActiveSubscription = false
                 let basePlanService = SKGlacierPlanPurchaseService()
                 baseStoreKitWasDefinitive = await basePlanService.refreshEntitlements()
+                if baseStoreKitWasDefinitive && account?.hasActiveSubscription == false {
+                    appleLapseConfirmedOnDevice = await basePlanService.didAccountSubscriptionEndRecently()
+                }
             } else {
                 // A purchase just completed this session — the verified transaction is authoritative,
                 // so treat the base StoreKit read as definitively confirmed for this cycle.
                 baseStoreKitWasDefinitive = true
             }
 
-            // Mirror the same pattern for the phone plan. Apple StoreKit is the authoritative
-            // source for phone subscriptions (backendPhoneNumbers reflects provisioned count, not
-            // subscription status), so we must re-check it here the same way we re-check the
-            // base plan — otherwise a stale `true` from a prior session persists indefinitely
-            // and a lapsed phone subscription is never detected on foreground transitions.
+            // Mirror the same pattern for the phone plan. StoreKit is the authoritative source for
+            // Apple phone subscriptions: the backend's phoneNumbers keeps counting Apple lines for
+            // 3 days past their expiry (its billing-retry grace), so we must re-check StoreKit here
+            // the same way we re-check the base plan — otherwise a stale `true` from a prior
+            // session persists indefinitely and a lapsed phone subscription is never detected on
+            // foreground transitions.
             // Capture the phone plan's definitiveness (was the entitlement enumeration a real
             // result, or a 5-second timeout?). A downgrade must never be acted on off a timeout.
             var phoneStoreKitWasDefinitive = false
@@ -100,6 +122,26 @@ extension GlacierApplicationDelegate {
 
             let hadLiveBackendResponse = await queryAndApplyBackendSubscription()
 
+            // The backend keeps an Apple plan active for 3 days past Apple's expiry, and the result
+            // above is StoreKit OR backend, so without this an Apple lapse would only be seen once
+            // that window ends — and the 72-hour grace below would start from there (about 6 days
+            // from expiry to the paywall). When StoreKit has definitely said no, the backend says
+            // the plan is Apple's, and this device's App Store account is the one whose
+            // subscription just ended for this Glacier account, trust StoreKit. The grace window
+            // still applies, so protection stays on for 72 hours.
+            //
+            // Foreground only: resolveSubscriptionStatus() at cold launch keeps believing the
+            // backend, because the launch path enforces with no grace when no window is open. Launch
+            // never clears an open window, so the two paths don't fight; and since the backend's
+            // grace is no longer than ours, it agrees the plan has lapsed by the time ours ends.
+            if appleLapseConfirmedOnDevice,
+               hadLiveBackendResponse,
+               account?.lastKnownBackendSubscriptionSource == .apple,
+               account?.hasActiveSubscription == true {
+                account?.hasActiveSubscription = false
+                Log.general.notice("[BackendSubscription] refreshBackendSubscription: Apple plan ended per StoreKit; not waiting for the backend's grace")
+            }
+
             // Detect base plan active → inactive transition and notify the UI.
             // The guard in GlacierAppRootScreen ensures this only triggers a paywall when the
             // user is already past authentication (i.e. on the main screen, not at the splash).
@@ -109,17 +151,21 @@ extension GlacierApplicationDelegate {
             // Require a live backend response before declaring a lapse.  If the backend call
             // failed and fell back to the cached lastKnownBackendSubscribed value, we cannot
             // distinguish "subscription genuinely lapsed" from "network was unavailable" (e.g.
-            // the WireGuard tunnel was reconnecting).  Apple-only (IAP) subscribers always have
-            // lastKnownBackendSubscribed=false, so a cached-fallback result combined with a
-            // StoreKit timeout would otherwise incorrectly read as a lapse and fire destructive
-            // actions (tunnel teardown, DoT disabled) against an active subscriber who simply
-            // had a bad network moment.
+            // the WireGuard tunnel was reconnecting).  The cached value can be false for an
+            // active Apple subscriber (it was never set, or was saved before the backend saw the
+            // purchase), so a cached-fallback result combined with a StoreKit timeout would
+            // otherwise incorrectly read as a lapse and fire destructive actions (tunnel teardown,
+            // DoT disabled) against an active subscriber who simply had a bad network moment.
+            //
+            // The backend reports Apple subscriptions too, and keeps them active for 3 days past
+            // Apple's expiry (APPLE_EXPIRY_GRACE_MS in the console). See appleLapseConfirmedOnDevice
+            // above for how that window is kept from delaying lapse detection.
             let isNowSubscribed = account?.hasActiveSubscription == true
             // A base-plan reading is only "confirmed" when BOTH the backend gave a live response AND
             // StoreKit gave a definitive (non-timeout) answer. Either gap means we cannot declare a
-            // lapse: for an IAP-only subscriber the backend always returns subscribed=false, so a live
-            // backend response alone carries no signal, and a StoreKit timeout is indistinguishable
-            // from a confirmed-empty result.
+            // lapse: a cached backend value may be stale, and a StoreKit timeout is indistinguishable
+            // from a confirmed-empty result. A live "not subscribed" from the backend isn't enough on
+            // its own either: the backend may not have recorded a new Apple purchase yet.
             let baseReadingConfirmed = hadLiveBackendResponse && baseStoreKitWasDefinitive
             Log.general.notice("[BackendSubscription] refreshBackendSubscription: isNowSubscribed=\(isNowSubscribed) hadLiveBackendResponse=\(hadLiveBackendResponse) baseStoreKitWasDefinitive=\(baseStoreKitWasDefinitive)")
             // Gate only on the BASE just-purchased flag. The phone plan is an independent
@@ -238,8 +284,8 @@ extension GlacierApplicationDelegate {
         // Return true only when BOTH the backend gave a live response AND StoreKit gave a
         // definitive (non-timeout) answer for the base plan.  Either gap means we cannot
         // confidently declare a lapse: a StoreKit timeout is indistinguishable from a
-        // confirmed-empty result, and for IAP-only subscribers the backend always returns
-        // subscribed=false (so a live backend response alone carries no signal).
+        // confirmed-empty result, and the backend may not have recorded a new Apple purchase
+        // yet (so a live "not subscribed" from it is not enough on its own).
         return hadLiveBackendResponse && baseStoreKitWasDefinitive
     }
 
@@ -299,6 +345,14 @@ extension GlacierApplicationDelegate {
                         Log.general.info("[BackendSubscription] queryAndApply: backend returned subscribed=\(body.data.subscribed) phoneNumbers=\(body.data.phoneNumbers)")
                         account.lastKnownBackendSubscribed = body.data.subscribed
                         account.lastKnownBackendPhoneNumbers = body.data.phoneNumbers
+                        // Only used to tell the user where to cancel when they delete their account.
+                        // An unrecognised store is saved as unknown rather than guessed.
+                        account.lastKnownBackendSubscriptionSource = body.data.subscriptionSource.flatMap(BillingStore.init(rawValue:))
+                        account.lastKnownBackendPhoneLineSource = body.data.phoneLineSource.flatMap(BillingStore.init(rawValue:))
+                        account.lastKnownBackendFamilyMember = body.data.familyMember ?? false
+                        // Display-only, for Settings → Subscription. An unparseable date is dropped.
+                        account.lastKnownBackendExpiry = body.data.expiryTime.flatMap(Self.parseBackendDate)
+                        account.lastKnownBackendAutoRenewing = body.data.autoRenewing
                         self.applyBackendSubscription(subscribed: body.data.subscribed,
                                                       phoneNumbers: body.data.phoneNumbers,
                                                       account: account)
@@ -313,6 +367,15 @@ extension GlacierApplicationDelegate {
                     }
                 }
         }
+    }
+
+    /// Parses a backend ISO-8601 timestamp, with or without fractional seconds.
+    private static func parseBackendDate(_ string: String) -> Date? {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        if let date = formatter.date(from: string) { return date }
+        formatter.formatOptions = [.withInternetDateTime]
+        return formatter.date(from: string)
     }
 
     // MARK: - Reconciliation
@@ -332,7 +395,7 @@ extension GlacierApplicationDelegate {
         // to `true` by the .glacierPlanPurchaseVerified notification handler, or reset to `false`
         // when no entitlement was found — see resolveSubscriptionStatus / refreshBackendSubscription).
         let appleBaseSubscribed = account.hasActiveSubscription
-        var effectiveBaseSubscribed = appleBaseSubscribed || backendSubscribed
+        let effectiveBaseSubscribed = appleBaseSubscribed || backendSubscribed
 
         // Persist "has ever subscribed" so the TestFlight override survives subscription expiry.
         if effectiveBaseSubscribed {

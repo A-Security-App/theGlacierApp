@@ -152,6 +152,10 @@ final class GlacierAppRootCoordinator: GlacierRootCoordinator, ObservableObject 
         case .vpnSettings:
             let viewModel = VPNSettingsVM(rootCoordinator: self)
             VPNSettingsScreen(viewModel: viewModel)
+
+        case .subscriptionSettings:
+            let viewModel = SubscriptionSettingsVM(rootCoordinator: self)
+            SubscriptionSettingsScreen(viewModel: viewModel)
         
         case .wifiSettings:
             let viewModel = WiFiSettingsVM(rootCoordinator: self)
