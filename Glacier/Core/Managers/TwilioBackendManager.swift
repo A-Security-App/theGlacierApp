@@ -29,7 +29,20 @@ open class TwilioBackendManager: NSObject
     private var apiKey:String?
     private var org:String?
     var contacts = [PhoneContact]()
-    private var phoneDelegates = [TwilioAccountDelegateProtocol]()
+    /// Registration happens on the main queue; broadcasts are read from
+    /// `internalQueue` when a network response lands. Every access goes through
+    /// `phoneDelegatesLock` — do not touch this property directly.
+    private var phoneDelegates = [WeakPhoneDelegate]()
+    private let phoneDelegatesLock = NSLock()
+    /// A snapshot of the live delegates, taken under the lock and returned as strong
+    /// references. Callers iterate the snapshot *outside* the lock: holding it across
+    /// a delegate callback would invite deadlock, and the strong references keep a
+    /// delegate alive for the duration of its own callback.
+    private var activePhoneDelegates: [TwilioAccountDelegateProtocol] {
+        phoneDelegatesLock.lock()
+        defer { phoneDelegatesLock.unlock() }
+        return phoneDelegates.compactMap { $0.delegate }
+    }
     private var tokenListeners = [TokenStatusDelegate]()
     var glacierPhone:GlacierPhone?
     private var smsOn = false
@@ -37,7 +50,7 @@ open class TwilioBackendManager: NSObject
     var selectedAccount: PhoneAccountModel? {
         didSet {
             DispatchQueue.main.async {
-                for phoneDelegate in self.phoneDelegates {
+                for phoneDelegate in self.activePhoneDelegates {
                     phoneDelegate.setSelectedAccount(self.selectedAccount)
                 }
             }
@@ -195,11 +208,22 @@ open class TwilioBackendManager: NSObject
     func callHistoryUrl() -> String {
         return getEndpoint() + "call-history"
     }
+    /// Every exit path must notify the delegates. `PhoneNumberSelectionVM` raises a
+    /// full-screen, non-cancellable progress overlay before calling this and lowers it
+    /// only from a delegate callback, so the silent `return`s that used to sit on the
+    /// proxy and auth-header guards left that overlay up until the app was force-quit —
+    /// the "buffers indefinitely" report.
     func queryForAvailableNumbers(areaCode:String?, contains:String?) {
-        guard !SecurityCenter.isProxyDetected else { return }
+        guard !SecurityCenter.isProxyDetected else {
+            notifyAvailableNumbersLookupFailed(.blockedBySecurityCheck)
+            return
+        }
         Task { [weak self] in
             guard let self else { return }
-            guard let headers = await GlacierAPIHeaders.authHeaders() else { return }
+            guard let headers = await GlacierAPIHeaders.authHeaders() else {
+                self.notifyAvailableNumbersLookupFailed(.notAuthenticated)
+                return
+            }
             var params = ["countryCode":"US"]
             if let areaCode = areaCode {
                 params["areaCode"] = areaCode
@@ -207,23 +231,24 @@ open class TwilioBackendManager: NSObject
             if let contains = contains {
                 params["contains"] = contains
             }
-            self.sessionManager.request(self.getAvailableNumListUrl(), method: .post, parameters: params, encoding: JSONEncoding.default, headers: headers)
+            self.sessionManager.request(self.getAvailableNumListUrl(), method: .post, parameters: params, encoding: JSONEncoding.default, headers: headers,
+                                        requestModifier: { $0.timeoutInterval = 20 })
             .validate()
             .responseDecodable(of: TwilioResponse.self, queue: self.internalQueue) { response in
             //.responseData(queue: self.internalQueue) { response in
                 switch response.result {
                     case .success(let value):
                     let phoneNumbers: [GlacierPhoneNumber] = value.data.map { GlacierPhoneNumber(number: $0.phoneNumber) }
-                        for phoneDelegate in self.phoneDelegates {
+                        for phoneDelegate in self.activePhoneDelegates {
                             phoneDelegate.availableNumbersUpdated(phoneNumbers)
                         }
                         return
                     case .failure(let error):
-                        let nums: [GlacierPhoneNumber] = []
-                        for phoneDelegate in self.phoneDelegates {
-                            phoneDelegate.availableNumbersUpdated(nums)
-                        }
+                        // Reported as a failure rather than an empty list: rendering a
+                        // failed request as "no results" tells the user a confident lie
+                        // about what happened.
                         Log.calls.error("Error accessing available numbers: \(error)")
+                        self.notifyAvailableNumbersLookupFailed(.requestFailed)
                         return
                 }
             }
@@ -244,7 +269,13 @@ open class TwilioBackendManager: NSObject
         guard !SecurityCenter.isProxyDetected else { responseHandler?(false); return }
         Task { [weak self] in
             guard let self else { return }
-            guard let headers = await GlacierAPIHeaders.authHeaders() else { return }
+            // Dropping the handler here left the caller's progress overlay up forever
+            // after the user confirmed "Add". No request was sent, so `false` cannot
+            // contradict a purchase that actually happened.
+            guard let headers = await GlacierAPIHeaders.authHeaders() else {
+                responseHandler?(false)
+                return
+            }
             self.sessionManager.request(self.purchaseNumUrl(), method: .post, parameters: ["number": selectedNumber], encoding: JSONEncoding.default, headers: headers)
                 .validate()
                 .responseData(queue: self.internalQueue) { response in
@@ -252,22 +283,23 @@ open class TwilioBackendManager: NSObject
                     case .success(_):
                         let shouldActivateSubscriptionFeatures = self.currentAccounts.isEmpty
                         let color = PhoneAccountModel.getNextColor(self.currentAccounts.count)
-                        var gradientAvatar: String? = nil
-                        if let avatar = self.getNextAvailableGradientAvatar() {
-                            gradientAvatar = avatar.name
-                            if var avatarDictionary: [String: String] = UserDefaultsService.shared.get(for: \.phoneNumberGradientAvatarDictionary), avatarDictionary[selectedNumber] == nil {
-                                avatarDictionary[selectedNumber] = avatar.name
-                                UserDefaultsService.shared.set(avatarDictionary, for: \.phoneNumberGradientAvatarDictionary)
-                            } else {
-                                UserDefaultsService.shared.set([selectedNumber: avatar.name], for: \.phoneNumberGradientAvatarDictionary)
-                            }
-                        }
-                        let smsAccount = PhoneAccountModel(phoneNumber: selectedNumber, smsacctid: "tempid", color:color, gradientAvatar: gradientAvatar)
+                        let gradientAvatar = self.assignGradientAvatar(to: selectedNumber)
+                        let newAccount = PhoneAccountModel(phoneNumber: selectedNumber, smsacctid: "tempid", color:color, gradientAvatar: gradientAvatar)
                         if let acctname = selectedName {
-                            smsAccount.grdbRecord?.displayName = acctname
+                            newAccount.grdbRecord?.displayName = acctname
                         }
-                        smsAccount.save(completion: {
-                            self.currentAccounts.append(smsAccount)
+                        // A queryForNumbers response can land between the purchase and this insert;
+                        // insertIfAbsent keeps the row it stored rather than adding a second one.
+                        let stored = PhoneAccountModel.insertIfAbsent(newAccount)
+                        let smsAccount = stored.account
+                        if !stored.inserted, let acctname = selectedName {
+                            smsAccount.grdbRecord?.displayName = acctname
+                            smsAccount.save()
+                        }
+                        DispatchQueue.main.async {
+                            if !self.currentAccounts.contains(where: { $0.grdbRecord?.phoneNumber == selectedNumber }) {
+                                self.currentAccounts.append(smsAccount)
+                            }
                             if shouldActivateSubscriptionFeatures {
                                 SubscriptionAccessCoordinator.shared.activateSubscriptionFeaturesIfNeeded()
                                 // If this is the first phone number (e.g., added post-onboarding),
@@ -282,7 +314,7 @@ open class TwilioBackendManager: NSObject
                             }
                             self.selectedAccount = smsAccount
                             responseHandler?(true)
-                        })
+                        }
                         return
                     case .failure(let error):
                         Log.calls.error("Error purchasing number: \(error)")
@@ -349,18 +381,22 @@ open class TwilioBackendManager: NSObject
     }
     private func removeAccount(_ selectedNumber:String) {
         self.internalQueue.async {
-            if let acct = self.getExistingAccount(phoneNumber:selectedNumber) {
-                acct.remove(completion: {
-                    self.currentAccounts = self.getExistingAccounts()
-                    if self.selectedAccount?.grdbRecord?.phoneNumber == selectedNumber {
-                        if self.currentAccounts.count > 0 {
-                            self.selectedAccount = self.currentAccounts.first
-                        } else {
-                            self.selectedAccount = nil
-                        }
+            // Remove every row for the number, not just the first: a duplicate left behind would
+            // keep the released number on screen.
+            let accounts = self.getExistingAccounts().filter { $0.grdbRecord?.phoneNumber == selectedNumber }
+            guard !accounts.isEmpty else { return }
+            DBManager.sharedDB().grdbStorage.asyncWrite(block: { transaction in
+                accounts.forEach { $0.grdbRecord?.grdbRemove(transaction: transaction) }
+            }, completion: {
+                self.currentAccounts = self.getExistingAccounts()
+                if self.selectedAccount?.grdbRecord?.phoneNumber == selectedNumber {
+                    if self.currentAccounts.count > 0 {
+                        self.selectedAccount = self.currentAccounts.first
+                    } else {
+                        self.selectedAccount = nil
                     }
-                })
-            }
+                }
+            })
         }
     }
     /// Performs the local portion of a number release (GRDB removal, in-memory state update,
@@ -517,37 +553,56 @@ open class TwilioBackendManager: NSObject
         var index = 0
         self.currentAccounts.removeAll()
         var updated = false
+        // Repair any duplicate rows left by the old check-then-async-insert race, and point the
+        // avatar map back at the avatar of the row we kept.
+        let repaired = PhoneAccountModel.removeDuplicateAccounts()
+        if !repaired.isEmpty {
+            updated = true
+            var avatarDictionary: [String: String] = UserDefaultsService.shared.get(for: \.phoneNumberGradientAvatarDictionary) ?? [:]
+            for record in repaired {
+                if let phonenumber = record.phoneNumber, let avatar = record.gradientAvatar {
+                    avatarDictionary[phonenumber] = avatar
+                }
+            }
+            UserDefaultsService.shared.set(avatarDictionary, for: \.phoneNumberGradientAvatarDictionary)
+            if let selectedNumber = self.selectedAccount?.grdbRecord?.phoneNumber {
+                self.selectedAccount = getExistingAccount(phoneNumber: selectedNumber)
+            }
+            DispatchQueue.main.async {
+                NotificationCenter.default.post(name: .userPhoneNumberDetailsUpdated, object: nil)
+            }
+        }
         for item in glacierPhone.selectedTwilionumber {
             if let phonenumber = item["number"], let id = item["sid"] {
+                guard !phonenumbers.contains(phonenumber) else { continue }
                 phonenumbers.append(phonenumber)
-                //can just change to PhoneAccount.existingAccount(with: phoneNumber)
-                var smsAccount:PhoneAccountModel?
+                var smsAccount:PhoneAccountModel
                 if let smsAcct = getExistingAccount(phoneNumber: phonenumber) {
                     smsAccount = smsAcct
                 } else {
                     let color = PhoneAccountModel.getNextColor(index)
-                    var gradientAvatar: String? = nil
-                    if let avatar = getNextAvailableGradientAvatar() {
-                        gradientAvatar = avatar.name
-                        if var avatarDictionary: [String: String] = UserDefaultsService.shared.get(for: \.phoneNumberGradientAvatarDictionary), avatarDictionary[phonenumber] == nil {
-                            avatarDictionary[phonenumber] = avatar.name
-                            UserDefaultsService.shared.set(avatarDictionary, for: \.phoneNumberGradientAvatarDictionary)
-                        } else {
-                            UserDefaultsService.shared.set([phonenumber: avatar.name], for: \.phoneNumberGradientAvatarDictionary)
+                    let newAccount = PhoneAccountModel(phoneNumber: phonenumber, smsacctid: id, color:color, gradientAvatar: nil)
+                    // Check and insert in one transaction: the existence check above only reads, so a
+                    // save still in flight from an earlier pass or a purchase is invisible to it.
+                    let stored = PhoneAccountModel.insertIfAbsent(newAccount)
+                    smsAccount = stored.account
+                    if stored.inserted {
+                        // Only take an avatar once we know this pass created the row; taking it
+                        // earlier let a losing pass claim a second avatar for the same number.
+                        if let gradientAvatar = assignGradientAvatar(to: phonenumber) {
+                            smsAccount.grdbRecord?.gradientAvatar = gradientAvatar
+                            smsAccount.save()
                         }
-                    }
-                    smsAccount = PhoneAccountModel(phoneNumber: phonenumber, smsacctid: id, color:color, gradientAvatar: gradientAvatar)
-                    updated = true
-                    if self.selectedAccount == nil {
-                        self.selectedAccount = smsAccount
-                    }
-                    smsAccount?.save(completion: {
+                        updated = true
                         DispatchQueue.main.async {
                             NotificationCenter.default.post(name: .newPhoneNumberAdded, object: nil)
                         }
-                    })
+                    }
+                    if self.selectedAccount == nil {
+                        self.selectedAccount = smsAccount
+                    }
                 }
-                currentAccounts.append(smsAccount!)
+                currentAccounts.append(smsAccount)
             }
             index+=1
         }
@@ -583,6 +638,20 @@ open class TwilioBackendManager: NSObject
                 self.selectedAccount = self.currentAccounts.first
             }
         }
+    }
+    /// Picks the next unused gradient avatar for `phoneNumber` and records it in the avatar map.
+    /// Reuses the number's existing entry if it has one. The previous inline version replaced the
+    /// whole map with a single entry whenever the number was already in it, dropping every other
+    /// number's avatar.
+    private func assignGradientAvatar(to phoneNumber: String) -> String? {
+        var avatarDictionary: [String: String] = UserDefaultsService.shared.get(for: \.phoneNumberGradientAvatarDictionary) ?? [:]
+        if let existing = avatarDictionary[phoneNumber] {
+            return existing
+        }
+        guard let avatar = getNextAvailableGradientAvatar() else { return nil }
+        avatarDictionary[phoneNumber] = avatar.name
+        UserDefaultsService.shared.set(avatarDictionary, for: \.phoneNumberGradientAvatarDictionary)
+        return avatar.name
     }
     private func getNextAvailableGradientAvatar() -> PhoneNumberGradientAvatar? {
         let allAvatars: [PhoneNumberGradientAvatar] = [.blueGradient, .megentaGradient, .orangeGradient, .greenGradient, .pinkGradient]
@@ -682,7 +751,7 @@ open class TwilioBackendManager: NSObject
             self.updatingRecordings = true
             responseHandler?(true)
             DispatchQueue.main.async {
-                for phoneDelegate in self.phoneDelegates {
+                for phoneDelegate in self.activePhoneDelegates {
                     phoneDelegate.voicemailUpdated()
                 }
             }
@@ -726,11 +795,29 @@ open class TwilioBackendManager: NSObject
         let account = GlacierAccountModel.getGlacierAccount()
         return account?.username
     }
-    func setPhoneDelegate(_ phoneDelegate:TwilioAccountDelegateProtocol) {
-        self.phoneDelegates.append(phoneDelegate)
+    /// Registers a delegate, replacing any previous registration of the same object.
+    ///
+    /// Previously this appended unconditionally and held every delegate strongly, and
+    /// nothing ever removed one: PhoneNumberSelectionVM re-registers on each list load
+    /// and each search, so a single screen accumulated duplicate entries, and every
+    /// dismissed screen stayed alive for the lifetime of the process still receiving
+    /// callbacks. Because those callbacks drive the *global* progress overlay, a stale
+    /// screen could dismiss a spinner belonging to a different screen.
+    func setPhoneDelegate(_ phoneDelegate: TwilioAccountDelegateProtocol) {
+        phoneDelegatesLock.lock()
+        defer { phoneDelegatesLock.unlock() }
+        phoneDelegates.removeAll { $0.delegate == nil || $0.delegate === phoneDelegate }
+        phoneDelegates.append(WeakPhoneDelegate(phoneDelegate))
     }
-    func removeLastPhoneDelegate() {
-        self.phoneDelegates.removeLast()
+    func removePhoneDelegate(_ phoneDelegate: TwilioAccountDelegateProtocol) {
+        phoneDelegatesLock.lock()
+        defer { phoneDelegatesLock.unlock() }
+        phoneDelegates.removeAll { $0.delegate == nil || $0.delegate === phoneDelegate }
+    }
+    private func notifyAvailableNumbersLookupFailed(_ failure: PhoneNumberLookupFailure) {
+        for phoneDelegate in self.activePhoneDelegates {
+            phoneDelegate.availableNumbersLookupFailed(failure)
+        }
     }
 }
 extension TwilioBackendManager {
@@ -791,13 +878,37 @@ public class GlacierPhone:NSObject {
         return ""
     }
 }
+/// Why a lookup for available numbers ended without any numbers. Distinguishes
+/// "the backend has nothing to offer" from "we never got to ask", which the caller
+/// needs in order to say something truthful to the user.
+public enum PhoneNumberLookupFailure {
+    /// A proxy/interception was detected, so the request was never sent.
+    case blockedBySecurityCheck
+    /// Auth headers were unavailable — Amplify not configured yet, or the Cognito
+    /// session fetch exceeded its 8s deadline. The request was never sent.
+    case notAuthenticated
+    /// The request was sent and the backend failed, timed out, or returned
+    /// something undecodable.
+    case requestFailed
+}
+
+/// Weak box so a registered view model is not kept alive by the manager.
+final class WeakPhoneDelegate {
+    weak var delegate: TwilioAccountDelegateProtocol?
+    init(_ delegate: TwilioAccountDelegateProtocol) {
+        self.delegate = delegate
+    }
+}
+
 public protocol TwilioAccountDelegateProtocol:AnyObject {
     func availableNumbersUpdated(_ availableNumbers: [GlacierPhoneNumber])
+    func availableNumbersLookupFailed(_ failure: PhoneNumberLookupFailure)
     func setSelectedAccount(_ account: PhoneAccountModel?)
     func voicemailUpdated()
 }
 public extension TwilioAccountDelegateProtocol {
     func availableNumbersUpdated(_ availableNumbers: [GlacierPhoneNumber]) {}
+    func availableNumbersLookupFailed(_ failure: PhoneNumberLookupFailure) {}
     func setSelectedAccount(_ account: PhoneAccountModel?) {}
     func voicemailUpdated() {}
 }

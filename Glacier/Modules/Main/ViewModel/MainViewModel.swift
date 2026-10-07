@@ -146,9 +146,9 @@ final class MainVM: MainViewModel, ObservableObject {
     }
     
     func presentPhoneNumberPlanPurchaseView() {
-        presentPhoneNumberPlanPurchase(orWarnWebManaged: {
-            if shouldShowPhoneNumberMenu {
-                setPhoneNumbersMenuVisibility(false)
+        presentPhoneNumberPlanPurchase(orWarnManagedElsewhere: {
+            if self.shouldShowPhoneNumberMenu {
+                self.setPhoneNumbersMenuVisibility(false)
             }
 
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {

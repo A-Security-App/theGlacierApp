@@ -70,6 +70,16 @@ final class PhoneNumberSelectionVM: PhoneNumberSelectionViewModel, ObservableObj
     private var addPhoneNumbersCount: Int = 0
     private var isPerformingSearch = false
     private var searchDebounceTimer: Timer?
+
+    /// Bumped on every lookup so a timeout armed for an earlier request cannot tear
+    /// down the spinner belonging to a later one. The search field debounces at 0.5s,
+    /// so several lookups can be in flight at once.
+    private var lookupGeneration = 0
+    private var lookupTimeoutTask: Task<Void, Never>?
+    /// Failsafe only — the request itself is capped at 20s inside TwilioBackendManager.
+    /// This exists so the overlay still comes down if some future exit path forgets to
+    /// report back, which is the bug this whole path is being fixed for.
+    private static let lookupTimeoutNanoseconds: UInt64 = 30_000_000_000
     
     private var maxAllowedPhoneNumbers: Int {
         guard let plan = GlacierPhoneNumberSubscriptionPlan.activePlan else {
@@ -95,15 +105,15 @@ final class PhoneNumberSelectionVM: PhoneNumberSelectionViewModel, ObservableObj
     deinit {
         NotificationCenter.default.removeObserver(self)
         searchDebounceTimer?.invalidate()
+        lookupTimeoutTask?.cancel()
     }
     
     // MARK: - Public methods
     
     @MainActor
     func loadPhoneNumbers() {
-        isLoadingPhoneNumbers = true
         isPerformingSearch = false
-        presentProgressIndicator()
+        beginLookup()
 
         TwilioBackendManager.sharedMgr().setPhoneDelegate(self)
         TwilioBackendManager.sharedMgr().queryForAvailableNumbers(areaCode: nil, contains: nil)
@@ -112,9 +122,8 @@ final class PhoneNumberSelectionVM: PhoneNumberSelectionViewModel, ObservableObj
     @MainActor
     func searchForAvailableNumbers() {
         guard !searchText.isEmpty else { return }
-        isLoadingPhoneNumbers = true
         isPerformingSearch = true
-        presentProgressIndicator()
+        beginLookup()
 
         TwilioBackendManager.sharedMgr().setPhoneDelegate(self)
         if searchText.count == 3 {
@@ -148,6 +157,107 @@ final class PhoneNumberSelectionVM: PhoneNumberSelectionViewModel, ObservableObj
 
         // Free slot available — show the standard (no-charge) confirmation.
         presentFreeAddConfirmationPrompt(for: phoneNumber)
+    }
+
+    // MARK: - Lookup lifecycle
+
+    /// Raises the progress overlay and arms the failsafe timeout for a new lookup.
+    @MainActor
+    private func beginLookup() {
+        isLoadingPhoneNumbers = true
+        presentProgressIndicator()
+
+        lookupGeneration += 1
+        let generation = lookupGeneration
+        lookupTimeoutTask?.cancel()
+        lookupTimeoutTask = Task { [weak self] in
+            try? await Task.sleep(nanoseconds: Self.lookupTimeoutNanoseconds)
+            guard !Task.isCancelled, let self else { return }
+            await self.handleLookupTimeout(generation: generation)
+        }
+    }
+
+    @MainActor
+    private func handleLookupTimeout(generation: Int) {
+        // A newer lookup has already taken over, or one came back — nothing to clear.
+        guard generation == lookupGeneration, isLoadingPhoneNumbers else { return }
+        finishLookup(with: .requestFailed)
+    }
+
+    /// Deliberately not @MainActor: it touches only a private stored property, and
+    /// the delegate callback that calls it arrives on the main *queue* without the
+    /// compiler knowing that. Isolating it would force an `assumeIsolated` that traps
+    /// if the assumption is ever wrong.
+    private func cancelLookupTimeout() {
+        lookupTimeoutTask?.cancel()
+        lookupTimeoutTask = nil
+    }
+
+    /// Single exit point for a lookup that produced no numbers. Always lowers the
+    /// overlay before saying anything, so the user is never left with a blocking
+    /// spinner and no way out.
+    @MainActor
+    private func finishLookup(with failure: PhoneNumberLookupFailure) {
+        cancelLookupTimeout()
+        isLoadingPhoneNumbers = false
+        dismissProgressIndicator()
+        presentLookupFailurePrompt(for: failure)
+    }
+
+    @MainActor
+    private func retryLookup() {
+        if isPerformingSearch, !searchText.isEmpty {
+            searchForAvailableNumbers()
+        } else {
+            loadPhoneNumbers()
+        }
+    }
+
+    @MainActor
+    private func presentLookupFailurePrompt(for failure: PhoneNumberLookupFailure) {
+        // The cause is deliberately kept out of the copy. Naming the proxy check
+        // alarms anyone sitting behind a legitimate corporate proxy, and "check your
+        // signal" asserts a cause we only inferred. It goes to the log instead, where
+        // it is the only breadcrumb this failure leaves.
+        Log.calls.error(
+            "Available-number lookup failed: \(String(describing: failure), privacy: .public)"
+        )
+
+        let configuration = PopupConfiguration(
+            title: NSLocalizedString(
+                "Couldn’t load numbers",
+                comment: "Phone number selection screen lookup failure popup title"
+            ),
+            description: NSLocalizedString(
+                "Glacier couldn’t load available numbers. Check your connection, then try again.",
+                comment: "Phone number selection screen lookup failure popup description"
+            ),
+            buttons: [
+                PopupButton(
+                    style: .primary,
+                    title: NSLocalizedString(
+                        "Try Again",
+                        comment: "Phone number selection screen lookup retry button title"
+                    ),
+                    onTap: { [weak self] in
+                        guard let self else { return }
+                        self.dismissPopup()
+                        Task { @MainActor in
+                            self.retryLookup()
+                        }
+                    }
+                ),
+                PopupButton(
+                    style: .tertiary,
+                    title: .cancelText,
+                    onTap: { [weak self] in
+                        self?.dismissPopup()
+                    }
+                )
+            ],
+            buttonsAlignment: .vertical
+        )
+        presentPopup(with: configuration)
     }
 
     // MARK: - Private methods
@@ -581,12 +691,19 @@ final class PhoneNumberSelectionVM: PhoneNumberSelectionViewModel, ObservableObj
 extension PhoneNumberSelectionVM: TwilioAccountDelegateProtocol {
     func availableNumbersUpdated(_ availableNumbers: [GlacierPhoneNumber]) {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            self.cancelLookupTimeout()
             self.dismissProgressIndicator()
             if !self.isPerformingSearch {
                 self.glacierPhoneNumbersAll = availableNumbers
             }
             self.glacierPhoneNumbersFiltered = availableNumbers
             self.isLoadingPhoneNumbers = false
+        }
+    }
+
+    func availableNumbersLookupFailed(_ failure: PhoneNumberLookupFailure) {
+        Task { @MainActor [weak self] in
+            self?.finishLookup(with: failure)
         }
     }
 }

@@ -23,6 +23,12 @@ open class GlacierAccountModel: GRDBModel {
         grdbRecord = GlacierAccount(uniqueId: self.uniqueId, username: username, loginDate: nil, apiKey:nil, avatarData: nil, modified: nil)
     }
 }
+/// The store that bills a subscription, as the backend's `mobile/status` names it.
+public enum BillingStore: String {
+    case stripe
+    case apple
+    case googlePlay = "google_play"
+}
 #if !TARGET_IS_EXTENSION
 extension GlacierAccountModel {
     public var avatarData: Data? {
@@ -109,6 +115,11 @@ extension GlacierAccountModel {
     private static let phoneSubscriptionStateKeyPrefix = "com.theglacierapp.subscription.phone.state."
     private static let backendSubscribedKeyPrefix = "com.theglacierapp.subscription.backend.subscribed."
     private static let backendPhoneNumbersKeyPrefix = "com.theglacierapp.subscription.backend.phoneNumbers."
+    private static let backendSubscriptionSourceKeyPrefix = "com.theglacierapp.subscription.backend.subscriptionSource."
+    private static let backendPhoneLineSourceKeyPrefix = "com.theglacierapp.subscription.backend.phoneLineSource."
+    private static let backendFamilyMemberKeyPrefix = "com.theglacierapp.subscription.backend.familyMember."
+    private static let backendExpiryKeyPrefix = "com.theglacierapp.subscription.backend.expiry."
+    private static let backendAutoRenewingKeyPrefix = "com.theglacierapp.subscription.backend.autoRenewing."
     public var hasActiveSubscription: Bool {
         get {
             let key = GlacierAccountModel.subscriptionStateKeyPrefix + uniqueId
@@ -184,6 +195,67 @@ extension GlacierAccountModel {
         }
         set {
             let key = GlacierAccountModel.backendPhoneNumbersKeyPrefix + uniqueId
+            UserDefaults.standard.set(newValue, forKey: key)
+        }
+    }
+    /// Store billing the base plan, from the last successful backend status response.
+    /// `nil` when no store bills it, before the first response, or when the backend is older
+    /// than console#573. A failed request keeps the last known value.
+    public var lastKnownBackendSubscriptionSource: BillingStore? {
+        get {
+            let key = GlacierAccountModel.backendSubscriptionSourceKeyPrefix + uniqueId
+            return (UserDefaults.standard.string(forKey: key)).flatMap(BillingStore.init(rawValue:))
+        }
+        set {
+            let key = GlacierAccountModel.backendSubscriptionSourceKeyPrefix + uniqueId
+            UserDefaults.standard.set(newValue?.rawValue, forKey: key)
+        }
+    }
+    /// Store billing the phone-line add-on, from the last successful backend status response.
+    /// Same `nil` and fallback rules as `lastKnownBackendSubscriptionSource`.
+    public var lastKnownBackendPhoneLineSource: BillingStore? {
+        get {
+            let key = GlacierAccountModel.backendPhoneLineSourceKeyPrefix + uniqueId
+            return (UserDefaults.standard.string(forKey: key)).flatMap(BillingStore.init(rawValue:))
+        }
+        set {
+            let key = GlacierAccountModel.backendPhoneLineSourceKeyPrefix + uniqueId
+            UserDefaults.standard.set(newValue?.rawValue, forKey: key)
+        }
+    }
+    /// `true` when the plan comes from someone else's family plan, so this account isn't billed
+    /// for it. The backend reports these accounts with `subscriptionSource: "stripe"`.
+    public var lastKnownBackendFamilyMember: Bool {
+        get {
+            let key = GlacierAccountModel.backendFamilyMemberKeyPrefix + uniqueId
+            return UserDefaults.standard.object(forKey: key) as? Bool ?? false
+        }
+        set {
+            let key = GlacierAccountModel.backendFamilyMemberKeyPrefix + uniqueId
+            UserDefaults.standard.set(newValue, forKey: key)
+        }
+    }
+    /// End of the paid period from the last successful backend status response, or `nil` when the
+    /// backend didn't report one. Display-only: nothing enforces entitlement off this.
+    public var lastKnownBackendExpiry: Date? {
+        get {
+            let key = GlacierAccountModel.backendExpiryKeyPrefix + uniqueId
+            return UserDefaults.standard.object(forKey: key) as? Date
+        }
+        set {
+            let key = GlacierAccountModel.backendExpiryKeyPrefix + uniqueId
+            UserDefaults.standard.set(newValue, forKey: key)
+        }
+    }
+    /// Whether the plan renews as it stands, from the last successful backend status response.
+    /// `nil` means the backend didn't say, which is not the same as `false`.
+    public var lastKnownBackendAutoRenewing: Bool? {
+        get {
+            let key = GlacierAccountModel.backendAutoRenewingKeyPrefix + uniqueId
+            return UserDefaults.standard.object(forKey: key) as? Bool
+        }
+        set {
+            let key = GlacierAccountModel.backendAutoRenewingKeyPrefix + uniqueId
             UserDefaults.standard.set(newValue, forKey: key)
         }
     }

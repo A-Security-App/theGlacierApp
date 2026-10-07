@@ -33,13 +33,23 @@ struct GlacierPlanPurchaseScreen<ViewModel: GlacierPlanPurchaseViewModel & Obser
     /// lapse paywall it must NOT record onboarding progress — otherwise the onboarding coordinator
     /// would re-enter the purchase screen on the next login.
     private let isGraceRenewal: Bool
+    /// Account actions offered on the lapse paywall. The paywall covers Settings and can't be
+    /// dismissed, so without these a lapsed user has no in-app way to cancel their subscription,
+    /// sign out, or delete their account (App Review 5.1.1(v)) short of paying.
+    private let lapseAccountActions: (any SettingsViewModel)?
 
     // MARK: - Initializer
 
-    init(viewModel: ViewModel, isLapsePaywall: Bool = false, isGraceRenewal: Bool = false) {
+    init(
+        viewModel: ViewModel,
+        isLapsePaywall: Bool = false,
+        isGraceRenewal: Bool = false,
+        lapseAccountActions: (any SettingsViewModel)? = nil
+    ) {
         self._viewModel = StateObject(wrappedValue: viewModel)
         self.isLapsePaywall = isLapsePaywall
         self.isGraceRenewal = isGraceRenewal
+        self.lapseAccountActions = lapseAccountActions
     }
     
     // MARK: - UI/UX
@@ -50,81 +60,15 @@ struct GlacierPlanPurchaseScreen<ViewModel: GlacierPlanPurchaseViewModel & Obser
                 GlacierBackground()
                     .ignoresSafeArea()
                 
-                VStack(alignment: .center, spacing: 24) {
-                    GlacierViewContainer(padding: 12) {
-                        GlacierImage(
-                            name: .constant("glacier-logo"),
-                            width: 50,
-                            height: 50,
-                            shouldAdaptToColorSchemeChange: true
-                        )
+                // Lays out exactly as before when it fits; scrolls only if it doesn't (e.g. the lapse
+                // paywall's extra account-actions row on an SE-sized screen). A plain ScrollView
+                // would collapse the Spacer and change the layout everywhere.
+                ViewThatFits(in: .vertical) {
+                    content
+                    ScrollView {
+                        content
                     }
-                    .padding(.top, 30)
-                    
-                    VStack(alignment: .center, spacing: 8) {
-                        GlacierLabel(
-                            text: NSLocalizedString("Select your plan", comment: "Glacier plan purchase screen header text"),
-                            font: .headerTwo,
-                            textAlignment: .center
-                        )
-                        
-                        GlacierLabel(
-                            text: NSLocalizedString("Instant privacy. Safe browsing.", comment: "Glacier plan purchase screen sub header text"),
-                            font: .headerTwo,
-                            textAlignment: .center,
-                            customTextColor: .constant(.grey60)
-                        )
-                    }
-                    
-                    Spacer()
-                    
-                    GlacierPlanListView(
-                        plans: viewModel.availablePlans,
-                        selectedPlan: $viewModel.selectedPlan
-                    )
-                    
-                    GlacierButton(
-                        style: .primary,
-                        title: NSLocalizedString("Get Glacier", comment: "Glacier plan purchase screen get glacier button title"),
-                        isEnabled: $viewModel.isPurchaseButtonEnabled,
-                        action: {
-                            viewModel.purchasePlan()
-                        }
-                    )
-                    
-                    GlacierLabel(
-                        text: NSLocalizedString(
-                            "Subscriptions renew automatically unless canceled at least 24 hours before the end of the current period. Manage or cancel anytime in Settings.",
-                            comment: "Glacier plan purchase screen footer text"
-                        ),
-                        font: .bodySmall,
-                        textAlignment: .leading,
-                        customTextColor: .constant(.grey60)
-                    )
-                    .padding(.top, 16)
-                    
-                    HStack(alignment: .center, spacing: 24) {
-                        GlacierLabelButton(
-                            text: NSLocalizedString("Terms of Use", comment: "Terms of use button title"),
-                            font: .bodySmall,
-                            width: 80,
-                            isUnderlined: true, action: {
-                                viewModel.openTermsOfUseURL()
-                            }
-                        )
-                        GlacierLabelButton(
-                            text: NSLocalizedString("Privacy Policy", comment: "Privacy policy button title"),
-                            font: .bodySmall,
-                            width: 80,
-                            isUnderlined: true, action: {
-                                viewModel.openPrivacyPolicyURL()
-                            }
-                        )
-                        Spacer()
-                    }
-                    .padding(.top, 16)
                 }
-                .padding(.horizontal, 16)
             }
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
@@ -164,6 +108,122 @@ struct GlacierPlanPurchaseScreen<ViewModel: GlacierPlanPurchaseViewModel & Obser
                 viewModel.loadAvailablePlans()
             }
         }
+    }
+
+    // MARK: - Private views
+
+    private var content: some View {
+        VStack(alignment: .center, spacing: 24) {
+            GlacierViewContainer(padding: 12) {
+                GlacierImage(
+                    name: .constant("glacier-logo"),
+                    width: 50,
+                    height: 50,
+                    shouldAdaptToColorSchemeChange: true
+                )
+            }
+            .padding(.top, 30)
+            
+            VStack(alignment: .center, spacing: 8) {
+                GlacierLabel(
+                    text: NSLocalizedString("Select your plan", comment: "Glacier plan purchase screen header text"),
+                    font: .headerTwo,
+                    textAlignment: .center
+                )
+                
+                GlacierLabel(
+                    text: NSLocalizedString("Instant privacy. Safe browsing.", comment: "Glacier plan purchase screen sub header text"),
+                    font: .headerTwo,
+                    textAlignment: .center,
+                    customTextColor: .constant(.grey60)
+                )
+            }
+            
+            Spacer()
+            
+            GlacierPlanListView(
+                plans: viewModel.availablePlans,
+                selectedPlan: $viewModel.selectedPlan
+            )
+            
+            GlacierButton(
+                style: .primary,
+                title: NSLocalizedString("Get Glacier", comment: "Glacier plan purchase screen get glacier button title"),
+                isEnabled: $viewModel.isPurchaseButtonEnabled,
+                action: {
+                    viewModel.purchasePlan()
+                }
+            )
+            
+            GlacierLabel(
+                text: NSLocalizedString(
+                    "Subscriptions renew automatically unless canceled at least 24 hours before the end of the current period. Manage or cancel anytime in Settings.",
+                    comment: "Glacier plan purchase screen footer text"
+                ),
+                font: .bodySmall,
+                textAlignment: .leading,
+                customTextColor: .constant(.grey60)
+            )
+            .padding(.top, 16)
+            
+            HStack(alignment: .center, spacing: 24) {
+                GlacierLabelButton(
+                    text: NSLocalizedString("Terms of Use", comment: "Terms of use button title"),
+                    font: .bodySmall,
+                    alignment: .leading,
+                    width: 80,
+                    isUnderlined: true, action: {
+                        viewModel.openTermsOfUseURL()
+                    }
+                )
+                GlacierLabelButton(
+                    text: NSLocalizedString("Privacy Policy", comment: "Privacy policy button title"),
+                    font: .bodySmall,
+                    alignment: .leading,
+                    width: 80,
+                    isUnderlined: true, action: {
+                        viewModel.openPrivacyPolicyURL()
+                    }
+                )
+                Spacer()
+            }
+            .padding(.top, 16)
+
+            if isLapsePaywall, let accountActions = lapseAccountActions {
+                HStack(alignment: .center, spacing: 16) {
+                    GlacierLabelButton(
+                        text: NSLocalizedString("Manage Subscription", comment: "Lapse paywall manage subscription button title"),
+                        font: .bodySmall,
+                        alignment: .leading,
+                        width: 130,
+                        action: {
+                            accountActions.manageSubscription()
+                        }
+                    )
+                    GlacierLabelButton(
+                        text: NSLocalizedString("Sign Out", comment: "Lapse paywall sign out button title"),
+                        font: .bodySmall,
+                        alignment: .leading,
+                        width: 60,
+                        action: {
+                            accountActions.signOut()
+                        }
+                    )
+                    GlacierLabelButton(
+                        text: NSLocalizedString("Delete Account", comment: "Lapse paywall delete account button title"),
+                        font: .bodySmall,
+                        alignment: .leading,
+                        width: 100,
+                        customTextColor: .constant(.ember),
+                        action: {
+                            accountActions.deleteAccount()
+                        }
+                    )
+                    Spacer()
+                }
+            }
+        }
+        .padding(.horizontal, 16)
     }
 }
 

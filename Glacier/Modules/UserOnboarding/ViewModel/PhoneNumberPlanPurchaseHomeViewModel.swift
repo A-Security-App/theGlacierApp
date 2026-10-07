@@ -44,8 +44,8 @@ final class PhoneNumberPlanPurchaseHomeVM: PhoneNumberPlanPurchaseHomeViewModel,
         // reads false when the account record isn't loaded yet at early launch. Re-check here so
         // the race can't land a web subscriber in the StoreKit sheet. "Skip for Now" remains
         // available, so the warning can't trap them on this screen.
-        presentPhoneNumberPlanPurchase(orWarnWebManaged: {
-            presentSheet(.phoneNumberPlanPurchase)
+        presentPhoneNumberPlanPurchase(orWarnManagedElsewhere: {
+            self.presentSheet(.phoneNumberPlanPurchase)
         })
     }
     

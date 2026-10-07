@@ -307,8 +307,18 @@ final class PhoneSubscriptionLifecycleHandler: NSObject {
 
     // MARK: - Number release
 
+    /// One account per distinct phone number. Duplicate local rows for the same number are a
+    /// local-database artifact, not extra lines: counting them made a single-line user look over
+    /// their limit, and releasing a "duplicate" would release their only number on the backend.
+    /// When a number has several rows, the oldest (lowest id) represents it.
     private func heldPhoneAccounts() -> [PhoneAccountModel] {
-        PhoneAccountModel.allAccounts().filter { $0.grdbRecord?.phoneNumber != nil }
+        var seen = Set<String>()
+        return PhoneAccountModel.allAccounts()
+            .sorted { ($0.grdbRecord?.id ?? .max) < ($1.grdbRecord?.id ?? .max) }
+            .filter { account in
+                guard let number = account.grdbRecord?.phoneNumber else { return false }
+                return seen.insert(number).inserted
+            }
     }
 
     /// Removes all local data for a phone number (GRDB records, in-memory state, avatar entry)
@@ -408,6 +418,12 @@ final class BaseSubscriptionLifecycleHandler: NSObject {
     var hasActiveGracePeriod: Bool {
         guard let pending = currentPending else { return false }
         return Date().timeIntervalSince(pending.firstDetectedAt) < graceInterval
+    }
+
+    /// When protection turns off if the plan isn't renewed, or `nil` when no grace window is open.
+    var gracePeriodEndsAt: Date? {
+        guard hasActiveGracePeriod, let pending = currentPending else { return nil }
+        return pending.firstDetectedAt.addingTimeInterval(graceInterval)
     }
 
     // MARK: - Detection entry points

@@ -26,7 +26,7 @@ struct UserRegistrationScreen<ViewModel: UserRegistrationViewModel & ObservableO
     @StateObject private var viewModel: ViewModel
     
     private var subHeaderText: String {
-        if viewModel.shouldShowPasswordTextField {
+        if viewModel.shouldShowPasswordTextField, !viewModel.shouldShowLinkedProviderOnly {
             NSLocalizedString("Set your Password.", comment: "User registration screen sub header password")
         } else {
             NSLocalizedString("You’ll use this email to log in.", comment: "User registration screen sub header email")
@@ -78,9 +78,21 @@ struct UserRegistrationScreen<ViewModel: UserRegistrationViewModel & ObservableO
                             text: $viewModel.email
                         )
                         .padding(.top, 24)
+
+                        // A password sign-up for this email would be refused, so
+                        // offer the provider in place of the password step.
+                        if viewModel.shouldShowLinkedProviderOnly, let provider = viewModel.linkedProvider {
+                            LinkedProviderNotice(
+                                provider: provider,
+                                message: PreSignUpRejection.existingProviderMessage(for: provider)
+                            ) {
+                                viewModel.signInWith(provider.authProvider)
+                            }
+                            .padding(.top, 16)
+                        }
                         
                         VStack(alignment: .center, spacing: 0) {
-                            if viewModel.shouldShowPasswordTextField {
+                            if viewModel.shouldShowPasswordTextField, !viewModel.shouldShowLinkedProviderOnly {
                                 GlacierTextField(
                                     placeholder: NSLocalizedString("Password", comment: "User registration screen password place holder"),
                                     isSecured: true,
@@ -99,15 +111,17 @@ struct UserRegistrationScreen<ViewModel: UserRegistrationViewModel & ObservableO
                             }
                         }
                         
-                        GlacierButton(
-                            style: .secondary,
-                            title: NSLocalizedString("Continue", comment: "Continue button title"),
-                            isEnabled: $viewModel.isContinueButtonEnabled,
-                            action: {
-                                UIApplication.shared.dismissKeyboard()
-                                viewModel.signInWithEmail()
-                            }
-                        )
+                        if !viewModel.shouldShowLinkedProviderOnly {
+                            GlacierButton(
+                                style: .secondary,
+                                title: NSLocalizedString("Continue", comment: "Continue button title"),
+                                isEnabled: $viewModel.isContinueButtonEnabled,
+                                action: {
+                                    UIApplication.shared.dismissKeyboard()
+                                    viewModel.signInWithEmail()
+                                }
+                            )
+                        }
                         
                         if !viewModel.shouldShowPasswordTextField {
                             GlacierLineSeparator(label: NSLocalizedString("or", comment:  "Or text"))

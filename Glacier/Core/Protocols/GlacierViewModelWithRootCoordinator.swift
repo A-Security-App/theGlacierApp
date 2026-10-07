@@ -7,6 +7,46 @@
 //
 
 import Foundation
+import StoreKit
+import UIKit
+
+/**
+ The Glacier website, where website (Stripe) subscriptions are managed.
+
+ Linking to it from a purchase-adjacent screen is steering under App Store Review Guideline 3.1.1
+ everywhere except the United States storefront, where since May 2025 apps may include links to
+ outside purchase flows without an entitlement. So the link is offered only on the US storefront;
+ elsewhere the app just names the website.
+ */
+enum GlacierWebsite {
+
+    /// The console's root page. The app's universal links claim only the `/…-securityapp` paths
+    /// (see the site's apple-app-site-association), so this opens in Safari, not back in the app.
+    static let manageSubscriptionURL = URL(string: "https://console.theglacierapp.com/")!
+
+    /**
+     Whether the App Store account on this device is on the US storefront, and so whether the app
+     may link to the website. `false` when StoreKit doesn't answer within `timeout`: hiding a link
+     is always allowed, showing one where it isn't is a rejection.
+     */
+    static func canLinkToWebsite(timeout: TimeInterval = 1.5) async -> Bool {
+        await withTaskGroup(of: Bool.self) { group in
+            group.addTask { await Storefront.current?.countryCode == "USA" }
+            group.addTask {
+                try? await Task.sleep(nanoseconds: UInt64(timeout * 1_000_000_000))
+                return false
+            }
+            let result = await group.next() ?? false
+            group.cancelAll()
+            return result
+        }
+    }
+
+    @MainActor
+    static func openManageSubscription() {
+        UIApplication.shared.open(manageSubscriptionURL)
+    }
+}
 
 /**
  GlacierViewModelWithRootCoordinator defines common requirements for view models that need to have root coordinator for managing root level screen nagivations.
@@ -165,52 +205,121 @@ extension GlacierViewModelWithRootCoordinator {
     }
 
     /**
-     `true` when the signed-in account's phone lines are granted by the *web* (Stripe)
-     subscription rather than by Apple.
-
-     Reads the persisted last-known backend value instead of re-querying, so this stays
-     synchronous and never blocks a tap on the network. The value is refreshed on every launch
-     and foreground by `refreshBackendSubscription()`.
-     */
-    var hasWebManagedPhoneSubscription: Bool {
-        (GlacierAccountModel.getGlacierAccount()?.lastKnownBackendPhoneNumbers ?? 0) > 0
-    }
-
-    /**
      Gates the "add / upgrade phone lines" tap.
 
-     A user whose lines come from the web subscription is warned instead of being sent to
-     StoreKit. Apple cannot upgrade a web subscription: the App Store sees a first-time purchase
-     in the add-on group, charges full price with no proration, and the web subscription keeps
-     billing — so the user pays twice. Only the *backend* line count matters for this gate; the
-     Apple side is 0 by definition for these users, and once it isn't, StoreKit handles
-     same-group upgrades (with proration) itself.
+     Buying through StoreKit is only safe when Apple already bills the lines, or nothing does.
+     Apple can't change a subscription another store bills: the App Store sees a first-time
+     purchase in the add-on group, charges full price, and the other subscription keeps billing,
+     so the user pays twice. In that case the user is told where the plan lives instead.
 
-     Deliberately fails open: `lastKnownBackendPhoneNumbers` is 0 until the first successful
-     `/status` response, so a web subscriber on a dead network slips past the warning rather than
-     having a legitimate Apple purchase blocked by a blip. The window is narrow — with both
-     sources reading 0 the user has no phone subscription and no upgrade affordance to begin with.
+     Who bills the lines is decided in this order:
+     1. **The backend reports no lines:** nothing bills them, so go straight to StoreKit. This is
+        also the fail-open path before the first successful `mobile/status` response.
+     2. **StoreKit on this device holds the add-on:** Apple bills them, and StoreKit handles
+        same-group upgrades (with proration) itself. Checked at tap time rather than read from
+        `hasActivePhoneNumberSubscription`, which merges Apple and backend grants. The backend's
+        line count includes Apple lines, so it can't tell the two apart on its own.
+     3. **Otherwise, the backend's `phoneLineSource`:** website, Google Play, or Apple on a
+        different Apple Account. With no source (an older backend), the lines are assumed to be
+        the website's, as before.
 
-     The warning intentionally does not link out to the web checkout: a purchase-adjacent popup
-     that steers to an external payment flow is what App Store Review Guideline 3.1.1 targets.
-     Naming where the plan lives is enough to stop the double charge.
+     The warnings don't link out to Google Play, and link to the website only on the US storefront
+     (see `GlacierWebsite`): elsewhere, a purchase-adjacent popup that steers to an external payment
+     flow is what App Store Review Guideline 3.1.1 targets. Naming where the plan lives is enough
+     to stop the double charge.
      */
-    func presentPhoneNumberPlanPurchase(orWarnWebManaged proceed: () -> Void) {
-        guard hasWebManagedPhoneSubscription else {
-            proceed()
+    func presentPhoneNumberPlanPurchase(orWarnManagedElsewhere proceed: @escaping @MainActor () -> Void) {
+        guard let account = GlacierAccountModel.getGlacierAccount(),
+              account.lastKnownBackendPhoneNumbers > 0 else {
+            Task { @MainActor in proceed() }
             return
         }
+        let phoneLineSource = account.lastKnownBackendPhoneLineSource
 
-        presentAlertWith(
-            title: NSLocalizedString(
-                "Your plan is managed on the web",
-                comment: "Web-managed phone subscription upgrade warning title"
-            ),
-            description: NSLocalizedString(
-                "You subscribed to your phone lines through the Glacier website, so changes to your plan need to be made there. Subscribing here would start a second, separate subscription and you’d be billed for both.",
-                comment: "Web-managed phone subscription upgrade warning description"
-            )
-        )
+        Task { @MainActor in
+            let appleEntitlement = await GlacierPhoneNumberSubscriptionPlan.appleEntitlement()
+            if appleEntitlement == .active {
+                proceed()
+                return
+            }
+
+            switch phoneLineSource {
+            case .apple:
+                // Apple bills the lines, but not to the App Store account on this device — or
+                // StoreKit didn't answer in time. Only a definite "not held" means a different
+                // Apple Account; if StoreKit is just slow, let its own sheet handle the upgrade.
+                guard appleEntitlement == .notHeld else {
+                    proceed()
+                    return
+                }
+                // "Not held" is also what lines that just expired on this Apple Account look like
+                // while the backend's 3-day grace still counts them. Buying again then can't
+                // double-bill: nothing is still billing. An unanswered history check keeps the
+                // warning, since a wrong "go ahead" could start a second subscription.
+                if await GlacierPhoneNumberSubscriptionPlan.appleLinesEndedRecently() == true {
+                    proceed()
+                    return
+                }
+                self.presentAlertWith(
+                    title: NSLocalizedString(
+                        "Your plan is on another Apple Account",
+                        comment: "Phone plan billed to a different Apple Account warning title"
+                    ),
+                    description: NSLocalizedString(
+                        "Your phone lines are billed through the App Store on a different Apple Account. To change your plan, sign in to the App Store with that account. Subscribing here would start a second, separate subscription and you’d be billed for both.",
+                        comment: "Phone plan billed to a different Apple Account warning description"
+                    )
+                )
+
+            case .googlePlay:
+                self.presentAlertWith(
+                    title: NSLocalizedString(
+                        "Your plan is managed in Google Play",
+                        comment: "Google Play-managed phone subscription upgrade warning title"
+                    ),
+                    description: NSLocalizedString(
+                        "You subscribed to your phone lines through Google Play, so changes to your plan need to be made there. Subscribing here would start a second, separate subscription and you’d be billed for both.",
+                        comment: "Google Play-managed phone subscription upgrade warning description"
+                    )
+                )
+
+            case .stripe, nil:
+                let title = NSLocalizedString(
+                    "Your plan is managed on the web",
+                    comment: "Web-managed phone subscription upgrade warning title"
+                )
+                let description = NSLocalizedString(
+                    "You subscribed to your phone lines through the Glacier website, so changes to your plan need to be made there. Subscribing here would start a second, separate subscription and you’d be billed for both.",
+                    comment: "Web-managed phone subscription upgrade warning description"
+                )
+                guard await GlacierWebsite.canLinkToWebsite() else {
+                    self.presentAlertWith(title: title, description: description)
+                    return
+                }
+                self.presentPopup(with: PopupConfiguration(
+                    title: title,
+                    description: description,
+                    buttons: [
+                        PopupButton(
+                            style: .tertiary,
+                            title: NSLocalizedString("Not Now", comment: "Not now button title"),
+                            onTap: {
+                                self.dismissPopup()
+                            }
+                        ),
+                        PopupButton(
+                            style: .tertiary,
+                            title: NSLocalizedString("Go to Website", comment: "Open the Glacier website button title"),
+                            onTap: {
+                                self.dismissPopup()
+                                Task { @MainActor in GlacierWebsite.openManageSubscription() }
+                            }
+                        )
+                    ],
+                    buttonsAlignment: .horizontal
+                ))
+            }
+        }
     }
     
     func presentProgressIndicator() {
