@@ -32,6 +32,7 @@ protocol ManagePhoneNumbersViewModel: GlacierViewModelWithRootCoordinator {
 
     @MainActor
     func presentDeleteHistoryConfirmationPrompt(for phoneNumber: PhoneAccountModel)
+    @MainActor
     func copyPhoneNumber(_ phoneNumber: PhoneAccountModel)
 }
 
@@ -229,8 +230,10 @@ final class ManagePhoneNumbersVM: ManagePhoneNumbersViewModel, ObservableObject 
         presentPopup(with: configuration)
     }
 
+    @MainActor
     func copyPhoneNumber(_ phoneNumber: PhoneAccountModel) {
-        UIPasteboard.general.string = phoneNumber.grdbRecord?.phoneNumber
+        guard let number = phoneNumber.grdbRecord?.phoneNumber, !number.isEmpty else { return }
+        CallerNumber.copy(number)
     }
     
     // MARK: - Private methods

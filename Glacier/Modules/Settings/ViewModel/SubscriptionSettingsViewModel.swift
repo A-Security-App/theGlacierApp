@@ -85,6 +85,8 @@ struct AppleSubscriptionSnapshot: Equatable {
     var basePlanExpiry: Date?
     var basePlanWillAutoRenew: Bool?
     var phonePlan: GlacierPhoneNumberSubscriptionPlan?
+    /// A different phone-line plan the App Store will switch to at renewal (a downgrade).
+    var phonePlanChange: ScheduledPhonePlanChange?
     /// Expiry of the most recent base-plan purchase this device's Apple Account made for this
     /// Glacier account, running or ended; `nil` when it made none.
     var basePlanLastExpiry: Date?
@@ -101,6 +103,8 @@ protocol SubscriptionSettingsViewModel: GlacierViewModelWithRootCoordinator {
     var glacierPlanValue: String { get }
     var phoneLinesValue: String { get }
     var renewsValue: String? { get }
+    /// Title and value of the row announcing a scheduled phone-line plan change, or `nil`.
+    var scheduledPhoneLinesRow: (title: String, value: String)? { get }
     var notices: [SubscriptionManagedNotice] { get }
     var canRenewGlacierPlan: Bool { get }
     var canRenewPhoneLines: Bool { get }
@@ -154,6 +158,7 @@ final class SubscriptionSettingsVM: SubscriptionSettingsViewModel, ObservableObj
     @Published private(set) var glacierPlanValue: String = ""
     @Published private(set) var phoneLinesValue: String = ""
     @Published private(set) var renewsValue: String?
+    @Published private(set) var scheduledPhoneLinesRow: (title: String, value: String)?
     @Published private(set) var notices: [SubscriptionManagedNotice] = []
     @Published private(set) var canRenewGlacierPlan: Bool = false
     @Published private(set) var canRenewPhoneLines: Bool = false
@@ -184,10 +189,30 @@ final class SubscriptionSettingsVM: SubscriptionSettingsViewModel, ObservableObj
     init(rootCoordinator: any GlacierRootCoordinator) {
         self.rootCoordinator = rootCoordinator
         render()
+
+        // A plan change made from this screen's picker (a downgrade, which only schedules) must
+        // show up here without leaving and coming back.
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(onPhonePlanChanged),
+            name: .phoneNumberPlanPurchaseSuccessful,
+            object: nil
+        )
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(onPhonePlanChanged),
+            name: .phoneNumberPlanChangeScheduled,
+            object: nil
+        )
     }
 
     deinit {
         refreshTask?.cancel()
+        NotificationCenter.default.removeObserver(self)
+    }
+
+    @objc private func onPhonePlanChanged() {
+        refresh()
     }
 
     // MARK: - Public methods
@@ -365,6 +390,22 @@ final class SubscriptionSettingsVM: SubscriptionSettingsViewModel, ObservableObj
         } else {
             // Its own key: some languages agree "None" with the noun ("líneas", "lignes" are feminine).
             phoneLinesValue = NSLocalizedString("None (phone lines)", value: "None", comment: "Subscription settings no phone lines")
+        }
+
+        // Only for lines this device's App Store holds: that's where StoreKit can see the schedule.
+        if linesOrigin == .appStoreHere, !linesExpired, let change = apple.phonePlanChange {
+            let count = change.plan.maxPhoneNumbers
+            scheduledPhoneLinesRow = (
+                title: String(
+                    format: NSLocalizedString("From %@", comment: "Subscription settings scheduled phone-line change row title — %@ is a short date"),
+                    change.startsOn.formatted(.dateTime.month(.abbreviated).day())
+                ),
+                value: count == 1
+                    ? NSLocalizedString("1 line", comment: "Subscription settings scheduled phone-line change value — singular")
+                    : String(format: NSLocalizedString("%d lines", comment: "Subscription settings scheduled phone-line change value — plural"), count)
+            )
+        } else {
+            scheduledPhoneLinesRow = nil
         }
 
         renewsValue = baseExpired ? nil : renewalDate(baseOrigin: baseOrigin, account: account).map {
@@ -609,6 +650,7 @@ final class SubscriptionSettingsVM: SubscriptionSettingsViewModel, ObservableObj
         let accountToken = await SKGlacierPlanPurchaseService().resolveAppAccountToken()
         let storeKitTask = Task.detached(priority: .userInitiated) { () -> AppleSubscriptionSnapshot in
             var snapshot = AppleSubscriptionSnapshot(isDefinitive: true)
+            var phoneTransaction: StoreKit.Transaction?
             for await result in Transaction.currentEntitlements {
                 guard case .verified(let transaction) = result,
                       transaction.revocationDate == nil else { continue }
@@ -622,7 +664,11 @@ final class SubscriptionSettingsVM: SubscriptionSettingsViewModel, ObservableObj
                 } else if let plan = GlacierPhoneNumberSubscriptionPlan(rawValue: transaction.productID),
                           plan.rank > (snapshot.phonePlan?.rank ?? 0) {
                     snapshot.phonePlan = plan
+                    phoneTransaction = transaction
                 }
+            }
+            if let phoneTransaction {
+                snapshot.phonePlanChange = await GlacierPhoneNumberSubscriptionPlan.scheduledChange(for: phoneTransaction)
             }
             for await result in Transaction.all {
                 guard case .verified(let transaction) = result,

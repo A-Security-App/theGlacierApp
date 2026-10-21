@@ -5,7 +5,8 @@
 //  Presented when the user's phone-number subscription tier drops below the number of
 //  phone numbers they currently hold (but they still have at least a 1-line subscription).
 //  Lets the user choose which number(s) to remove rather than having one picked for them.
-//  Removing a number permanently deletes its messages and call history.
+//  Removing a number permanently deletes its messages, call history and voicemails. The screen
+//  shows the decision deadline and which number(s) will be removed automatically if none is chosen.
 //
 //  This view is presented over the global overlay window by
 //  PhoneSubscriptionLifecycleHandler and therefore owns its own GlacierColorScheme, mirroring
@@ -29,6 +30,12 @@ struct RemovePhoneNumbersView: View {
     let accounts: [PhoneAccountModel]
     /// Exactly how many numbers the user must remove to get back within their plan limit.
     let removalCount: Int
+    /// How many lines the downgraded plan includes.
+    let allowedNumbers: Int
+    /// The last day the user can choose before we remove `autoRemovalNumbers` for them.
+    let deadline: Date
+    /// The number(s) we'll remove if the user doesn't choose by `deadline`.
+    let autoRemovalNumbers: [String]
     /// Called with the phone-number strings the user chose to remove.
     let onRemove: @MainActor ([String]) -> Void
     /// Called when the user defers the decision ("Decide later").
@@ -58,10 +65,6 @@ struct RemovePhoneNumbersView: View {
             .first { !$0.safeAreaInsets.top.isZero }?
             .safeAreaInsets
             ?? UIEdgeInsets(top: 44, left: 0, bottom: 34, right: 0)
-    }
-
-    private var allowedRemaining: Int {
-        max(0, accounts.count - removalCount)
     }
 
     private var isSelectionComplete: Bool {
@@ -111,10 +114,7 @@ struct RemovePhoneNumbersView: View {
     private var selectionContent: some View {
         VStack(alignment: .leading, spacing: 0) {
             header(
-                title: NSLocalizedString(
-                    "Choose numbers to remove",
-                    comment: "Downgrade number-removal screen title"
-                ),
+                title: selectionTitle,
                 subtitle: selectionDescription
             )
 
@@ -158,12 +158,40 @@ struct RemovePhoneNumbersView: View {
         }
     }
 
+    private var selectionTitle: String {
+        allowedNumbers == 1
+            ? NSLocalizedString("Your plan now includes 1 line", comment: "Downgrade number-removal screen title — singular")
+            : String(
+                format: NSLocalizedString("Your plan now includes %d lines", comment: "Downgrade number-removal screen title — plural"),
+                allowedNumbers
+            )
+    }
+
     private var selectionDescription: String {
-        let format = NSLocalizedString(
-            "Your plan now includes %d number(s). Select %d to remove. Removing a number permanently deletes its messages and call history.",
-            comment: "Downgrade number-removal screen description"
+        let choose = removalCount == 1
+            ? String(
+                format: NSLocalizedString(
+                    "You have %d numbers, so choose 1 to remove. Its messages, call history and voicemails will be permanently deleted.",
+                    comment: "Downgrade number-removal screen description — remove one"
+                ),
+                accounts.count
+            )
+            : String(
+                format: NSLocalizedString(
+                    "You have %d numbers, so choose %d to remove. Their messages, call history and voicemails will be permanently deleted.",
+                    comment: "Downgrade number-removal screen description — remove several"
+                ),
+                accounts.count, removalCount
+            )
+        let deadlineNotice = String(
+            format: NSLocalizedString(
+                "If you don't choose by %@, we'll remove %@ for you.",
+                comment: "Downgrade number-removal deadline — first %@ is a date, second the number(s)"
+            ),
+            PhoneSubscriptionLifecycleHandler.deadlineString(deadline),
+            autoRemovalNumbers.joined(separator: ", ")
         )
-        return String(format: format, allowedRemaining, removalCount)
+        return choose + "\n\n" + deadlineNotice
     }
 
     private var removeButtonTitle: String {
@@ -239,22 +267,25 @@ struct RemovePhoneNumbersView: View {
         let isSingle = numbers.count == 1
 
         let title = isSingle
-            ? NSLocalizedString("Remove this number?", comment: "Downgrade number-removal confirm alert title — single")
+            ? String(format: NSLocalizedString("Remove %@?", comment: "Downgrade number-removal confirm alert title — single"), joined)
             : NSLocalizedString("Remove these numbers?", comment: "Downgrade number-removal confirm alert title — multiple")
 
-        let descriptionFormat = isSingle
+        let description = isSingle
             ? NSLocalizedString(
-                "%@ will be permanently removed, including its messages and call history. This can't be undone.",
+                "This number and its messages, call history and voicemails will be permanently deleted. The number goes back to the carrier, so you may not be able to get it back.",
                 comment: "Downgrade number-removal confirm alert description — single"
             )
-            : NSLocalizedString(
-                "%@ will be permanently removed, including their messages and call history. This can't be undone.",
-                comment: "Downgrade number-removal confirm alert description — multiple"
+            : String(
+                format: NSLocalizedString(
+                    "%@ and their messages, call history and voicemails will be permanently deleted. The numbers go back to the carrier, so you may not be able to get them back.",
+                    comment: "Downgrade number-removal confirm alert description — multiple"
+                ),
+                joined
             )
 
         return PopupConfiguration(
             title: title,
-            description: String(format: descriptionFormat, joined),
+            description: description,
             buttons: [
                 PopupButton(
                     style: .tertiary,

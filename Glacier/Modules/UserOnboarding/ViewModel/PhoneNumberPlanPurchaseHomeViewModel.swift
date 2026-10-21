@@ -55,8 +55,6 @@ final class PhoneNumberPlanPurchaseHomeVM: PhoneNumberPlanPurchaseHomeViewModel,
     }
     
     func skip() {
-        UserDefaultsService.shared.set(true, for: \.didSkipPhoneNumberPurchaseDuringOnboarding)
-        connectDNSIfSetUpDuringOnboarding()
-        setRootScreen(.main)
+        finishOnboarding(marking: \.didSkipPhoneNumberPurchaseDuringOnboarding)
     }
 }

@@ -149,3 +149,52 @@ extension GlacierPhoneNumberSubscriptionPlan {
         }
     }
 }
+
+/**
+ A phone-line plan the App Store has scheduled to replace the current one at renewal.
+
+ Apple applies a move to a smaller plan at the end of the period already paid for, so until
+ `startsOn` the account keeps the plan in `Transaction.currentEntitlements` and only the renewal
+ info names the new one. Without this, a downgrade looks like it did nothing.
+ */
+struct ScheduledPhonePlanChange: Equatable {
+    let plan: GlacierPhoneNumberSubscriptionPlan
+    let startsOn: Date
+}
+
+extension GlacierPhoneNumberSubscriptionPlan {
+    /**
+     The plan `transaction`'s subscription renews into, when that's a different phone-line plan and
+     it will renew at all; `nil` otherwise. `transaction` should be the add-on's current entitlement.
+     */
+    static func scheduledChange(for transaction: StoreKit.Transaction) async -> ScheduledPhonePlanChange? {
+        guard GlacierPhoneNumberSubscriptionPlan(rawValue: transaction.productID) != nil,
+              let expiration = transaction.expirationDate,
+              let status = await transaction.subscriptionStatus,
+              case .verified(let renewal) = status.renewalInfo,
+              renewal.willAutoRenew,
+              let next = renewal.autoRenewPreference,
+              next != transaction.productID,
+              let plan = GlacierPhoneNumberSubscriptionPlan(rawValue: next) else { return nil }
+        return ScheduledPhonePlanChange(plan: plan, startsOn: expiration)
+    }
+
+    /**
+     The scheduled change for the add-on this device's Apple Account holds now, or `nil` when none
+     is scheduled or it holds no add-on. Enumerates `Transaction.currentEntitlements` with no
+     timeout of its own: callers must not block UI on it.
+     */
+    static func scheduledAppleChange() async -> ScheduledPhonePlanChange? {
+        var current: StoreKit.Transaction?
+        for await result in Transaction.currentEntitlements {
+            guard case .verified(let transaction) = result,
+                  transaction.revocationDate == nil,
+                  let plan = GlacierPhoneNumberSubscriptionPlan(rawValue: transaction.productID),
+                  plan.rank > (current.flatMap { GlacierPhoneNumberSubscriptionPlan(rawValue: $0.productID) }?.rank ?? 0)
+            else { continue }
+            current = transaction
+        }
+        guard let current else { return nil }
+        return await scheduledChange(for: current)
+    }
+}

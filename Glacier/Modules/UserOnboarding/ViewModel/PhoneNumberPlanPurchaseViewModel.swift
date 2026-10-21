@@ -23,11 +23,14 @@ final class PhoneNumberPlanPurchaseVM: GlacierPlanPurchaseViewModel, ObservableO
     let rootCoordinator: any GlacierRootCoordinator
     @Published private(set) var availablePlans: [Product] = []
     @Published var selectedPlan: Product? {
-        didSet {
-            isPurchaseButtonEnabled = selectedPlan != nil
-        }
+        didSet { updatePurchaseButton() }
     }
     @Published var isPurchaseButtonEnabled: Bool = false
+    /// A downgrade already scheduled for renewal. Its plan can't be bought again (StoreKit only
+    /// answers "already subscribed"), so it's labelled with its start date and Subscribe is off.
+    @Published private(set) var scheduledPhonePlanChange: ScheduledPhonePlanChange? {
+        didSet { updatePurchaseButton() }
+    }
     
     // MARK: - Private properties
     
@@ -60,6 +63,11 @@ final class PhoneNumberPlanPurchaseVM: GlacierPlanPurchaseViewModel, ObservableO
                 presentProgressIndicator()
                 
                 availablePlans = try await service.loadAvailablePlans()
+
+                // Read on the side: the plans are usable without it, so it never holds the screen.
+                Task { @MainActor in
+                    scheduledPhonePlanChange = await GlacierPhoneNumberSubscriptionPlan.scheduledAppleChange()
+                }
         
                 if let activePlan = GlacierPhoneNumberSubscriptionPlan.activePlan {
                     selectedPlan = availablePlans.first(where: { $0.id == activePlan.rawValue })
@@ -81,6 +89,16 @@ final class PhoneNumberPlanPurchaseVM: GlacierPlanPurchaseViewModel, ObservableO
                 guard let plan = selectedPlan else { return }
                 isExpectingVerification = true
                 try await service.purchasePlan(plan)
+
+                // A downgrade only schedules the new plan for renewal, and the purchase service
+                // drops its lower-ranked transaction, so nothing else reports it. Re-read the
+                // schedule so this list labels the plan, and tell the Subscription screen.
+                let scheduled = await GlacierPhoneNumberSubscriptionPlan.scheduledAppleChange()
+                scheduledPhonePlanChange = scheduled
+                if scheduled?.plan.rawValue == plan.id {
+                    isExpectingVerification = false
+                    NotificationCenter.default.post(name: .phoneNumberPlanChangeScheduled, object: nil)
+                }
             } catch GlacierPlanPurchaseError.userCancelled {
                 // User dismissed the payment sheet intentionally — no error popup.
                 isExpectingVerification = false
@@ -107,7 +125,15 @@ final class PhoneNumberPlanPurchaseVM: GlacierPlanPurchaseViewModel, ObservableO
     }
     
     // MARK: - Private methods
-    
+
+    private func updatePurchaseButton() {
+        guard let selectedPlan else {
+            isPurchaseButtonEnabled = false
+            return
+        }
+        isPurchaseButtonEnabled = selectedPlan.id != scheduledPhonePlanChange?.plan.rawValue
+    }
+
     private func registerForNotifications() {
         NotificationCenter.default.addObserver(
             self,

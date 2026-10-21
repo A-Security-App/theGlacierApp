@@ -51,6 +51,10 @@ struct SubscriptionSettingsScreen<ViewModel: SubscriptionSettingsViewModel & Obs
                             value: viewModel.phoneLinesValue
                         )
 
+                        if let scheduled = viewModel.scheduledPhoneLinesRow {
+                            valueRow(title: scheduled.title, value: scheduled.value)
+                        }
+
                         if let renews = viewModel.renewsValue {
                             valueRow(
                                 title: NSLocalizedString("Renews", comment: "Subscription settings renewal date row"),

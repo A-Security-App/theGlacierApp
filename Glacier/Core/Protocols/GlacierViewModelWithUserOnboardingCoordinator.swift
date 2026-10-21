@@ -52,9 +52,35 @@ extension GlacierViewModelWithUserOnboardingCoordinator where Self: GlacierViewM
         if existingNumbers.isEmpty {
             setOnboardingScreen(.phoneNumberSelectionHome)
         } else {
-            UserDefaultsService.shared.set(true, for: \.isUserOnboardingCompleted)
-            connectDNSIfSetUpDuringOnboarding()
-            setRootScreen(.main)
+            finishOnboarding()
         }
+    }
+}
+
+extension GlacierViewModelWithRootCoordinator {
+
+    /// Every way out of onboarding ends here. Turns on DNS if it was set up during onboarding,
+    /// then shows the "How did you first hear about Glacier?" screen when this account still has
+    /// to answer it, or goes straight to the main screen.
+    ///
+    /// - Parameter flag: The onboarding flag to set once the user reaches the main screen. Skip
+    ///   paths pass their own flag rather than `isUserOnboardingCompleted`.
+    func finishOnboarding(marking flag: KeyPath<UserDefaultsService.LocalStorageKeys, String> = \.isUserOnboardingCompleted) {
+        connectDNSIfSetUpDuringOnboarding()
+        // Only while onboarding is on screen: the phone-number picker also finishes onboarding
+        // when a user who skipped it earlier picks a number from the main app.
+        if DiscoverySurveyService.shared.shouldAsk,
+           (rootCoordinator as? GlacierAppRootCoordinator)?.currentScreen == .userOnboarding,
+           let onboardingCoordinator = UserOnboardingCoordinator.active {
+            onboardingCoordinator.showDiscoverySurvey(completionFlag: flag)
+        } else {
+            completeOnboarding(marking: flag)
+        }
+    }
+
+    /// Marks onboarding as finished and goes to the main screen.
+    func completeOnboarding(marking flag: KeyPath<UserDefaultsService.LocalStorageKeys, String> = \.isUserOnboardingCompleted) {
+        UserDefaultsService.shared.set(true, for: flag)
+        setRootScreen(.main)
     }
 }

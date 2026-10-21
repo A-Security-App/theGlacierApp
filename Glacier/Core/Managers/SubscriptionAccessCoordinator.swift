@@ -54,9 +54,12 @@ final class SubscriptionAccessCoordinator: NSObject {
    pending change is cleared. Numbers are only removed after the drop has persisted.
  - **Let the user choose.** While a downgrade is pending we present RemovePhoneNumbersView so the
    user picks which number(s) to remove. The prompt is dismissable ("Decide later").
- - **Fair fallback.** If the user is given several chances and never chooses, we auto-remove the
-   most-recently-added number(s) (by insertion order), falling back to a random pick when insertion
-   order can't be determined (e.g. after a reinstall).
+ - **A deadline the user is told about.** The user has until the end of the day
+   `decisionWindowDays` after detection. Every prompt shows that date and names the number(s) we
+   will remove if they don't choose, so the eventual auto-removal is never a surprise.
+ - **Fair fallback.** Once the deadline passes (and the user has seen the prompt at least once) we
+   remove the number(s) we named: the most recently added (by insertion order), or a stable
+   order-independent pick when insertion order can't be determined (e.g. after a reinstall).
  */
 final class PhoneSubscriptionLifecycleHandler: NSObject {
     static let shared = PhoneSubscriptionLifecycleHandler()
@@ -69,22 +72,42 @@ final class PhoneSubscriptionLifecycleHandler: NSObject {
         let allowedNumbers: Int
         /// How many distinct app activations we have shown the selection prompt on.
         var promptsShown: Int
-        /// When the downgrade was first confirmed — anchors the grace-period backstop.
-        let firstDetectedAt: Date
+        /// When the downgrade was first confirmed — anchors the decision deadline. Moved forward when
+        /// the number(s) we named change, so a new pick always gets a full window of its own.
+        var firstDetectedAt: Date
+        /// The number(s) we told the user we'd remove if they don't choose. Persisted so the
+        /// number named in the prompt is the one actually removed; re-picked if it goes stale.
+        var autoRemovalNumbers: [String]?
     }
 
-    // Bumped to `.v2` — the previous (never-wired) scaffold stored a different shape under the old key.
-    private let pendingChangeKey = "com.theglacierapp.phoneSubscription.pendingChange.v2"
+    /// An auto-removal notice that couldn't be shown because another popup was on screen.
+    private struct UnshownRemovalNotice: Codable {
+        let numbers: [String]
+        let deadline: Date
+        let allowedNumbers: Int
+    }
 
-    /// The user must see the prompt on this many activations before we auto-resolve.
-    private let requiredPrompts = 3
-    /// Never auto-resolve within this window of first detection, even after `requiredPrompts`.
-    private let minGraceInterval: TimeInterval = 24 * 60 * 60          // 1 day
-    /// Hard backstop: auto-resolve after this long (once at least one prompt has been shown),
-    /// so a user who opens the app rarely doesn't stay over-limit indefinitely.
-    private let maxGraceInterval: TimeInterval = 14 * 24 * 60 * 60     // 2 weeks
+    // Bumped to `.v3` when the deadline replaced the prompt-count rule: a change pending under the
+    // old rule was never shown a deadline, so it starts a fresh window rather than resolving at once.
+    private let pendingChangeKey = "com.theglacierapp.phoneSubscription.pendingChange.v3"
+    private let legacyPendingChangeKey = "com.theglacierapp.phoneSubscription.pendingChange.v2"
+    private let unshownNoticeKey = "com.theglacierapp.phoneSubscription.unshownRemovalNotice"
 
-    private override init() { }
+    /// The user has until the end of this many days after detection to choose. Auto-removal only
+    /// happens once that day is over and the user has seen the prompt at least once.
+    private let decisionWindowDays = 7
+
+    /// Don't show the chooser again within this long of the last showing. Detection runs on both
+    /// activation and the subscription refresh that follows it, and activation also fires for Face ID,
+    /// Control Center and system sheets — without this, "Decide later" could be followed straight
+    /// away by the same prompt.
+    private let repromptInterval: TimeInterval = 60 * 60
+    private var lastPromptedAt: Date?
+
+    private override init() {
+        super.init()
+        UserDefaults.standard.removeObject(forKey: legacyPendingChangeKey)
+    }
 
     // MARK: - Detection (called from backend reconciliation)
 
@@ -123,9 +146,10 @@ final class PhoneSubscriptionLifecycleHandler: NSObject {
     }
 
     /// Called from applicationDidBecomeActive. Presents the selection UI, or auto-resolves once the
-    /// user has been given enough chances.
+    /// decision deadline has passed.
     @MainActor
     func handleAppDidBecomeActive() {
+        presentUnshownRemovalNoticeIfNeeded()
         presentDowngradeUIIfNeeded()
     }
 
@@ -145,54 +169,94 @@ final class PhoneSubscriptionLifecycleHandler: NSObject {
         // Don't stack over any popup already on screen (including our own from a prior activation).
         guard !OverlayViewManager.shared.isPresentingPopupView() else { return }
 
-        if shouldAutoResolve(pending) {
-            autoResolveDowngrade(pending, accounts: accounts)
+        let removalCount = accounts.count - pending.allowedNumbers
+        let autoRemovalNumbers = resolvedAutoRemovalNumbers(for: &pending, accounts: accounts, count: removalCount)
+        let deadline = decisionDeadline(for: pending)
+
+        if pending.promptsShown >= 1 && Date() >= enforcementDate(for: pending) {
+            autoResolveDowngrade(numbers: autoRemovalNumbers, deadline: deadline, allowedNumbers: pending.allowedNumbers)
             return
         }
+
+        if let lastPromptedAt, Date().timeIntervalSince(lastPromptedAt) < repromptInterval { return }
+        lastPromptedAt = Date()
 
         // Count this activation as a shown prompt and present the selection UI.
         pending.promptsShown += 1
         storePendingChange(pending)
 
-        let removalCount = accounts.count - pending.allowedNumbers
         let view = RemovePhoneNumbersView(
             accounts: accounts,
             removalCount: removalCount,
+            allowedNumbers: pending.allowedNumbers,
+            deadline: deadline,
+            autoRemovalNumbers: autoRemovalNumbers,
             onRemove: { [weak self] numbers in
                 OverlayViewManager.shared.dismissPopupView()
                 self?.performRelease(numbers)
             },
-            onDefer: {
+            onDefer: { [weak self] in
                 OverlayViewManager.shared.dismissPopupView()
+                self?.presentDeferredNotice(deadline: deadline, autoRemovalNumbers: autoRemovalNumbers)
             }
         )
         OverlayViewManager.shared.presentPopupView(view)
     }
 
-    private func shouldAutoResolve(_ pending: PendingChange) -> Bool {
-        let elapsed = Date().timeIntervalSince(pending.firstDetectedAt)
-        if pending.promptsShown >= requiredPrompts && elapsed >= minGraceInterval { return true }
-        if pending.promptsShown >= 1 && elapsed >= maxGraceInterval { return true }
-        return false
+    /// The last day the user can choose, shown in every prompt.
+    private func decisionDeadline(for pending: PendingChange) -> Date {
+        let calendar = Calendar.current
+        let day = calendar.startOfDay(for: pending.firstDetectedAt)
+        return calendar.date(byAdding: .day, value: decisionWindowDays, to: day) ?? day
+    }
+
+    /// Auto-removal starts once the deadline day is over, so "choose by Oct 12" includes all of Oct 12.
+    private func enforcementDate(for pending: PendingChange) -> Date {
+        let deadline = decisionDeadline(for: pending)
+        return Calendar.current.date(byAdding: .day, value: 1, to: deadline) ?? deadline
+    }
+
+    /// Returns the persisted auto-removal pick when it still names exactly `count` numbers the user
+    /// holds; otherwise picks again and persists the new pick.
+    ///
+    /// The pick goes stale when the user removes a number themselves but is still over the limit
+    /// (e.g. a 5-line → 1-line downgrade where they remove one of the four extras). The user was
+    /// shown a different number than we'd now remove, so the deadline restarts and the new pick has
+    /// to be shown before anything is removed.
+    private func resolvedAutoRemovalNumbers(for pending: inout PendingChange,
+                                            accounts: [PhoneAccountModel],
+                                            count: Int) -> [String] {
+        let held = Set(accounts.compactMap { $0.grdbRecord?.phoneNumber })
+        if let stored = pending.autoRemovalNumbers, stored.count == count, Set(stored).isSubset(of: held) {
+            return stored
+        }
+        let numbers = automaticRemovalTargets(from: accounts, count: count).compactMap { $0.grdbRecord?.phoneNumber }
+        if pending.autoRemovalNumbers != nil {
+            Log.general.notice("[PhoneDowngrade] Auto-removal pick changed — restarting the decision window")
+            pending.firstDetectedAt = Date()
+            pending.promptsShown = 0
+        }
+        pending.autoRemovalNumbers = numbers
+        storePendingChange(pending)
+        return numbers
     }
 
     @MainActor
-    private func autoResolveDowngrade(_ pending: PendingChange, accounts: [PhoneAccountModel]) {
-        let removalCount = accounts.count - pending.allowedNumbers
-        guard removalCount > 0 else {
+    private func autoResolveDowngrade(numbers: [String], deadline: Date, allowedNumbers: Int) {
+        guard !numbers.isEmpty else {
             clearPendingChangeIfNeeded()
             return
         }
-        let victims = automaticRemovalTargets(from: accounts, count: removalCount)
-        let numbers = victims.compactMap { $0.grdbRecord?.phoneNumber }
+        Log.general.notice("[PhoneDowngrade] Decision deadline passed — auto-removing \(numbers.count) number(s)")
         performRelease(numbers)
-        presentReleasedNotice(numbers: numbers)
+        presentReleasedNotice(UnshownRemovalNotice(numbers: numbers, deadline: deadline, allowedNumbers: allowedNumbers))
     }
 
-    /// Selects which number(s) to auto-remove when the user never chose. Prefers the most recently
-    /// added numbers (highest GRDB rowid == inserted last on this install). Falls back to a random
-    /// pick when insertion order is unreliable — e.g. after a reinstall, where every number was
-    /// re-inserted in one pass and rowids no longer reflect true chronological add order.
+    /// Selects which number(s) to auto-remove if the user never chooses. Prefers the most recently
+    /// added numbers (highest GRDB rowid == inserted last on this install). When insertion order is
+    /// unreliable — e.g. after a reinstall, where every number was re-inserted in one pass — falls
+    /// back to an order that doesn't depend on insertion (the number itself), so the pick is stable
+    /// between the prompt that names it and the removal.
     private func automaticRemovalTargets(from accounts: [PhoneAccountModel], count: Int) -> [PhoneAccountModel] {
         let ids = accounts.compactMap { $0.grdbRecord?.id }
         let hasReliableRecency = ids.count == accounts.count && Set(ids).count == accounts.count
@@ -201,10 +265,9 @@ final class PhoneSubscriptionLifecycleHandler: NSObject {
         if hasReliableRecency {
             // Most recently added first.
             ordered = accounts.sorted { ($0.grdbRecord?.id ?? 0) > ($1.grdbRecord?.id ?? 0) }
-            Log.general.notice("[PhoneDowngrade] Auto-removing \(count) most-recently-added number(s)")
         } else {
-            ordered = accounts.shuffled()
-            Log.general.notice("[PhoneDowngrade] Insertion order unavailable — auto-removing \(count) number(s) at random")
+            ordered = accounts.sorted { ($0.grdbRecord?.phoneNumber ?? "") > ($1.grdbRecord?.phoneNumber ?? "") }
+            Log.general.notice("[PhoneDowngrade] Insertion order unavailable — picking auto-removal by number")
         }
         return Array(ordered.prefix(count))
     }
@@ -237,19 +300,19 @@ final class PhoneSubscriptionLifecycleHandler: NSObject {
         }
     }
 
+    /// Confirms what "Decide later" means: both numbers stay until the deadline, then the named
+    /// number(s) go.
     @MainActor
-    private func presentReleasedNotice(numbers: [String]) {
-        guard !numbers.isEmpty, !OverlayViewManager.shared.isPresentingPopupView() else { return }
-        let joined = numbers.joined(separator: ", ")
+    private func presentDeferredNotice(deadline: Date, autoRemovalNumbers: [String]) {
+        guard !OverlayViewManager.shared.isPresentingPopupView() else { return }
+        let date = Self.deadlineString(deadline)
+        let numbers = autoRemovalNumbers.joined(separator: ", ")
+        let description = String(format: NSLocalizedString(
+            "Until then you'll keep all your numbers. After that, we'll remove %@.",
+            comment: "Downgrade defer notice description — %@ is the number(s) to be removed"), numbers)
         let configuration = PopupConfiguration(
-            title: NSLocalizedString("Numbers removed", comment: "Downgrade auto-removal notice title"),
-            description: String(
-                format: NSLocalizedString(
-                    "%@ and its messages and call history were removed because your phone plan was downgraded.",
-                    comment: "Downgrade auto-removal notice description"
-                ),
-                joined
-            ),
+            title: String(format: NSLocalizedString("Decide by %@", comment: "Downgrade defer notice title"), date),
+            description: description,
             buttons: [
                 PopupButton(
                     style: .primary,
@@ -260,6 +323,70 @@ final class PhoneSubscriptionLifecycleHandler: NSObject {
             buttonsAlignment: .vertical
         )
         OverlayViewManager.shared.presentPopupView(GlacierPopup(configuration: configuration))
+    }
+
+    /// Tells the user which number(s) were removed. If another popup is on screen, the notice is
+    /// saved and shown on the next activation instead of being dropped.
+    @MainActor
+    private func presentReleasedNotice(_ notice: UnshownRemovalNotice) {
+        guard !notice.numbers.isEmpty else { return }
+        guard !OverlayViewManager.shared.isPresentingPopupView() else {
+            storeUnshownNotice(notice)
+            return
+        }
+        storeUnshownNotice(nil)
+
+        let joined = notice.numbers.joined(separator: ", ")
+        let date = Self.deadlineString(notice.deadline)
+        let isSingle = notice.numbers.count == 1
+        let title = isSingle
+            ? String(format: NSLocalizedString("%@ was removed", comment: "Downgrade auto-removal notice title — one number"), joined)
+            : NSLocalizedString("Numbers removed", comment: "Downgrade auto-removal notice title")
+        let planDescription = Self.planDescription(allowedNumbers: notice.allowedNumbers)
+        let description = isSingle
+            ? String(format: NSLocalizedString(
+                "%@, and no number was chosen by %@, so we removed this one along with its messages, call history and voicemails.",
+                comment: "Downgrade auto-removal notice description — one number. First %@ is e.g. 'Your plan includes 1 line', second is a date"),
+                     planDescription, date)
+            : String(format: NSLocalizedString(
+                "%@, and no numbers were chosen by %@, so we removed %@ along with their messages, call history and voicemails.",
+                comment: "Downgrade auto-removal notice description — several numbers. First %@ is e.g. 'Your plan includes 2 lines', second is a date, third the numbers"),
+                     planDescription, date, joined)
+        let configuration = PopupConfiguration(
+            title: title,
+            description: description,
+            buttons: [
+                PopupButton(
+                    style: .primary,
+                    title: NSLocalizedString("OK", comment: "OK button title"),
+                    onTap: { OverlayViewManager.shared.dismissPopupView() }
+                )
+            ],
+            buttonsAlignment: .vertical
+        )
+        OverlayViewManager.shared.presentPopupView(GlacierPopup(configuration: configuration))
+    }
+
+    @MainActor
+    private func presentUnshownRemovalNoticeIfNeeded() {
+        guard let notice = unshownNotice, !OverlayViewManager.shared.isPresentingPopupView() else { return }
+        presentReleasedNotice(notice)
+    }
+
+    // MARK: - Formatting
+
+    /// "Oct 12" — the deadline shown in every downgrade prompt.
+    static func deadlineString(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.setLocalizedDateFormatFromTemplate("MMMd")
+        return formatter.string(from: date)
+    }
+
+    /// "Your plan includes 1 line" / "Your plan includes 2 lines".
+    private static func planDescription(allowedNumbers: Int) -> String {
+        allowedNumbers == 1
+            ? NSLocalizedString("Your plan includes 1 line", comment: "Downgrade notice — plan size, singular")
+            : String(format: NSLocalizedString("Your plan includes %d lines", comment: "Downgrade notice — plan size, plural"), allowedNumbers)
     }
 
     // MARK: - Persistence
@@ -284,6 +411,19 @@ final class PhoneSubscriptionLifecycleHandler: NSObject {
             }
         } else {
             UserDefaults.standard.removeObject(forKey: pendingChangeKey)
+        }
+    }
+
+    private var unshownNotice: UnshownRemovalNotice? {
+        guard let data = UserDefaults.standard.data(forKey: unshownNoticeKey) else { return nil }
+        return try? JSONDecoder().decode(UnshownRemovalNotice.self, from: data)
+    }
+
+    private func storeUnshownNotice(_ notice: UnshownRemovalNotice?) {
+        if let notice, let data = try? JSONEncoder().encode(notice) {
+            UserDefaults.standard.set(data, forKey: unshownNoticeKey)
+        } else {
+            UserDefaults.standard.removeObject(forKey: unshownNoticeKey)
         }
     }
 

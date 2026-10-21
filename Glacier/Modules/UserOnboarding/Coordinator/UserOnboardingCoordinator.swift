@@ -25,22 +25,51 @@ final class UserOnboardingCoordinator: GlacierCoordinator, ObservableObject {
     
     @Published private(set) var currentScreen: Screen?
     @Published private(set) var presentedScreen: Screen?
+
+    /// The coordinator of the onboarding flow on screen, if any. Lets onboarding exits that only
+    /// hold the root coordinator, like the phone-number picker sheet, end on the survey screen.
+    private(set) static weak var active: UserOnboardingCoordinator?
     
     // MARK: - Private properties
     
     private var rootCoordinator: any GlacierRootCoordinator
+    /// The flag the survey screen sets when it finishes onboarding. See `finishOnboarding(marking:)`.
+    private var discoverySurveyCompletionFlag: KeyPath<UserDefaultsService.LocalStorageKeys, String> = \.isUserOnboardingCompleted
     
     // MARK: - Initializer
     
     init(rootCoordinator: any GlacierRootCoordinator) {
         self.rootCoordinator = rootCoordinator
+        Self.active = self
+        // A new onboarding flow may be a different account, so start from a fresh survey status
+        // and fetch it while the user works through the earlier screens.
+        DiscoverySurveyService.shared.reset()
+        DiscoverySurveyService.shared.prefetchStatus()
         setCurrentScreen()
+    }
+
+    /// Starts on `screen` rather than restoring saved progress, which reads the account database.
+    /// For unit tests: the database crashes on purpose when the keychain isn't available.
+    init(rootCoordinator: any GlacierRootCoordinator, startingAt screen: Screen) {
+        self.rootCoordinator = rootCoordinator
+        Self.active = self
+        DiscoverySurveyService.shared.reset()
+        setScreen(screen)
     }
     
     // MARK: - Public methods
     
     func setScreen(_ screen: Screen) {
         self.currentScreen = screen
+        // Retries a status fetch that failed earlier, e.g. on a bad connection.
+        DiscoverySurveyService.shared.prefetchStatus()
+    }
+
+    /// Ends onboarding on the survey screen. Its Submit and Skip set `completionFlag` and go to the
+    /// main screen.
+    func showDiscoverySurvey(completionFlag: KeyPath<UserDefaultsService.LocalStorageKeys, String>) {
+        discoverySurveyCompletionFlag = completionFlag
+        setScreen(.discoverySurvey)
     }
     
     func presentScreen(_ screen: Screen) {
@@ -75,6 +104,9 @@ final class UserOnboardingCoordinator: GlacierCoordinator, ObservableObject {
         case .phoneNumberSelectionHome:
             let viewModel = PhoneNumberSelectionHomeVM(rootCoordinator: rootCoordinator)
             PhoneNumberSelectionHomeScreen(viewModel: viewModel)
+        case .discoverySurvey:
+            let viewModel = DiscoverySurveyVM(rootCoordinator: rootCoordinator, completionFlag: discoverySurveyCompletionFlag)
+            DiscoverySurveyScreen(viewModel: viewModel)
         }
     }
     

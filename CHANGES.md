@@ -6,6 +6,17 @@ users a day or two later.
 ## Unreleased
 
 
+## Version 1.2.2 (October 21, 2026)
+
+* Optional question at the end of onboarding about how you heard about Glacier,
+  caller's number can be copied from call history and voicemail.
+
+## Version 1.2.1 (October 15, 2026)
+
+* Scheduled phone-line downgrades shown with their deadline, call back the
+  caller's own number from history, Google and Apple sign-in explained on the
+  password reset screen.
+
 ## Version 1.2 (October 6, 2026)
 
 * Settings → Subscription screen, reasons asked on account deletion, clearer

@@ -62,6 +62,12 @@ protocol VoiceMailDetailsViewModel: GlacierViewModelWithRootCoordinator {
     
     @MainActor
     func startCall()
+    
+    /// The caller's number when it can be copied; nil for a hidden or unknown caller.
+    var copyableNumber: String? { get }
+    
+    @MainActor
+    func copyPhoneNumber()
 }
 
 /**
@@ -261,6 +267,17 @@ class VoiceMailDetailsVM: VoiceMailDetailsViewModel, ObservableObject, PhoneNumb
             ]
         )
         presentPopup(with: popupConfiguration)
+    }
+    
+    var copyableNumber: String? {
+        // The number the voicemail came from, for the same reason startCall uses it.
+        CallerNumber.usableNumber(voiceMail.from)
+    }
+    
+    @MainActor
+    func copyPhoneNumber() {
+        guard let phoneNumber = copyableNumber else { return }
+        CallerNumber.copy(phoneNumber)
     }
     
     @MainActor

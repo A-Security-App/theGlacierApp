@@ -70,10 +70,15 @@ struct CallHistoryScreen<ViewModel: HistoryViewModel & ObservableObject>: View, 
                                 avatarBackgroundColor: $avatarBackgroundColor
                             ) {
                                 // This is called when user taps on the call button for contact
-                                viewModel.startCall(with: record.phoneNumber, personName: record.name)
+                                viewModel.startCall(with: record.remotePhoneNumber, personName: record.name)
                             }
                             .onTapGesture {
                                 hidePhoneNumberMenu()
+                            }
+                            // Copies the raw remote number, not the displayed one: a matched
+                            // contact's stored number can differ from the number that called.
+                            .copyNumberContextMenu(for: record.remotePhoneNumber) { number in
+                                viewModel.copyPhoneNumber(number)
                             }
                         }
                     }

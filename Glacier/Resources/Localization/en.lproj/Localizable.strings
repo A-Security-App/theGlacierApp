@@ -321,22 +321,32 @@
 "Your phone lines are billed through the App Store on a different Apple Account. To change your plan, sign in to the App Store with that account. Subscribing here would start a second, separate subscription and you’d be billed for both." = "Your phone lines are billed through the App Store on a different Apple Account. To change your plan, sign in to the App Store with that account. Subscribing here would start a second, separate subscription and you’d be billed for both.";
 "Your plan is managed in Google Play" = "Your plan is managed in Google Play";
 "You subscribed to your phone lines through Google Play, so changes to your plan need to be made there. Subscribing here would start a second, separate subscription and you’d be billed for both." = "You subscribed to your phone lines through Google Play, so changes to your plan need to be made there. Subscribing here would start a second, separate subscription and you’d be billed for both.";
-"Choose numbers to remove" = "Choose numbers to remove";
 "Decide later" = "Decide later";
-"Your plan now includes %d number(s). Select %d to remove. Removing a number permanently deletes its messages and call history." = "Your plan now includes %d number(s). Select %d to remove. Removing a number permanently deletes its messages and call history.";
 "Select %d to remove" = "Select %d to remove";
 "Remove %d of %d" = "Remove %d of %d";
-"Remove this number?" = "Remove this number?";
 "Remove these numbers?" = "Remove these numbers?";
-"%@ will be permanently removed, including its messages and call history. This can't be undone." = "%@ will be permanently removed, including its messages and call history. This can't be undone.";
 "%@ will be permanently removed. You can select a replacement number at no additional charge." = "%@ will be permanently removed. You can select a replacement number at no additional charge.";
 "%@ will be permanently removed. To add a new number this month, a one-time %@ fee will apply." = "%@ will be permanently removed. To add a new number this month, a one-time %@ fee will apply.";
 "Delete call history" = "Delete call history";
 "All call history for %@ will be permanently deleted. This cannot be undone." = "All call history for %@ will be permanently deleted. This cannot be undone.";
 "Delete history" = "Delete history";
 "Something went wrong while deleting call history. Please try again." = "Something went wrong while deleting call history. Please try again.";
-"%@ will be permanently removed, including their messages and call history. This can't be undone." = "%@ will be permanently removed, including their messages and call history. This can't be undone.";
 "Remove permanently" = "Remove permanently";
+"Your plan now includes 1 line" = "Your plan now includes 1 line";
+"Your plan now includes %d lines" = "Your plan now includes %d lines";
+"You have %d numbers, so choose 1 to remove. Its messages, call history and voicemails will be permanently deleted." = "You have %d numbers, so choose 1 to remove. Its messages, call history and voicemails will be permanently deleted.";
+"You have %d numbers, so choose %d to remove. Their messages, call history and voicemails will be permanently deleted." = "You have %d numbers, so choose %d to remove. Their messages, call history and voicemails will be permanently deleted.";
+"If you don't choose by %@, we'll remove %@ for you." = "If you don't choose by %@, we'll remove %@ for you.";
+"Remove %@?" = "Remove %@?";
+"This number and its messages, call history and voicemails will be permanently deleted. The number goes back to the carrier, so you may not be able to get it back." = "This number and its messages, call history and voicemails will be permanently deleted. The number goes back to the carrier, so you may not be able to get it back.";
+"%@ and their messages, call history and voicemails will be permanently deleted. The numbers go back to the carrier, so you may not be able to get them back." = "%@ and their messages, call history and voicemails will be permanently deleted. The numbers go back to the carrier, so you may not be able to get them back.";
+"Decide by %@" = "Decide by %@";
+"Until then you'll keep all your numbers. After that, we'll remove %@." = "Until then you'll keep all your numbers. After that, we'll remove %@.";
+"%@ was removed" = "%@ was removed";
+"%@, and no number was chosen by %@, so we removed this one along with its messages, call history and voicemails." = "%@, and no number was chosen by %@, so we removed this one along with its messages, call history and voicemails.";
+"%@, and no numbers were chosen by %@, so we removed %@ along with their messages, call history and voicemails." = "%@, and no numbers were chosen by %@, so we removed %@ along with their messages, call history and voicemails.";
+"Your plan includes 1 line" = "Your plan includes 1 line";
+"Your plan includes %d lines" = "Your plan includes %d lines";
 
 
 /***************************
@@ -349,7 +359,6 @@
 "Renew now" = "Renew now";
 "Later" = "Later";
 "Numbers removed" = "Numbers removed";
-"%@ and its messages and call history were removed because your phone plan was downgraded." = "%@ and its messages and call history were removed because your phone plan was downgraded.";
 
 
 /***************************
@@ -610,6 +619,10 @@
 "We couldn't find an active subscription for this Apple Account or your Glacier account." = "We couldn't find an active subscription for this Apple Account or your Glacier account.";
 "Expired" = "Expired";
 "Expired (phone lines)" = "Expired";
+"From %@" = "From %@";
+"1 line" = "1 line";
+"%d lines" = "%d lines";
+"Starts %@" = "Starts %@";
 "Yearly" = "Yearly";
 "Monthly" = "Monthly";
 "Active" = "Active";
@@ -639,3 +652,40 @@
 "Plans bought on the Glacier website can't be changed here. Sign in on the Glacier website to change or cancel." = "Plans bought on the Glacier website can't be changed here. Sign in on the Glacier website to change or cancel.";
 "Plans bought outside the App Store can't be changed here. Manage or cancel where you made the purchase." = "Plans bought outside the App Store can't be changed here. Manage or cancel where you made the purchase.";
 "Go to Website" = "Go to Website";
+
+/* Password reset screen: the email signs in with Google or Apple. %1$@ is the provider name. */
+"This email signs in with %1$@. If you never set a password, no reset email will arrive. Go back and use Continue with %1$@ instead." = "This email signs in with %1$@. If you never set a password, no reset email will arrive. Go back and use Continue with %1$@ instead.";
+
+/* Password reset screen button: send the reset email for an email linked to Google or Apple */
+"I have a password, send the email" = "I have a password, send the email";
+
+/* Discovery survey: last onboarding screen, "How did you first hear about Glacier?" (glacierApp#225) */
+"Web search" = "Web search";
+"Podcast" = "Podcast";
+"YouTube" = "YouTube";
+"Social media" = "Social media";
+"Article, review, or newsletter" = "Article, review, or newsletter";
+"Friend or family" = "Friend or family";
+"AI assistant" = "AI assistant";
+"App Store or Google Play" = "App Store or Google Play";
+"I don't remember" = "I don't remember";
+"Which podcast?" = "Which podcast?";
+"Which channel or creator?" = "Which channel or creator?";
+"Which platform or account?" = "Which platform or account?";
+"Which publication or newsletter?" = "Which publication or newsletter?";
+"Which AI assistant?" = "Which AI assistant?";
+"Where did you hear about us?" = "Where did you hear about us?";
+"One last thing." = "One last thing.";
+"How did you first hear about Glacier?" = "How did you first hear about Glacier?";
+"Optional. Your answer helps us understand how people discover Glacier." = "Optional. Your answer helps us understand how people discover Glacier.";
+"Optional" = "Optional";
+"Submit" = "Submit";
+
+/* Call history and voicemail: action that copies the caller's phone number */
+"Copy number" = "Copy number";
+
+/* Confirmation shown after a phone number is copied */
+"Number copied" = "Number copied";
+
+/* Call history and voicemail: shown when a caller's number is hidden or unknown */
+"Number unavailable" = "Number unavailable";

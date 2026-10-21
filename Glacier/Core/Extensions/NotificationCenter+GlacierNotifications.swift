@@ -41,6 +41,9 @@ extension Notification.Name {
     static let phoneNumberPlanPurchaseVerificationFailed = Notification.Name("phoneNumberPlanPurchaseVerificationFailed")
     static let phoneNumberPlanPurchaseVerified = Notification.Name("phoneNumberPlanPurchaseVerified")
     static let phoneNumberPlanPurchaseSuccessful = Notification.Name("phoneNumberPlanPurchaseSuccessful")
+    /// Fired by the phone-line plan picker when a purchase scheduled a plan change for renewal
+    /// (a downgrade) instead of changing the plan now, so no purchase-successful notification follows.
+    static let phoneNumberPlanChangeScheduled = Notification.Name("phoneNumberPlanChangeScheduled")
     /// Fired by `applyBackendSubscription` after the reconciled `hasActivePhoneNumberSubscription`
     /// value is written to the account. Observers should re-read that flag and update their UI state.
     /// This bridges the gap between the backend subscription path and ViewModels that only learn

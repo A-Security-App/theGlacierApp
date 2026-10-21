@@ -283,17 +283,48 @@ struct VoicemailDetailsScreen<ViewModel: VoiceMailDetailsViewModel & ObservableO
                     )
                 }
                 
-                if let phoneNumber = viewModel.voiceMail.from {
+                if let phoneNumber = viewModel.copyableNumber {
+                    HStack(alignment: .center, spacing: 4) {
+                        GlacierLabel(
+                            text: phoneNumber,
+                            font: .bodyThick,
+                            customTextColor: hasValidName ? $secondaryTextColor : .constant(nil)
+                        )
+                        
+                        copyNumberButton
+                    }
+                } else {
+                    // Hidden or unknown caller: say so rather than show a placeholder
+                    // ("anonymous", +266696687) that looks like a number.
                     GlacierLabel(
-                        text: phoneNumber,
+                        text: NSLocalizedString("Number unavailable", comment: "Shown in place of a caller's number when it is hidden or unknown"),
                         font: .bodyThick,
-                        customTextColor: hasValidName ? $secondaryTextColor : .constant(nil)
+                        customTextColor: $secondaryTextColor
                     )
                 }
             }
             
             Spacer()
         }
+    }
+    
+    private var copyNumberButton: some View {
+        Button(
+            action: {
+                viewModel.copyPhoneNumber()
+            },
+            label: {
+                GlacierImage(
+                    name: .constant("copy-icon"),
+                    width: 16,
+                    height: 18,
+                    shouldAdaptToColorSchemeChange: false,
+                    customTintColor: $secondaryTextColor
+                )
+            }
+        )
+        .frame(width: 24, height: 24)
+        .accessibilityLabel(NSLocalizedString("Copy number", comment: "Context menu action that copies the caller's phone number"))
     }
     
     private var callButton: some View {

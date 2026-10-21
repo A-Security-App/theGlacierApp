@@ -18,6 +18,8 @@ protocol GlacierPlanPurchaseViewModel: GlacierViewModelWithRootCoordinator, Glac
     var availablePlans: [Product] { get }
     var selectedPlan: Product? { get set }
     var isPurchaseButtonEnabled: Bool { get set }
+    /// A plan the App Store has already scheduled to start at renewal; only phone lines have one.
+    var scheduledPhonePlanChange: ScheduledPhonePlanChange? { get }
 
     init(rootCoodinator: any GlacierRootCoordinator, service: GlacierPlanPurchaseService)
 
@@ -26,6 +28,10 @@ protocol GlacierPlanPurchaseViewModel: GlacierViewModelWithRootCoordinator, Glac
 
     func purchasePlan()
     func restorePurchase()
+}
+
+extension GlacierPlanPurchaseViewModel {
+    var scheduledPhonePlanChange: ScheduledPhonePlanChange? { nil }
 }
 
 /**

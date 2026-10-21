@@ -321,22 +321,32 @@
 "Your phone lines are billed through the App Store on a different Apple Account. To change your plan, sign in to the App Store with that account. Subscribing here would start a second, separate subscription and you’d be billed for both." = "Tus líneas telefónicas se cobran a través del App Store en otra cuenta de Apple. Para cambiar tu plan, inicia sesión en el App Store con esa cuenta. Suscribirte aquí iniciaría una segunda suscripción independiente y se te cobrarían las dos.";
 "Your plan is managed in Google Play" = "Tu plan se administra en Google Play";
 "You subscribed to your phone lines through Google Play, so changes to your plan need to be made there. Subscribing here would start a second, separate subscription and you’d be billed for both." = "Contrataste tus líneas telefónicas a través de Google Play, así que los cambios a tu plan deben hacerse allí. Suscribirte aquí iniciaría una segunda suscripción independiente y se te cobrarían las dos.";
-"Choose numbers to remove" = "Elige los números que quieres eliminar";
 "Decide later" = "Decidir más tarde";
-"Your plan now includes %d number(s). Select %d to remove. Removing a number permanently deletes its messages and call history." = "Tu plan ahora incluye %d número(s). Selecciona %d para eliminar. Al eliminar un número, se borran de forma permanente sus mensajes e historial de llamadas.";
 "Select %d to remove" = "Selecciona %d para eliminar";
 "Remove %d of %d" = "Eliminar %d de %d";
-"Remove this number?" = "¿Eliminar este número?";
 "Remove these numbers?" = "¿Eliminar estos números?";
-"%@ will be permanently removed, including its messages and call history. This can't be undone." = "%@ se eliminará de forma permanente, incluidos sus mensajes e historial de llamadas. Esto no se puede deshacer.";
 "%@ will be permanently removed. You can select a replacement number at no additional charge." = "%@ se eliminará de forma permanente. Puedes elegir un número de reemplazo sin costo adicional.";
 "%@ will be permanently removed. To add a new number this month, a one-time %@ fee will apply." = "%@ se eliminará de forma permanente. Para agregar un número nuevo este mes, se aplicará un cargo único de %@.";
 "Delete call history" = "Eliminar historial de llamadas";
 "All call history for %@ will be permanently deleted. This cannot be undone." = "Todo el historial de llamadas de %@ se eliminará de forma permanente. Esto no se puede deshacer.";
 "Delete history" = "Eliminar historial";
 "Something went wrong while deleting call history. Please try again." = "Algo salió mal al eliminar el historial de llamadas. Inténtalo de nuevo.";
-"%@ will be permanently removed, including their messages and call history. This can't be undone." = "%@ se eliminarán de forma permanente, incluidos sus mensajes e historiales de llamadas. Esto no se puede deshacer.";
 "Remove permanently" = "Eliminar permanentemente";
+"Your plan now includes 1 line" = "Tu plan ahora incluye 1 línea";
+"Your plan now includes %d lines" = "Tu plan ahora incluye %d líneas";
+"You have %d numbers, so choose 1 to remove. Its messages, call history and voicemails will be permanently deleted." = "Tienes %d números, así que elige 1 para eliminar. Sus mensajes, historial de llamadas y mensajes de voz se borrarán de forma permanente.";
+"You have %d numbers, so choose %d to remove. Their messages, call history and voicemails will be permanently deleted." = "Tienes %d números, así que elige %d para eliminar. Sus mensajes, historial de llamadas y mensajes de voz se borrarán de forma permanente.";
+"If you don't choose by %@, we'll remove %@ for you." = "Si no eliges a más tardar el %@, eliminaremos %@ por ti.";
+"Remove %@?" = "¿Eliminar %@?";
+"This number and its messages, call history and voicemails will be permanently deleted. The number goes back to the carrier, so you may not be able to get it back." = "Este número y sus mensajes, historial de llamadas y mensajes de voz se borrarán de forma permanente. El número vuelve al operador, así que es posible que no puedas recuperarlo.";
+"%@ and their messages, call history and voicemails will be permanently deleted. The numbers go back to the carrier, so you may not be able to get them back." = "%@ y sus mensajes, historial de llamadas y mensajes de voz se borrarán de forma permanente. Los números vuelven al operador, así que es posible que no puedas recuperarlos.";
+"Decide by %@" = "Decide a más tardar el %@";
+"Until then you'll keep all your numbers. After that, we'll remove %@." = "Hasta entonces conservarás todos tus números. Después, eliminaremos %@.";
+"%@ was removed" = "Se eliminó %@";
+"%@, and no number was chosen by %@, so we removed this one along with its messages, call history and voicemails." = "%1$@ y no se eligió ningún número a más tardar el %2$@, así que eliminamos este junto con sus mensajes, historial de llamadas y mensajes de voz.";
+"%@, and no numbers were chosen by %@, so we removed %@ along with their messages, call history and voicemails." = "%1$@ y no se eligieron números a más tardar el %2$@, así que eliminamos %3$@ junto con sus mensajes, historial de llamadas y mensajes de voz.";
+"Your plan includes 1 line" = "Tu plan incluye 1 línea";
+"Your plan includes %d lines" = "Tu plan incluye %d líneas";
 
 
 /***************************
@@ -349,7 +359,6 @@
 "Renew now" = "Renovar ahora";
 "Later" = "Más tarde";
 "Numbers removed" = "Números eliminados";
-"%@ and its messages and call history were removed because your phone plan was downgraded." = "%@ y sus mensajes e historial de llamadas se eliminaron porque tu plan telefónico cambió a uno inferior.";
 
 
 /***************************
@@ -610,6 +619,10 @@
 "We couldn't find an active subscription for this Apple Account or your Glacier account." = "No encontramos una suscripción activa para esta cuenta de Apple ni para tu cuenta de Glacier.";
 "Expired" = "Expirado";
 "Expired (phone lines)" = "Expiradas";
+"From %@" = "Desde el %@";
+"1 line" = "1 línea";
+"%d lines" = "%d líneas";
+"Starts %@" = "Empieza el %@";
 "Yearly" = "Anual";
 "Monthly" = "Mensual";
 "Active" = "Activo";
@@ -639,3 +652,40 @@
 "Plans bought on the Glacier website can't be changed here. Sign in on the Glacier website to change or cancel." = "Los planes comprados en el sitio web de Glacier no se pueden cambiar aquí. Inicia sesión en el sitio web de Glacier para cambiarlo o cancelarlo.";
 "Plans bought outside the App Store can't be changed here. Manage or cancel where you made the purchase." = "Los planes comprados fuera del App Store no se pueden cambiar aquí. Adminístralo o cancélalo donde hiciste la compra.";
 "Go to Website" = "Ir al sitio web";
+
+/* Password reset screen: the email signs in with Google or Apple. %1$@ is the provider name. */
+"This email signs in with %1$@. If you never set a password, no reset email will arrive. Go back and use Continue with %1$@ instead." = "Este correo inicia sesión con %1$@. Si nunca creaste una contraseña, no llegará ningún correo para restablecerla. Vuelve y usa Continuar con %1$@.";
+
+/* Password reset screen button: send the reset email for an email linked to Google or Apple */
+"I have a password, send the email" = "Tengo contraseña, enviar el correo";
+
+/* Discovery survey: last onboarding screen, "How did you first hear about Glacier?" (glacierApp#225) */
+"Web search" = "Búsqueda web";
+"Podcast" = "Pódcast";
+"YouTube" = "YouTube";
+"Social media" = "Redes sociales";
+"Article, review, or newsletter" = "Artículo, reseña o boletín";
+"Friend or family" = "Amigo o familiar";
+"AI assistant" = "Asistente de IA";
+"App Store or Google Play" = "App Store o Google Play";
+"I don't remember" = "No lo recuerdo";
+"Which podcast?" = "¿Qué pódcast?";
+"Which channel or creator?" = "¿Qué canal o creador?";
+"Which platform or account?" = "¿Qué plataforma o cuenta?";
+"Which publication or newsletter?" = "¿Qué publicación o boletín?";
+"Which AI assistant?" = "¿Qué asistente de IA?";
+"Where did you hear about us?" = "¿Dónde oíste hablar de nosotros?";
+"One last thing." = "Una última cosa.";
+"How did you first hear about Glacier?" = "¿Cómo conociste Glacier?";
+"Optional. Your answer helps us understand how people discover Glacier." = "Opcional. Tu respuesta nos ayuda a entender cómo la gente descubre Glacier.";
+"Optional" = "Opcional";
+"Submit" = "Enviar";
+
+/* Call history and voicemail: action that copies the caller's phone number */
+"Copy number" = "Copiar número";
+
+/* Confirmation shown after a phone number is copied */
+"Number copied" = "Número copiado";
+
+/* Call history and voicemail: shown when a caller's number is hidden or unknown */
+"Number unavailable" = "Número no disponible";

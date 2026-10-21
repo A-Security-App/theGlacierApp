@@ -19,6 +19,8 @@ enum OnboardingScreen: String, Identifiable {
     case phoneNumberPlanPurchaseHome
     case userPermissions
     case phoneNumberSelectionHome
+    /// "How did you first hear about Glacier?" Shown last, however onboarding ends.
+    case discoverySurvey
     
     var id: Self { return self }
     var name: String { return rawValue }

@@ -353,10 +353,8 @@ final class PhoneNumberSelectionVM: PhoneNumberSelectionViewModel, ObservableObj
                         // treated the same as false — both mean onboarding is not yet complete.
                         let isOnboardingCompleted = UserDefaultsService.shared.get(for: \.isUserOnboardingCompleted) ?? false
                         if !isOnboardingCompleted {
-                            UserDefaultsService.shared.set(true, for: \.isUserOnboardingCompleted)
-                            self.connectDNSIfSetUpDuringOnboarding()
                             DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-                                self.setRootScreen(.main)
+                                self.finishOnboarding()
                             }
                         }
                     }
@@ -588,10 +586,8 @@ final class PhoneNumberSelectionVM: PhoneNumberSelectionViewModel, ObservableObj
                 // treated the same as false — both mean onboarding is not yet complete.
                 let isOnboardingCompleted = UserDefaultsService.shared.get(for: \.isUserOnboardingCompleted) ?? false
                 if !isOnboardingCompleted {
-                    UserDefaultsService.shared.set(true, for: \.isUserOnboardingCompleted)
-                    self.connectDNSIfSetUpDuringOnboarding()
                     DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-                        self.setRootScreen(.main)
+                        self.finishOnboarding()
                     }
                 }
             }
@@ -609,10 +605,8 @@ final class PhoneNumberSelectionVM: PhoneNumberSelectionViewModel, ObservableObj
                 // treated the same as false — both mean onboarding is not yet complete.
                 let isOnboardingCompleted = UserDefaultsService.shared.get(for: \.isUserOnboardingCompleted) ?? false
                 if !isOnboardingCompleted {
-                    UserDefaultsService.shared.set(true, for: \.isUserOnboardingCompleted)
-                    self.connectDNSIfSetUpDuringOnboarding()
                     DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-                        self.setRootScreen(.main)
+                        self.finishOnboarding()
                     }
                 }
             }

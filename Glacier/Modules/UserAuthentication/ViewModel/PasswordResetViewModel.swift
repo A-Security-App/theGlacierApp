@@ -55,27 +55,124 @@ final class PasswordResetVM: PasswordResetViewModel, ObservableObject {
     let rootCoordinator: any GlacierRootCoordinator
     var passwordResetCoordinator: any GlacierCoordinator
     let authenticationService: GlacierAuthenticationService
+    private let signInMethodService: SignInMethodLookup
     
     // MARK: - Initializer
     
-    init(
+    convenience init(
         rootCoodinator: any GlacierRootCoordinator,
         passwordResetCoordinator: any GlacierCoordinator,
         authenticationService: GlacierAuthenticationService,
         isPresentedFromLoginScreen: Bool
     ) {
+        self.init(
+            rootCoodinator: rootCoodinator,
+            passwordResetCoordinator: passwordResetCoordinator,
+            authenticationService: authenticationService,
+            signInMethodService: ConsoleSignInMethodService(),
+            isPresentedFromLoginScreen: isPresentedFromLoginScreen
+        )
+    }
+    
+    /// - Parameter savedEmail: The signed-in account's email, to fill in. Reads the account
+    ///   database by default; tests pass their own, because the database crashes on purpose
+    ///   when the keychain isn't available.
+    init(
+        rootCoodinator: any GlacierRootCoordinator,
+        passwordResetCoordinator: any GlacierCoordinator,
+        authenticationService: GlacierAuthenticationService,
+        signInMethodService: SignInMethodLookup,
+        isPresentedFromLoginScreen: Bool,
+        savedEmail: () -> String? = { GlacierAccountModel.getGlacierAccount()?.username }
+    ) {
         self.rootCoordinator = rootCoodinator
         self.passwordResetCoordinator = passwordResetCoordinator
         self.authenticationService = authenticationService
+        self.signInMethodService = signInMethodService
         self.isPresentedFromLoginScreen = isPresentedFromLoginScreen
         
-        getUserEmail()
+        fillInEmail(savedEmail())
     }
     
     // MARK: - Public methods
     
+    /// Someone who signed up with Google or Apple has no password, so Cognito
+    /// sends no reset email and they wait for one that never comes. Check how
+    /// the email signs in first and say so. An account created with a password
+    /// and linked later still has one, so they can send the email anyway.
     @MainActor
     func sendPasswordResetLink() {
+        guard !email.isEmpty else {
+            requestPasswordReset()
+            return
+        }
+        Task {
+            presentProgressIndicator()
+            let method = await signInMethodService.signInMethod(for: email)
+            guard case .federated(let provider) = method else {
+                // The reset keeps this spinner up (presenting it again is a
+                // no-op) and dismisses it, so it doesn't flicker between steps.
+                requestPasswordReset()
+                return
+            }
+            dismissProgressIndicator()
+            presentLinkedProviderAlert(for: provider)
+        }
+    }
+    
+    /// What to tell someone resetting the password of an email that signs in
+    /// with Google or Apple.
+    static func linkedProviderAlert(for provider: FederatedSignInProvider) -> AuthAlertContent {
+        AuthAlertContent(
+            title: String(
+                format: NSLocalizedString(
+                    "Linked to %@",
+                    comment: "Alert title: wrong password for an email linked to Google or Apple. %@ is the provider name."
+                ),
+                provider.displayName
+            ),
+            message: String(
+                format: NSLocalizedString(
+                    "This email signs in with %1$@. If you never set a password, no reset email will arrive. Go back and use Continue with %1$@ instead.",
+                    comment: "Password reset screen: the email signs in with Google or Apple. %1$@ is the provider name."
+                ),
+                provider.displayName
+            )
+        )
+    }
+    
+    @MainActor
+    private func presentLinkedProviderAlert(for provider: FederatedSignInProvider) {
+        let alert = Self.linkedProviderAlert(for: provider)
+        presentPopup(with: PopupConfiguration(
+            title: alert.title,
+            description: alert.message,
+            buttons: [
+                PopupButton(
+                    style: .primary,
+                    title: NSLocalizedString("Ok", comment: "Ok button title"),
+                    onTap: { [weak self] in
+                        self?.rootCoordinator.dismissPopup()
+                    }
+                ),
+                PopupButton(
+                    style: .secondary,
+                    title: NSLocalizedString(
+                        "I have a password, send the email",
+                        comment: "Password reset screen button: send the reset email for an email linked to Google or Apple"
+                    ),
+                    onTap: { [weak self] in
+                        self?.rootCoordinator.dismissPopup()
+                        self?.requestPasswordReset()
+                    }
+                )
+            ],
+            buttonsAlignment: .vertical
+        ))
+    }
+    
+    @MainActor
+    private func requestPasswordReset() {
         Task {
             let errorDescription = NSLocalizedString(
                 "Something went wrong while sending password reset email. Please try again.",
@@ -124,10 +221,12 @@ final class PasswordResetVM: PasswordResetViewModel, ObservableObject {
         return true
     }
     
-    private func getUserEmail() {
-        guard let glacierAccount = GlacierAccountModel.getGlacierAccount() else {
+    /// Set through a method rather than in `init` directly, so `email`'s `didSet` runs and
+    /// enables Continue.
+    private func fillInEmail(_ savedEmail: String?) {
+        guard let savedEmail else {
             return
         }
-        email = glacierAccount.username
+        email = savedEmail
     }
 }

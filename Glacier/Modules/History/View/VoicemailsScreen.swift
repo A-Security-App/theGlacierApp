@@ -79,6 +79,9 @@ struct VoicemailsScreen<ViewModel: HistoryViewModel & ObservableObject>: View, P
                                 hidePhoneNumberMenu()
                                 viewModel.presentVoicemailDetailsView(for: voiceMail)
                             }
+                            .copyNumberContextMenu(for: voiceMail.from) { number in
+                                viewModel.copyPhoneNumber(number)
+                            }
                         }
                     }
                     .padding(.top, 32)

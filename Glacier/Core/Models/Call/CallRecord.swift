@@ -26,7 +26,15 @@ struct CallRecord: GRDBRecord, TableRecord {
     var endTime:String
     var duration:String
     var modified = Date()
-    
+
+    /// The other party's raw number: the number to call back. Not `phoneNumber`, which
+    /// is overwritten with a matched contact's stored number — contacts are matched on
+    /// the last 10 digits, so that can be a different number (an international caller
+    /// in particular).
+    var remotePhoneNumber: String {
+        isIncoming ? from : to
+    }
+
     public static var databaseTableName: String {
         return "CallRecord"
     }

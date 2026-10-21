@@ -35,8 +35,7 @@ struct CallHistoryItemDetailsView: View {
     }
 
     private var avatarImage: UIImage? {
-        let phoneNumber = callRecord.isIncoming ? callRecord.from : callRecord.to
-        guard let matchingContact = ContactsManager.shared.matchContact(for: phoneNumber) else {
+        guard let matchingContact = ContactsManager.shared.matchContact(for: callRecord.remotePhoneNumber) else {
             return nil
         }
         return matchingContact.avatar

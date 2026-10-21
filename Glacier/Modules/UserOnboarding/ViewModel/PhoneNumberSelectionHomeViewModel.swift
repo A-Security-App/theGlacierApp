@@ -47,9 +47,7 @@ final class PhoneNumberSelectionHomeVM: PhoneNumberSelectionHomeViewModel, Obser
     }
     
     func skip() {
-        UserDefaultsService.shared.set(true, for: \.didSkipPhoneNumberSelectionDuringOnboarding)
-        connectDNSIfSetUpDuringOnboarding()
-        setRootScreen(.main)
+        finishOnboarding(marking: \.didSkipPhoneNumberSelectionDuringOnboarding)
     }
     
     // MARK: - Private methods

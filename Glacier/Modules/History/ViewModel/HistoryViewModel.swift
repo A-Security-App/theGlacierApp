@@ -27,6 +27,9 @@ protocol HistoryViewModel: GlacierViewModelWithRootCoordinator {
     func getContact(for phoneNumber: String) -> PhoneContact?
     func startCall(with phoneNumber: String, personName: String?)
     
+    @MainActor
+    func copyPhoneNumber(_ phoneNumber: String)
+    
     func presentVoicemailDetailsView(for voiceMail: VoicemailRecord)
 }
 
@@ -125,6 +128,12 @@ final class HistoryVM: HistoryViewModel, ObservableObject, PhoneNumberMenuCoordi
             buttonsAlignment: .horizontal
         )
         presentPopup(with: popupConfiguration)
+    }
+    
+    @MainActor
+    func copyPhoneNumber(_ phoneNumber: String) {
+        hidePhoneNumberMenu()
+        CallerNumber.copy(phoneNumber)
     }
     
     func presentVoicemailDetailsView(for voiceMail: VoicemailRecord) {
@@ -294,11 +303,8 @@ extension HistoryVM: CallHistoryDelegateProtocol {
     private func processCallRecord(cdr: CallRecord) -> CallRecord {
         var modded = cdr
         
-        var cdrnumber = CallManager.cleanPhoneNumber(cdr.from)
-        if cdr.isIncoming == false {
-            cdrnumber = CallManager.cleanPhoneNumber(cdr.to)
-        }
-            
+        let cdrnumber = CallManager.cleanPhoneNumber(cdr.remotePhoneNumber)
+
         for contact in self.contacts {
             let cleanContact = CallManager.cleanPhoneNumber(contact.phoneNumber)
             if TwilioBackendManager.arePhoneNumbersEqualUS(phone1: cdrnumber, phone2: cleanContact) {

@@ -74,7 +74,8 @@ struct PhoneNumberPlanPurchaseScreen<ViewModel: GlacierPlanPurchaseViewModel & O
                     
                     PhoneNumberPlanListView(
                         plans: viewModel.availablePlans,
-                        selectedPlan: $viewModel.selectedPlan
+                        selectedPlan: $viewModel.selectedPlan,
+                        scheduledChange: viewModel.scheduledPhonePlanChange
                     )
                     
                     GlacierButton(
@@ -163,12 +164,14 @@ struct PhoneNumberPlanListView: View {
     
     private let plans: [Product]
     @Binding private var selectedPlan: Product?
-    
+    private let scheduledChange: ScheduledPhonePlanChange?
+
     // MARK: - Initializer
-    
-    init(plans: [Product], selectedPlan: Binding<Product?>) {
+
+    init(plans: [Product], selectedPlan: Binding<Product?>, scheduledChange: ScheduledPhonePlanChange? = nil) {
         self.plans = plans
         self._selectedPlan = selectedPlan
+        self.scheduledChange = scheduledChange
     }
     
     // MARK: - UI/UX
@@ -179,11 +182,25 @@ struct PhoneNumberPlanListView: View {
                 ForEach(plans, id: \.id) { plan in
                     GlacierViewContainer(padding: 12) {
                         HStack(alignment: .center, spacing: 0) {
-                            GlacierLabel(
-                                text: plan.displayName,
-                                font: .bodyThick
-                            )
-                            
+                            VStack(alignment: .leading, spacing: 2) {
+                                GlacierLabel(
+                                    text: plan.displayName,
+                                    font: .bodyThick
+                                )
+
+                                if let scheduledChange, scheduledChange.plan.rawValue == plan.id {
+                                    GlacierLabel(
+                                        text: String(
+                                            format: NSLocalizedString("Starts %@", comment: "Phone number plan list: plan already scheduled to start at renewal — %@ is a short date"),
+                                            scheduledChange.startsOn.formatted(.dateTime.month(.abbreviated).day())
+                                        ),
+                                        font: .bodySmall,
+                                        lineLimit: 1,
+                                        customTextColor: .constant(.grey60)
+                                    )
+                                }
+                            }
+
                             GlacierViewContainer(cornerRadius: 8, padding: 12) {
                                 GlacierLabel(
                                     text: plan.displayPrice,

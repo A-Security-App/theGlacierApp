@@ -321,22 +321,32 @@
 "Your phone lines are billed through the App Store on a different Apple Account. To change your plan, sign in to the App Store with that account. Subscribing here would start a second, separate subscription and you’d be billed for both." = "Je telefoonlijnen worden via de App Store gefactureerd op een ander Apple-account. Log met dat account in bij de App Store om je abonnement te wijzigen. Als je je hier abonneert, start je een tweede, apart abonnement en betaal je voor beide.";
 "Your plan is managed in Google Play" = "Je abonnement wordt beheerd in Google Play";
 "You subscribed to your phone lines through Google Play, so changes to your plan need to be made there. Subscribing here would start a second, separate subscription and you’d be billed for both." = "Je hebt je telefoonlijnen via Google Play afgesloten, dus wijzigingen in je abonnement moeten daar worden gedaan. Als je je hier abonneert, start je een tweede, apart abonnement en betaal je voor beide.";
-"Choose numbers to remove" = "Kies de nummers die je wilt verwijderen";
 "Decide later" = "Later beslissen";
-"Your plan now includes %d number(s). Select %d to remove. Removing a number permanently deletes its messages and call history." = "Je abonnement omvat nu %d nummer(s). Selecteer %d om te verwijderen. Als je een nummer verwijdert, worden de berichten en gespreksgeschiedenis permanent verwijderd.";
 "Select %d to remove" = "Selecteer %d om te verwijderen";
 "Remove %d of %d" = "Verwijder %d van %d";
-"Remove this number?" = "Dit nummer verwijderen?";
 "Remove these numbers?" = "Deze nummers verwijderen?";
-"%@ will be permanently removed, including its messages and call history. This can't be undone." = "%@ wordt permanent verwijderd, inclusief de berichten en gespreksgeschiedenis. Dit kan niet worden ongedaan gemaakt.";
 "%@ will be permanently removed. You can select a replacement number at no additional charge." = "%@ wordt permanent verwijderd. Je kunt zonder extra kosten een vervangend nummer kiezen.";
 "%@ will be permanently removed. To add a new number this month, a one-time %@ fee will apply." = "%@ wordt permanent verwijderd. Als je deze maand een nieuw nummer wilt toevoegen, betaal je eenmalig %@.";
 "Delete call history" = "Gespreksgeschiedenis verwijderen";
 "All call history for %@ will be permanently deleted. This cannot be undone." = "Alle gespreksgeschiedenis van %@ wordt permanent verwijderd. Dit kan niet worden ongedaan gemaakt.";
 "Delete history" = "Geschiedenis verwijderen";
 "Something went wrong while deleting call history. Please try again." = "Er ging iets mis bij het verwijderen van de gespreksgeschiedenis. Probeer het opnieuw.";
-"%@ will be permanently removed, including their messages and call history. This can't be undone." = "%@ worden permanent verwijderd, inclusief hun berichten en gespreksgeschiedenis. Dit kan niet worden ongedaan gemaakt.";
 "Remove permanently" = "Permanent verwijderen";
+"Your plan now includes 1 line" = "Je abonnement omvat nu 1 lijn";
+"Your plan now includes %d lines" = "Je abonnement omvat nu %d lijnen";
+"You have %d numbers, so choose 1 to remove. Its messages, call history and voicemails will be permanently deleted." = "Je hebt %d nummers, dus kies er 1 om te verwijderen. De berichten, gespreksgeschiedenis en voicemails ervan worden permanent verwijderd.";
+"You have %d numbers, so choose %d to remove. Their messages, call history and voicemails will be permanently deleted." = "Je hebt %d nummers, dus kies er %d om te verwijderen. De berichten, gespreksgeschiedenis en voicemails ervan worden permanent verwijderd.";
+"If you don't choose by %@, we'll remove %@ for you." = "Als je niet uiterlijk %@ kiest, verwijderen we %@ voor je.";
+"Remove %@?" = "%@ verwijderen?";
+"This number and its messages, call history and voicemails will be permanently deleted. The number goes back to the carrier, so you may not be able to get it back." = "Dit nummer en de berichten, gespreksgeschiedenis en voicemails ervan worden permanent verwijderd. Het nummer gaat terug naar de provider, dus je krijgt het mogelijk niet meer terug.";
+"%@ and their messages, call history and voicemails will be permanently deleted. The numbers go back to the carrier, so you may not be able to get them back." = "%@ en de berichten, gespreksgeschiedenis en voicemails ervan worden permanent verwijderd. De nummers gaan terug naar de provider, dus je krijgt ze mogelijk niet meer terug.";
+"Decide by %@" = "Beslis uiterlijk %@";
+"Until then you'll keep all your numbers. After that, we'll remove %@." = "Tot die tijd houd je al je nummers. Daarna verwijderen we %@.";
+"%@ was removed" = "%@ is verwijderd";
+"%@, and no number was chosen by %@, so we removed this one along with its messages, call history and voicemails." = "%1$@ en er is uiterlijk %2$@ geen nummer gekozen, dus hebben we dit nummer verwijderd, samen met de berichten, gespreksgeschiedenis en voicemails ervan.";
+"%@, and no numbers were chosen by %@, so we removed %@ along with their messages, call history and voicemails." = "%1$@ en er zijn uiterlijk %2$@ geen nummers gekozen, dus hebben we %3$@ verwijderd, samen met de berichten, gespreksgeschiedenis en voicemails ervan.";
+"Your plan includes 1 line" = "Je abonnement omvat 1 lijn";
+"Your plan includes %d lines" = "Je abonnement omvat %d lijnen";
 
 
 /***************************
@@ -349,7 +359,6 @@
 "Renew now" = "Nu verlengen";
 "Later" = "Later";
 "Numbers removed" = "Nummers verwijderd";
-"%@ and its messages and call history were removed because your phone plan was downgraded." = "%@ en de bijbehorende berichten en gespreksgeschiedenis zijn verwijderd omdat je telefoonabonnement is verlaagd.";
 
 
 /***************************
@@ -610,6 +619,10 @@
 "We couldn't find an active subscription for this Apple Account or your Glacier account." = "We konden geen actief abonnement vinden voor dit Apple-account of je Glacier-account.";
 "Expired" = "Verlopen";
 "Expired (phone lines)" = "Verlopen";
+"From %@" = "Vanaf %@";
+"1 line" = "1 lijn";
+"%d lines" = "%d lijnen";
+"Starts %@" = "Start op %@";
 "Yearly" = "Jaarlijks";
 "Monthly" = "Maandelijks";
 "Active" = "Actief";
@@ -639,3 +652,40 @@
 "Plans bought on the Glacier website can't be changed here. Sign in on the Glacier website to change or cancel." = "Abonnementen die op de Glacier-website zijn gekocht, kunnen hier niet worden gewijzigd. Log in op de Glacier-website om te wijzigen of op te zeggen.";
 "Plans bought outside the App Store can't be changed here. Manage or cancel where you made the purchase." = "Abonnementen die buiten de App Store zijn gekocht, kunnen hier niet worden gewijzigd. Beheer of zeg op waar je de aankoop hebt gedaan.";
 "Go to Website" = "Naar de website";
+
+/* Password reset screen: the email signs in with Google or Apple. %1$@ is the provider name. */
+"This email signs in with %1$@. If you never set a password, no reset email will arrive. Go back and use Continue with %1$@ instead." = "Dit e-mailadres logt in met %1$@. Heb je nooit een wachtwoord ingesteld, dan komt er geen herstelmail. Ga terug en gebruik Doorgaan met %1$@.";
+
+/* Password reset screen button: send the reset email for an email linked to Google or Apple */
+"I have a password, send the email" = "Ik heb een wachtwoord, stuur de e-mail";
+
+/* Discovery survey: last onboarding screen, "How did you first hear about Glacier?" (glacierApp#225) */
+"Web search" = "Zoekmachine";
+"Podcast" = "Podcast";
+"YouTube" = "YouTube";
+"Social media" = "Sociale media";
+"Article, review, or newsletter" = "Artikel, recensie of nieuwsbrief";
+"Friend or family" = "Vriend of familie";
+"AI assistant" = "AI-assistent";
+"App Store or Google Play" = "App Store of Google Play";
+"I don't remember" = "Weet ik niet meer";
+"Which podcast?" = "Welke podcast?";
+"Which channel or creator?" = "Welk kanaal of welke maker?";
+"Which platform or account?" = "Welk platform of account?";
+"Which publication or newsletter?" = "Welke publicatie of nieuwsbrief?";
+"Which AI assistant?" = "Welke AI-assistent?";
+"Where did you hear about us?" = "Waar heb je over ons gehoord?";
+"One last thing." = "Nog één ding.";
+"How did you first hear about Glacier?" = "Hoe heb je voor het eerst over Glacier gehoord?";
+"Optional. Your answer helps us understand how people discover Glacier." = "Optioneel. Je antwoord helpt ons begrijpen hoe mensen Glacier ontdekken.";
+"Optional" = "Optioneel";
+"Submit" = "Versturen";
+
+/* Call history and voicemail: action that copies the caller's phone number */
+"Copy number" = "Nummer kopiëren";
+
+/* Confirmation shown after a phone number is copied */
+"Number copied" = "Nummer gekopieerd";
+
+/* Call history and voicemail: shown when a caller's number is hidden or unknown */
+"Number unavailable" = "Nummer niet beschikbaar";

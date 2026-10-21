@@ -88,6 +88,43 @@ final class SignInMethodLookupTests: XCTestCase {
         )
     }
 
+    func testPasswordResetForALinkedEmailNamesTheProvider() {
+        let alert = PasswordResetVM.linkedProviderAlert(for: .google)
+        XCTAssertEqual(alert.title, "Linked to Google")
+        XCTAssertEqual(
+            alert.message,
+            "This email signs in with Google. If you never set a password, no reset email will arrive. Go back and use Continue with Google instead."
+        )
+    }
+
+    // MARK: - Password reset
+
+    /// A Google or Apple email gets the explanation instead of a reset email
+    /// that never comes.
+    func testPasswordResetForALinkedEmailDoesNotRequestAReset() async {
+        let lookup = MockSignInMethodLookup(method: .federated(.google))
+        let service = ResetRecordingAuthenticationService()
+        let viewModel = makePasswordResetViewModel(lookup: lookup, service: service)
+        viewModel.email = "person@example.com"
+
+        viewModel.sendPasswordResetLink()
+        await waitUntil { lookup.requestedEmails == ["person@example.com"] }
+        for _ in 0..<20 { await Task.yield() }
+
+        XCTAssertTrue(service.resetRequestedFor.isEmpty)
+    }
+
+    func testPasswordResetForAPasswordEmailRequestsAReset() async {
+        let lookup = MockSignInMethodLookup(method: .password)
+        let service = ResetRecordingAuthenticationService()
+        let viewModel = makePasswordResetViewModel(lookup: lookup, service: service)
+        viewModel.email = "person@example.com"
+
+        viewModel.sendPasswordResetLink()
+
+        await waitUntil { service.resetRequestedFor == ["person@example.com"] }
+    }
+
     // MARK: - Login screen state
 
     func testFinishingTheEmailStepShowsTheLinkedProvider() async {
@@ -417,6 +454,21 @@ final class SignInMethodLookupTests: XCTestCase {
         )
     }
 
+    private func makePasswordResetViewModel(
+        lookup: MockSignInMethodLookup,
+        service: GlacierAuthenticationService
+    ) -> PasswordResetVM {
+        let coordinator = LookupStubRootCoordinator()
+        return PasswordResetVM(
+            rootCoodinator: coordinator,
+            passwordResetCoordinator: coordinator,
+            authenticationService: service,
+            signInMethodService: lookup,
+            isPresentedFromLoginScreen: true,
+            savedEmail: { nil }
+        )
+    }
+
     private func waitUntil(
         timeout: TimeInterval = 2,
         file: StaticString = #filePath,
@@ -506,6 +558,37 @@ private final class UnverifiedAccountAuthenticationService: GlacierAuthenticatio
     func confirmSignUp(for userName: String, confirmationCode: String) async throws -> AuthSignUpResult? { nil }
     func signIn(with provider: AuthProvider) async throws -> AuthSignInResult? { nil }
     func resetPassword(for userName: String) async throws -> AuthResetPasswordResult? { nil }
+    func confirmResetPassword(for userName: String, with newPassword: String, confirmationCode: String) async throws -> Bool { false }
+    func getCurrentUser() async throws -> AuthUser { throw UserAuthenticationError.authenticationFailure }
+    func getCurrentAuthSession() async throws -> AuthSession? { nil }
+    func signOut() async -> Bool { true }
+}
+
+private final class ResetRecordingAuthenticationService: GlacierAuthenticationService, @unchecked Sendable {
+    private let lock = NSLock()
+    private var resetEmails: [String] = []
+
+    var resetRequestedFor: [String] {
+        lock.lock(); defer { lock.unlock() }
+        return resetEmails
+    }
+
+    func resetPassword(for userName: String) async throws -> AuthResetPasswordResult? {
+        lock.lock()
+        resetEmails.append(userName)
+        lock.unlock()
+        return nil
+    }
+
+    // Unused by these tests.
+    func signIn(with email: String, password: String, flow: GlacierSignInFlow) async throws -> AuthSignInResult? { nil }
+    func confirmSignIn(challengeResponse: String) async throws -> AuthSignInResult? { nil }
+    func createUserAccount(with email: String, password: String) async throws -> AuthSignUpResult? { nil }
+    func resendSignUpCode(for userName: String) async throws -> AuthCodeDeliveryDetails {
+        throw UserAuthenticationError.authenticationFailure
+    }
+    func confirmSignUp(for userName: String, confirmationCode: String) async throws -> AuthSignUpResult? { nil }
+    func signIn(with provider: AuthProvider) async throws -> AuthSignInResult? { nil }
     func confirmResetPassword(for userName: String, with newPassword: String, confirmationCode: String) async throws -> Bool { false }
     func getCurrentUser() async throws -> AuthUser { throw UserAuthenticationError.authenticationFailure }
     func getCurrentAuthSession() async throws -> AuthSession? { nil }
