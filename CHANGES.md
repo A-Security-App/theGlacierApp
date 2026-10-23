@@ -9,7 +9,8 @@ users a day or two later.
 ## Version 1.2.2 (October 21, 2026)
 
 * Optional question at the end of onboarding about how you heard about Glacier,
-  caller's number can be copied from call history and voicemail.
+  caller's number can be copied from call history and voicemail, Secure DNS
+  setup reminder when Glacier isn't selected in iOS Settings yet.
 
 ## Version 1.2.1 (October 15, 2026)
 
