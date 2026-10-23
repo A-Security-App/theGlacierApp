@@ -106,6 +106,12 @@ final class HomeVM: HomeViewModel, ObservableObject {
     /// prompt and the final verdict don't both fire it (and it doesn't re-appear after
     /// the user has dismissed it).
     private var didPromptDNSSetupDuringVerification = false
+    /// Lets a verdict nobody asked for (a foreground refresh, the first Home screen after
+    /// onboarding) surface the DNS-setup prompt once per launch. Without it a user who switched
+    /// DNS on but never selected Glacier in iOS Settings only ever saw "Disconnected", with no
+    /// word on why, unless they tapped Connect again. Static so a re-created HomeVM
+    /// doesn't prompt a second time in the same launch.
+    private static var didPromptDNSSetupThisLaunch = false
     /// Guards the zero-tracker diagnostic below to one line per launch.
     private var didLogZeroTrackerDiagnostic = false
     /// Last composite connection state written to the log, so `checkSecuredConnectionStatus()`
@@ -1453,14 +1459,20 @@ extension HomeVM: DNSStatusDelegate {
                 // 1. User explicitly tapped the DNS connection button, OR
                 // 2. VPN is configured with on-demand but the tunnel is currently suppressed
                 //    (trusted-network rule fired) — DNS should be routed through DoT but isn't
-                //    because the profile hasn't been selected in iOS Settings.
+                //    because the profile hasn't been selected in iOS Settings, OR
+                // 3. Nobody asked (foreground refresh, first Home screen after onboarding) and
+                //    it hasn't been shown yet this launch. This verdict only arrives when another
+                //    resolver actually answered — a captive portal or blocked 853 goes to
+                //    `dnsVerificationUnavailable` instead — so it can't nag on those networks.
                 // Skip if we already prompted earlier in this same connect attempt (the early
                 // probe-failed prompt), so it doesn't fire twice or re-appear after dismissal.
                 let isVPNSuppressedByOnDemand = strongSelf.securityCenter.isVpnEnabled()
                                              && !strongSelf.securityCenter.isVpnTunnelConnected()
-                if (strongSelf.didUserTappedDNSConnectionButton || isVPNSuppressedByOnDemand),
+                if (strongSelf.didUserTappedDNSConnectionButton || isVPNSuppressedByOnDemand
+                    || !HomeVM.didPromptDNSSetupThisLaunch),
                    !strongSelf.didPromptDNSSetupDuringVerification {
                     strongSelf.didPromptDNSSetupDuringVerification = true
+                    HomeVM.didPromptDNSSetupThisLaunch = true
                     strongSelf.presentDNSSetupConfirmationPrompt(shouldDownloadAndAddDNSProfile: false)
                 }
             }
@@ -1482,6 +1494,7 @@ extension HomeVM: DNSStatusDelegate {
                                          && !strongSelf.securityCenter.isVpnTunnelConnected()
             guard strongSelf.didUserTappedDNSConnectionButton || isVPNSuppressedByOnDemand else { return }
             strongSelf.didPromptDNSSetupDuringVerification = true
+            HomeVM.didPromptDNSSetupThisLaunch = true
             strongSelf.presentDNSSetupConfirmationPrompt(shouldDownloadAndAddDNSProfile: false)
         }
     }
