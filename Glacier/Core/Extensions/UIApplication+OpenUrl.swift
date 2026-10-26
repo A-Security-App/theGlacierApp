@@ -16,18 +16,6 @@ extension UIApplication {
         "App-Prefs:"
     }
     
-    /// Boolean flag that tells if its a debug or TestFlight build.
-    static func isDebugOrTestFlight() -> Bool {
-    #if DEBUG
-        return true
-    #else
-        if let receiptURL = Bundle.main.appStoreReceiptURL {
-            return receiptURL.lastPathComponent == "sandboxReceipt"
-        }
-        return true
-    #endif
-    }
-    
     /// Opens the given URL string in the default browser.
     func openURL(_ urlString: String) {
         guard let url = URL(string: urlString), canOpenURL(url) else {

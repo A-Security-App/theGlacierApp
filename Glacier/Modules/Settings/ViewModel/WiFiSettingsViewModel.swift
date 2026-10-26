@@ -380,7 +380,7 @@ final class WiFiSettingsVM: WiFiSettingsViewModel, ObservableObject {
             description: NSLocalizedString(
                 "When your VPN turns off on this trusted network, Secure DNS protection requires our profile to be selected in iOS Settings.\n\nIn Settings page, navigate to:\n\nGeneral →\nVPN & Device Management →\nDNS →\n\nThen select Glacier.",
                 comment: "Trusted network DNS warning popup description"
-            ),
+            ) + "\n\n" + .dnsSettingsReopenTip,
             buttons: [
                 PopupButton(
                     style: .tertiary,

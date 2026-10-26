@@ -385,8 +385,8 @@ open class TwilioBackendManager: NSObject
             // keep the released number on screen.
             let accounts = self.getExistingAccounts().filter { $0.grdbRecord?.phoneNumber == selectedNumber }
             guard !accounts.isEmpty else { return }
-            DBManager.sharedDB().grdbStorage.asyncWrite(block: { transaction in
-                accounts.forEach { $0.grdbRecord?.grdbRemove(transaction: transaction) }
+            AppDatabase.shared.asyncWrite({ db in
+                try accounts.forEach { try $0.grdbRecord?.deleteByUniqueId(db) }
             }, completion: {
                 self.currentAccounts = self.getExistingAccounts()
                 if self.selectedAccount?.grdbRecord?.phoneNumber == selectedNumber {

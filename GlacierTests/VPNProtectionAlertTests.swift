@@ -37,7 +37,7 @@ final class VPNProtectionAlertTests: XCTestCase {
         }
     }
 
-    /// The case from the customer report: an app update tore the tunnel down and no
+    /// The reported case: an app update tore the tunnel down and no
     /// alert was sent. It must classify as a failure *and* keep the appUpdate kind,
     /// because that is what selects the "finish updating first" copy.
     func testAppUpdateIsAFailureCarryingItsOwnKind() {

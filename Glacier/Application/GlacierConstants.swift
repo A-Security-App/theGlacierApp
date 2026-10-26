@@ -21,10 +21,7 @@ let kGlacierPendingSignupAcct       = "com.theglacierapp.PendingSignup"
 
 // MARK: - Encryption Keys
 
-let kGlacierSalt                    = "com.theglacierapp.Salt"
 let kGlacierKeySpec                 = "com.theglacierapp.KeySpec"
-let kGlacierMediaSalt               = "com.theglacierapp.MediaSalt"
-let kGlacierMediaKeySpec            = "com.theglacierapp.MediaKeySpec"
 let kGlacierBackup                  = "com.theglacierapp.Backup"
 
 // MARK: - Misc Keys
@@ -39,13 +36,10 @@ let kBgTaskId                       = "com.theglacierapp.Glacier.task.refresh"
 let kBgRebootTaskId                 = "com.theglacierapp.Glacier.task.reboot"
 let kRebootReminderNotificationId   = "glacier.weeklyRebootReminder"
 let kAppVersionKey                  = "kAppVersionKey"
-let kOTRErrorDomain                 = "com.theglacierapp"
 
 // MARK: - Database
 
-let GlacierMediaDatabaseName        = "Glacier-media.sqlite"
 let GlacierGRDBPassphraseAccountName = "GlacierGRDBPassphraseAccountName"
-let GlacierMediaPassphraseName      = "GlacierMediaPassphraseName"
 
 // MARK: - Notifications
 

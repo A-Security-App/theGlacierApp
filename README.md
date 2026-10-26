@@ -52,8 +52,8 @@ gem install cocoapods
 ### 2. Clone and install pods
 
 ```bash
-git clone https://github.com/A-Security-App/glacierApp.git
-cd glacierApp
+git clone https://github.com/A-Security-App/theGlacierApp.git
+cd theGlacierApp
 pod install
 ```
 
@@ -198,10 +198,15 @@ Or in Xcode: select the **GlacierTests** scheme and press ⌘U.
 
 ## Pinned Endpoints
 
-Glacier enforces SSL public-key pinning on every outbound HTTPS connection via
-[`GlacierPinningConfiguration`](Glacier/Core/Networking/GlacierPinningConfiguration.swift).
-If you point the app at infrastructure that does not use Amazon Trust Services
-or Google Trust Services as a root, add the SPKI SHA-256 hash of your CA's
+Every request the app makes to Glacier's own backend is pinned to a set of
+CA public keys via
+[`GlacierPinningConfiguration`](Glacier/Core/Networking/GlacierPinningConfiguration.swift):
+a connection is accepted only if standard TLS validation passes and a
+certificate in the server's chain matches one of the pins. Third-party SDKs
+such as Amplify (Cognito) and Twilio Voice manage their own connections.
+
+If you point the app at infrastructure that does not chain to Amazon Trust
+Services or Google Trust Services, add the SPKI SHA-256 hash of your CA's
 public key to `GlacierPinningConfiguration.pinnedHashes`. Instructions for
 generating a hash from a live endpoint are at the top of that file.
 

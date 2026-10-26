@@ -10,7 +10,7 @@ import Alamofire
 
 /**
  Why the user is deleting their account, sent with the delete request so the backend can
- record it (console#571). The raw values are the backend's codes and must not change. The
+ record it. The raw values are the backend's codes and must not change. The
  cases are in the console's order, without `duplicate_account`: the survey shows eight reasons
  in four rows of two, and a second account can go in the feedback box.
  */

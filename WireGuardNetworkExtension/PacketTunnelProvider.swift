@@ -269,7 +269,7 @@ class PacketTunnelProvider: NEPacketTunnelProvider {
         }
     }
     
-    /// Tells the user their VPN protection stopped when they didn't ask for it (issue #204).
+    /// Tells the user their VPN protection stopped when they didn't ask for it.
     ///
     /// This runs in the extension because it is the only process guaranteed to be
     /// alive when the tunnel goes down — the containing app is normally suspended or

@@ -39,6 +39,18 @@ final class DNSSetupVM: DNSSetupViewModel {
     // MARK: - Private properties
     
     private let dnsOverTlsController = DnsOverTlsController.shared
+
+    /// Progress of the profile save that starts as soon as the popup appears, so iOS already has
+    /// the Glacier entry by the time the user taps "Open Settings".
+    private enum ProfileSaveState {
+        case idle
+        case saving
+        case saved
+        case failed(missingProfile: Bool)
+    }
+    private var profileSaveState: ProfileSaveState = .idle
+    /// Set when "Open Settings" is tapped while the save is still running.
+    private var shouldOpenSettingsWhenSaved = false
     
     // MARK: - Initializer
     
@@ -52,9 +64,13 @@ final class DNSSetupVM: DNSSetupViewModel {
     
     @MainActor
     func presentDNSSetupConfirmationPrompt() {
+        // Save the profile while the user reads the popup rather than after "Open Settings".
+        // It is saved disabled, so leaving it behind on Cancel changes nothing.
+        saveDNSProfile()
+
         let popupConfiguration = PopupConfiguration(
             title: NSLocalizedString("Enable Glacier DNS in Settings", comment: "DNS setup popup title"),
-            description: NSLocalizedString("In Settings page, navigate to:\n\nGeneral →\nVPN & Device Management →\nDNS →\n\nThen select Glacier.", comment: "DNS setup popup description"),
+            description: NSLocalizedString("In Settings page, navigate to:\n\nGeneral →\nVPN & Device Management →\nDNS →\n\nThen select Glacier.", comment: "DNS setup popup description") + "\n\n" + .dnsSettingsReopenTip,
             buttons: [
                 PopupButton(
                     style: .tertiary,
@@ -68,9 +84,7 @@ final class DNSSetupVM: DNSSetupViewModel {
                     title: NSLocalizedString("Open Settings", comment: "Open settings button title"),
                     onTap: {
                         self.dismissPopup()
-                        
-                        // Let's add Glacier DNS configuration to user device
-                        self.addDNSConfigurationToUserDevice()
+                        self.openSettingsWhenProfileSaved()
                     }
                 )
             ],
@@ -97,64 +111,88 @@ final class DNSSetupVM: DNSSetupViewModel {
 
     // MARK: - Private methods
     
-    @MainActor
-    private func addDNSConfigurationToUserDevice() {
-        let dnsOverTlsController = DnsOverTlsController.shared
+    /// Fetches the user's profile and saves it to iOS, disabled. Does nothing while a save is
+    /// running or once one has succeeded; a failed save is retried.
+    private func saveDNSProfile() {
+        switch profileSaveState {
+        case .saving, .saved:
+            return
+        case .idle, .failed:
+            break
+        }
+        profileSaveState = .saving
+
         let securityCenter = GlacierApplicationDelegate.appDelegate.securityCenter
-        
-        presentProgressIndicator()
         securityCenter.getDNSProfile { [weak self] dnsProfile in
-            guard let self = self else { return }
             DispatchQueue.main.async {
-                self.dismissProgressIndicator()
-            }
-            
-            // No profile available (the account isn't provisioned yet, or the fetch failed).
-            // `getDNSProfile` no longer substitutes the shared backup profile, because a device
-            // pinned to it never re-fetches and reports zero blocked trackers forever. Tell the
-            // user instead of silently leaving the step half-done: nothing is stored, and
-            // `didCompleteDNSSetupDuringOnboarding` stays unset so the step can be retried.
-            guard let profile = dnsProfile else {
-                DispatchQueue.main.async {
-                    self.presentAlertWith(
-                        title: .errorText,
-                        description: NSLocalizedString(
-                            "We couldn't finish setting up Secure DNS right now. Try again in a minute, or skip this step and turn it on later in Settings.",
-                            comment: "DNS setup screen missing DNS profile error"
-                        )
-                    )
-                }
-                return
-            }
-            var finalProfile = profile
-            if !profile.hasPrefix("tls://"), profile.contains(SecurityCenter.DNS_BACKUP) {
-                if let deviceID = self.getShortDeviceID(length: 12) {
-                    finalProfile = "tls://\(deviceID)-\(profile)"
-                } else {
-                    finalProfile = "tls://\(profile)"
-                }
-            }
-            dnsOverTlsController.storeNewConfiguration(finalProfile)
-            
-            let configuration = dnsOverTlsController.loadSavedConfiguration()
-            dnsOverTlsController.apply(configuration: configuration) { result in
-                guard case .success(let _) = result else {
-                    DispatchQueue.main.async {
-                        self.presentAlertWith(
-                            title: .errorText,
-                            description: NSLocalizedString("Something went wrong while adding DNS configuration. Please try again.", comment: "DNS setup screen add DNS configuration error")
-                        )
-                    }
+                guard let self = self else { return }
+
+                // No profile available (the account isn't provisioned yet, or the fetch failed).
+                // `getDNSProfile` no longer substitutes the shared backup profile, because a device
+                // pinned to it never re-fetches and reports zero blocked trackers forever. Nothing
+                // is stored, and `didCompleteDNSSetupDuringOnboarding` stays unset so the step can
+                // be retried.
+                guard let profile = dnsProfile else {
+                    self.finishProfileSave(.failed(missingProfile: true))
                     return
                 }
-                
-                // Let's open iOS settings so that user can select Glacier DNS
-                //guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
-                guard let url = URL(string: UIApplication.settingsRootURL) else { return }
-                UIApplication.shared.open(url)
-                self.didShowDeviceSettings = true
-                UserDefaultsService.shared.set(true, for: \.didCompleteDNSSetupDuringOnboarding)
+                var finalProfile = profile
+                if !profile.hasPrefix("tls://"), profile.contains(SecurityCenter.DNS_BACKUP) {
+                    if let deviceID = self.getShortDeviceID(length: 12) {
+                        finalProfile = "tls://\(deviceID)-\(profile)"
+                    } else {
+                        finalProfile = "tls://\(profile)"
+                    }
+                }
+                self.dnsOverTlsController.storeNewConfiguration(finalProfile)
+
+                let configuration = self.dnsOverTlsController.loadSavedConfiguration()
+                self.dnsOverTlsController.apply(configuration: configuration) { result in
+                    guard case .success = result else {
+                        self.finishProfileSave(.failed(missingProfile: false))
+                        return
+                    }
+                    self.finishProfileSave(.saved)
+                }
             }
+        }
+    }
+
+    private func finishProfileSave(_ state: ProfileSaveState) {
+        profileSaveState = state
+        guard shouldOpenSettingsWhenSaved else { return }
+        shouldOpenSettingsWhenSaved = false
+        dismissProgressIndicator()
+        openSettingsWhenProfileSaved()
+    }
+
+    /// "Open Settings": opens iOS Settings once the profile is saved, waiting behind a progress
+    /// indicator if the save is still running, or tells the user why it couldn't be saved.
+    private func openSettingsWhenProfileSaved() {
+        switch profileSaveState {
+        case .saved:
+            // Let's open iOS settings so that user can select Glacier DNS
+            guard let url = URL(string: UIApplication.settingsRootURL) else { return }
+            UIApplication.shared.open(url)
+            didShowDeviceSettings = true
+            UserDefaultsService.shared.set(true, for: \.didCompleteDNSSetupDuringOnboarding)
+        case .saving:
+            shouldOpenSettingsWhenSaved = true
+            presentProgressIndicator()
+        case .idle:
+            shouldOpenSettingsWhenSaved = true
+            presentProgressIndicator()
+            saveDNSProfile()
+        case .failed(let missingProfile):
+            // Back to idle so the next tap on the card starts a fresh attempt.
+            profileSaveState = .idle
+            let description = missingProfile
+                ? NSLocalizedString(
+                    "We couldn't finish setting up Secure DNS right now. Try again in a minute, or skip this step and turn it on later in Settings.",
+                    comment: "DNS setup screen missing DNS profile error"
+                )
+                : NSLocalizedString("Something went wrong while adding DNS configuration. Please try again.", comment: "DNS setup screen add DNS configuration error")
+            presentAlertWith(title: .errorText, description: description)
         }
     }
     

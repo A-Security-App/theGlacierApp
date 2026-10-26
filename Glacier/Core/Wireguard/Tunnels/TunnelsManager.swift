@@ -568,7 +568,7 @@ class TunnelsManager {
         tunnel.isAttemptingActivation = false
         guard tunnel.status != .inactive && tunnel.status != .deactivating else { return }
         // The app is asking for this stop, so the resulting .disconnected must not be
-        // reported to the user as lost protection (issue #204). Nothing outside the app
+        // reported to the user as lost protection. Nothing outside the app
         // reaches this method, which is what makes it a trustworthy signal of intent.
         VPNProtectionAlert.noteAppInitiatedStop()
         #if targetEnvironment(simulator)

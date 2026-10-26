@@ -9,7 +9,7 @@ import SwiftUI
 
 /**
  DiscoverySurveyScreen is the last onboarding screen, however onboarding ends. It asks once per
- account how the user first heard about Glacier (glacierApp#225), with an optional follow-up for
+ account how the user first heard about Glacier, with an optional follow-up for
  some answers. Answering is optional: **Skip** finishes onboarding just like **Submit**, and
  neither waits on the network.
 

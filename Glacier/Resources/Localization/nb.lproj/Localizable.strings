@@ -145,6 +145,7 @@
 "Hides which sites you're visiting - faster connection, no ads, and enough privacy for everyday use." = "Skjuler hvilke nettsider du besøker - raskere tilkobling, ingen annonser og tilstrekkelig personvern for daglig bruk.";
 "Enable Glacier DNS in Settings" = "Aktiver Glacier DNS i Innstillinger";
 "In Settings page, navigate to:\n\nGeneral →\nVPN & Device Management →\nDNS →\n\nThen select Glacier." = "Gå til dette i Innstillinger:\n\nGenerelt →\nVPN og enhetsadministrasjon →\nDNS →\n\nVelg deretter Glacier.";
+"Don't see Glacier? Swipe Settings closed and open it again." = "Ser du ikke Glacier? Lukk Innstillinger helt og åpne den igjen.";
 "Secure DNS Protection Required" = "Sikker DNS-beskyttelse kreves";
 "When your VPN turns off on this trusted network, Secure DNS protection requires our profile to be selected in iOS Settings.\n\nIn Settings page, navigate to:\n\nGeneral →\nVPN & Device Management →\nDNS →\n\nThen select Glacier." = "Når VPN slås av på dette klarerte nettverket, krever sikker DNS-beskyttelse at profilen vår er valgt i iOS-innstillingene.\n\nPå siden Innstillinger, naviger til:\n\nGenerelt →\nVPN og enhetsadministrasjon →\nDNS →\n\nDeretter velger du Glacier.";
 "Something went wrong while adding DNS configuration. Please try again." = "Noe gikk galt under tillegging av DNS-konfigurasjonen. Vennligst prøv igjen.";
@@ -521,7 +522,7 @@
 "Choose your preferred widget, then press " = "Velg foretrukket widget, og trykk deretter ";
 " to confirm" = " for å bekrefte";
 
-/* VPN protection-off alert (issue #204) */
+/* VPN protection-off alert */
 "VPN protection is off" = "VPN-beskyttelsen er av";
 "Glacier's VPN stopped for an app update. Finish updating, then reconnect." = "Glacier-VPN stoppet på grunn av en appoppdatering. Fullfør oppdateringen, og koble til igjen.";
 "Your Glacier VPN stopped unexpectedly. Open Glacier to reconnect." = "Glacier-VPN stoppet uventet. Åpne Glacier for å koble til igjen.";
@@ -659,7 +660,7 @@
 /* Password reset screen button: send the reset email for an email linked to Google or Apple */
 "I have a password, send the email" = "Jeg har et passord, send e-posten";
 
-/* Discovery survey: last onboarding screen, "How did you first hear about Glacier?" (glacierApp#225) */
+/* Discovery survey: last onboarding screen, "How did you first hear about Glacier?" */
 "Web search" = "Nettsøk";
 "Podcast" = "Podkast";
 "YouTube" = "YouTube";

@@ -57,8 +57,9 @@ enum FederatedSignInProvider: String, CaseIterable {
  What the backend says an email should sign in with.
 
  `.password` is also the answer for an address with no account and for a
- lookup that failed: the backend answers those identically on purpose (pentest
- finding F-08), and the app treats a failure the same way.
+ lookup that failed: the backend answers those identically on purpose, so the
+ lookup cannot reveal which addresses have accounts, and the app treats a failure
+ the same way.
  */
 enum SignInMethod: Equatable {
     case password

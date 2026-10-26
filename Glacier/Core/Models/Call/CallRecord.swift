@@ -9,7 +9,7 @@
 import Foundation
 import GRDB
 
-struct CallRecord: GRDBRecord, TableRecord {
+struct CallRecord: StoredRecord, TableRecord {
     var id: Int64?
     var uniqueId: String
     
@@ -59,11 +59,11 @@ struct CallRecord: GRDBRecord, TableRecord {
         var messages:[CallRecord] = []
         
         do {
-            try DBManager.sharedDB().grdbStorage.read(block: { transaction in
-                messages = try CallRecord
+            messages = try AppDatabase.shared.read { db in
+                try CallRecord
                     .order(Column("startTime").desc)
-                    .fetchAll(transaction.database)
-            })
+                    .fetchAll(db)
+            }
         } catch {
             Log.calls.debug("CallRecord.allMessages error: \(error)")
         }
@@ -75,12 +75,12 @@ struct CallRecord: GRDBRecord, TableRecord {
         var messages:[CallRecord] = []
         
         do {
-            try DBManager.sharedDB().grdbStorage.read(block: { transaction in
-                messages = try CallRecord
+            messages = try AppDatabase.shared.read { db in
+                try CallRecord
                     .filter(Column("to") == number || Column("from") == number)
                     .order(Column("startTime").desc)
-                    .fetchAll(transaction.database)
-            })
+                    .fetchAll(db)
+            }
         } catch {
             Log.calls.debug("CallRecord.allMessages error: \(error)")
         }
@@ -89,22 +89,22 @@ struct CallRecord: GRDBRecord, TableRecord {
     }
     
     public static func storeCallRecords(callRecords:[CallRecord], completion: @escaping ()->Void) {
-        DBManager.sharedDB().grdbStorage.asyncWrite(block: { transaction in
+        AppDatabase.shared.asyncWrite({ db in
             for callRecord in callRecords {
-                callRecord.grdbSave(transaction: transaction)
+                try callRecord.upsert(db)
             }
         }, completion: completion)
     }
 
     public static func removeAll(for number: String) {
-        DBManager.sharedDB().grdbStorage.asyncWrite(block: { transaction in
+        AppDatabase.shared.asyncWrite { db in
             do {
                 try CallRecord
                     .filter(Column("to") == number || Column("from") == number)
-                    .deleteAll(transaction.database)
+                    .deleteAll(db)
             } catch {
                 Log.calls.debug("CallRecord.removeAll error: \(error)")
             }
-        })
+        }
     }
 }

@@ -8,9 +8,9 @@
 import Foundation
 
 /**
- Where the user first heard about Glacier, asked once per account on the last onboarding screen
- (glacierApp#225). The raw values are the backend's channel IDs, shared with the console and
- Android (console#590), and must not change. The order is the order shown, with **Other** and
+ Where the user first heard about Glacier, asked once per account on the last onboarding screen.
+ The raw values are the backend's channel IDs, shared with the console and Android, and must
+ not change. The order is the order shown, with **Other** and
  **I don't remember** last.
  */
 enum DiscoveryChannel: String, CaseIterable, Identifiable {

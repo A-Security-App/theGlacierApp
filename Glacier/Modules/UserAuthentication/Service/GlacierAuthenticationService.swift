@@ -124,39 +124,15 @@ final class AmplifyAuthenticationService: GlacierAuthenticationService {
      six-digit code. Login asks for `.emailCodeChallenge`. The automatic sign-in
      that follows account confirmation asks for `.passwordOnly`, so confirming a
      brand new account does not immediately mail a second code.
+
+     A login that asks for the code never falls back to a sign-in without one:
+     if Cognito refuses the custom flow, the error reaches the user.
      */
     func signIn(
         with email: String,
         password: String,
         flow: GlacierSignInFlow
     ) async throws -> AuthSignInResult? {
-        do {
-            return try await amplifySignIn(email: email, password: password, flow: flow)
-        } catch {
-            // A shipped build cannot be pulled back the way a server deploy can,
-            // so it must not hard-depend on ALLOW_CUSTOM_AUTH being present on
-            // the Cognito app client. Without that flag Cognito rejects the
-            // request outright and the user cannot log in at all. For that one
-            // error, and only that one, fall back to plain SRP so sign-in still
-            // works — and log it, because the account got no code and the app
-            // client still needs the flag before this build's 2FA does anything.
-            // Debug-only: the message itself carries no PII, but there is no
-            // reason to persist it in the unified log of a release build.
-            guard flow == .emailCodeChallenge, Self.isCustomAuthUnavailable(error) else {
-                throw error
-            }
-            #if DEBUG
-            Log.auth.error("[GlacierAuth] Cognito app client does not allow custom auth; signed in without an email code: \(String(describing: error), privacy: .public)")
-            #endif
-            return try await amplifySignIn(email: email, password: password, flow: .passwordOnly)
-        }
-    }
-
-    private func amplifySignIn(
-        email: String,
-        password: String,
-        flow: GlacierSignInFlow
-    ) async throws -> AuthSignInResult {
         try await signInClearingStaleSession {
             try await Amplify.Auth.signIn(
                 username: email,
@@ -178,31 +154,6 @@ final class AmplifyAuthenticationService: GlacierAuthenticationService {
         return try await Amplify.Auth.confirmSignIn(challengeResponse: challengeResponse)
     }
 
-    /**
-     Cognito answers a `CUSTOM_WITH_SRP` request from an app client that lacks
-     `ALLOW_CUSTOM_AUTH` with `InvalidParameterException`, which Amplify surfaces
-     as `.invalidParameter`. The observed message is `CUSTOM_AUTH is not enabled
-     for the client` — Cognito's stable phrasing for a disabled flow is
-     `<FLOW> is not enabled for the client`, so that substring is what we match
-     (an earlier `"auth flow"` guess never matched the real text, and the missing
-     fallback locked users out). We only reach here for `.emailCodeChallenge`, so
-     "not enabled for the client" can only mean custom auth. The `"auth flow"`
-     variant is kept as a belt-and-braces alternative. Because `.invalidParameter`
-     also covers unrelated bad requests, the message has to match too; anything
-     else is rethrown and reaches the user exactly as it does now.
-
-     Not `private` so `UserLoginEmailCodeTests` can pin the message match and stop
-     this from silently regressing again.
-     */
-    static func isCustomAuthUnavailable(_ error: Error) -> Bool {
-        let underlying = (error as? AuthError)?.underlyingError as? AWSCognitoAuthError
-        let cognitoError = underlying ?? error as? AWSCognitoAuthError
-        guard cognitoError == .invalidParameter else { return false }
-        let description = String(describing: error).lowercased()
-        return description.contains("not enabled for the client")
-            || description.contains("auth flow")
-    }
-    
     /**
      Initiates user authentication flow with Google and Apple authetication providers.
      */

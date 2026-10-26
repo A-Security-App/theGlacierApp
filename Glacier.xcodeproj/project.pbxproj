@@ -25,6 +25,7 @@
 		A1EC10072F48E700006EDC42 /* EnableVPNViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1EC10082F48E700006EDC42 /* EnableVPNViewModel.swift */; };
 		A51C0DE00000000000000002 /* SignInMethodService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A51C0DE00000000000000001 /* SignInMethodService.swift */; };
 		A51C0DE00000000000000004 /* LinkedProviderNotice.swift in Sources */ = {isa = PBXBuildFile; fileRef = A51C0DE00000000000000003 /* LinkedProviderNotice.swift */; };
+		A9D8B0C1E2F3A4B5C6D7E8F0 /* AppDatabaseUpgradeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9D8B0C1E2F3A4B5C6D7E8F1 /* AppDatabaseUpgradeTests.swift */; };
 		AC10000000000000000000BA /* GlacierWidgetBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC10000000000000000000B5 /* GlacierWidgetBundle.swift */; };
 		AC10000000000000000000BB /* GlacierWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC10000000000000000000B6 /* GlacierWidget.swift */; };
 		AC10000000000000000000BC /* VPNDNSToggleIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC10000000000000000000B7 /* VPNDNSToggleIntent.swift */; };
@@ -121,8 +122,7 @@
 		C14DA05E2F128EDD003D40CB /* GlacierApplicationDelegate+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = C14DA05D2F128ED4003D40CB /* GlacierApplicationDelegate+Extension.swift */; };
 		C14DA0602F129543003D40CB /* GlacierApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = C14DA02D2F11830F003D40CB /* GlacierApp.swift */; };
 		C14DA0622F1296DA003D40CB /* SplashScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = C14DA0612F1296DA003D40CB /* SplashScreen.storyboard */; };
-		C14DA1372F12A190003D40CB /* GRDBRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = C14DA0A52F12A190003D40CB /* GRDBRecord.swift */; };
-		C14DA1382F12A190003D40CB /* GlacierError.swift in Sources */ = {isa = PBXBuildFile; fileRef = C14DA0A32F12A190003D40CB /* GlacierError.swift */; };
+		C14DA1372F12A190003D40CB /* StoredRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = C14DA0A52F12A190003D40CB /* StoredRecord.swift */; };
 		C14DA13A2F12A190003D40CB /* DNSTester.swift in Sources */ = {isa = PBXBuildFile; fileRef = C14DA0C32F12A190003D40CB /* DNSTester.swift */; };
 		C14DA13B2F12A190003D40CB /* TunnelErrors.swift in Sources */ = {isa = PBXBuildFile; fileRef = C14DA1142F12A190003D40CB /* TunnelErrors.swift */; };
 		C14DA1452F12A190003D40CB /* TunnelViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C14DA11D2F12A190003D40CB /* TunnelViewModel.swift */; };
@@ -134,7 +134,7 @@
 		C14DA1752F12A190003D40CB /* ActivateOnDemandViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C14DA1182F12A190003D40CB /* ActivateOnDemandViewModel.swift */; };
 		C14DA1782F12A190003D40CB /* RecentTunnelsTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = C14DA11B2F12A190003D40CB /* RecentTunnelsTracker.swift */; };
 		C14DA17D2F12A190003D40CB /* WireGuardResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = C14DA1212F12A190003D40CB /* WireGuardResult.swift */; };
-		C14DA1802F12A190003D40CB /* GRDBModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C14DA0A42F12A190003D40CB /* GRDBModel.swift */; };
+		C14DA1802F12A190003D40CB /* StoredModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C14DA0A42F12A190003D40CB /* StoredModel.swift */; };
 		C14DA1882F12A190003D40CB /* ErrorPresenterProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = C14DA11A2F12A190003D40CB /* ErrorPresenterProtocol.swift */; };
 		C14DA18B2F12A190003D40CB /* TunnelImporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = C14DA11C2F12A190003D40CB /* TunnelImporter.swift */; };
 		C14DA18F2F12A190003D40CB /* TunnelsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C14DA1152F12A190003D40CB /* TunnelsManager.swift */; };
@@ -144,17 +144,15 @@
 		C14DA1982F12A190003D40CB /* SMSChatAccount.swift in Sources */ = {isa = PBXBuildFile; fileRef = C14DA09D2F12A190003D40CB /* SMSChatAccount.swift */; };
 		C14DA19C2F12A190003D40CB /* WireGuardAppError.swift in Sources */ = {isa = PBXBuildFile; fileRef = C14DA1202F12A190003D40CB /* WireGuardAppError.swift */; };
 		C14DA1AE2F12A190003D40CB /* ErrorPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = C14DA1192F12A190003D40CB /* ErrorPresenter.swift */; };
-		C14DA1F62F12A562003D40CB /* DBStorageCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = C14DA1E02F12A562003D40CB /* DBStorageCoordinator.swift */; };
+		C14DA1F62F12A562003D40CB /* DatabaseKey.swift in Sources */ = {isa = PBXBuildFile; fileRef = C14DA1E02F12A562003D40CB /* DatabaseKey.swift */; };
 		C14DA1F82F12A562003D40CB /* SubscriptionAccessCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = C14DA1F02F12A562003D40CB /* SubscriptionAccessCoordinator.swift */; };
-		C14DA1FA2F12A562003D40CB /* DBSchemaCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = C14DA1DF2F12A562003D40CB /* DBSchemaCoordinator.swift */; };
+		C14DA1FA2F12A562003D40CB /* AppDatabaseSchema.swift in Sources */ = {isa = PBXBuildFile; fileRef = C14DA1DF2F12A562003D40CB /* AppDatabaseSchema.swift */; };
 		C14DA1FB2F12A562003D40CB /* TwilioBackendManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C14DA1F22F12A562003D40CB /* TwilioBackendManager.swift */; };
 		C14DA1FC2F12A562003D40CB /* SecurityCenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = C14DA1EE2F12A562003D40CB /* SecurityCenter.swift */; };
 		C14DA1FD2F12A562003D40CB /* AWSAcctManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C14DA1E42F12A562003D40CB /* AWSAcctManager.swift */; };
 		C14DA1FE2F12A562003D40CB /* CallManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C14DA1E52F12A562003D40CB /* CallManager.swift */; };
-		C14DA1FF2F12A562003D40CB /* Transaction.swift in Sources */ = {isa = PBXBuildFile; fileRef = C14DA1E22F12A562003D40CB /* Transaction.swift */; };
 		C14DA2002F12A562003D40CB /* PushController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C14DA1ED2F12A562003D40CB /* PushController.swift */; };
-		C14DA2012F12A562003D40CB /* DBManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C14DA1DE2F12A562003D40CB /* DBManager.swift */; };
-		C14DA2022F12A562003D40CB /* Transactable.swift in Sources */ = {isa = PBXBuildFile; fileRef = C14DA1E12F12A562003D40CB /* Transactable.swift */; };
+		C14DA2012F12A562003D40CB /* AppDatabase.swift in Sources */ = {isa = PBXBuildFile; fileRef = C14DA1DE2F12A562003D40CB /* AppDatabase.swift */; };
 		C14DA2042F12A562003D40CB /* WireGuardManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C14DA1F32F12A562003D40CB /* WireGuardManager.swift */; };
 		C14DA2072F12A562003D40CB /* LatestVersions.swift in Sources */ = {isa = PBXBuildFile; fileRef = C14DA1E72F12A562003D40CB /* LatestVersions.swift */; };
 		C158F94E2F13FB7A00194829 /* UserAuthenticationHomeScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = C158F94D2F13FB7A00194829 /* UserAuthenticationHomeScreen.swift */; };
@@ -294,7 +292,6 @@
 		F574E20C2EBE62230052C919 /* DNSProxy.swift in Sources */ = {isa = PBXBuildFile; fileRef = F574E20B2EBE62230052C919 /* DNSProxy.swift */; };
 		F57F83412F3A6F2B00FE3B94 /* GlacierAPIHeaders.swift in Sources */ = {isa = PBXBuildFile; fileRef = F57F83402F3A6F2B00FE3B94 /* GlacierAPIHeaders.swift */; };
 		F59763CE2F55BB34002C081F /* Lottie in Frameworks */ = {isa = PBXBuildFile; productRef = F59763CD2F55BB34002C081F /* Lottie */; };
-		F59958B0296F183200ACBFFC /* grdbschema.sql in Resources */ = {isa = PBXBuildFile; fileRef = F59958AF296F183200ACBFFC /* grdbschema.sql */; };
 		F59D74C72E97E03000A01CA3 /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F59D74C62E97E03000A01CA3 /* StoreKit.framework */; };
 		F5A3A83C2F4DEC360078B432 /* Secrets.plist in Resources */ = {isa = PBXBuildFile; fileRef = F5A3A83B2F4DEC360078B432 /* Secrets.plist */; };
 		F5AE288124993CD1009056F2 /* Settings.bundle in Resources */ = {isa = PBXBuildFile; fileRef = F5AE287524993CD1009056F2 /* Settings.bundle */; };
@@ -369,6 +366,7 @@
 		A1EC10082F48E700006EDC42 /* EnableVPNViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnableVPNViewModel.swift; sourceTree = "<group>"; };
 		A51C0DE00000000000000001 /* SignInMethodService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignInMethodService.swift; sourceTree = "<group>"; };
 		A51C0DE00000000000000003 /* LinkedProviderNotice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LinkedProviderNotice.swift; sourceTree = "<group>"; };
+		A9D8B0C1E2F3A4B5C6D7E8F1 /* AppDatabaseUpgradeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDatabaseUpgradeTests.swift; sourceTree = "<group>"; };
 		AB9578A3E554459798EB779A /* CallerNumberTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CallerNumberTests.swift; sourceTree = "<group>"; };
 		AC10000000000000000000AF /* GlacierWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = GlacierWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		AC10000000000000000000B5 /* GlacierWidgetBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlacierWidgetBundle.swift; sourceTree = "<group>"; };
@@ -470,9 +468,8 @@
 		C14DA09B2F12A190003D40CB /* CallRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CallRecord.swift; sourceTree = "<group>"; };
 		C14DA09D2F12A190003D40CB /* SMSChatAccount.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SMSChatAccount.swift; sourceTree = "<group>"; };
 		C14DA0A22F12A190003D40CB /* GlacierAccount.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlacierAccount.swift; sourceTree = "<group>"; };
-		C14DA0A32F12A190003D40CB /* GlacierError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlacierError.swift; sourceTree = "<group>"; };
-		C14DA0A42F12A190003D40CB /* GRDBModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GRDBModel.swift; sourceTree = "<group>"; };
-		C14DA0A52F12A190003D40CB /* GRDBRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GRDBRecord.swift; sourceTree = "<group>"; };
+		C14DA0A42F12A190003D40CB /* StoredModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoredModel.swift; sourceTree = "<group>"; };
+		C14DA0A52F12A190003D40CB /* StoredRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoredRecord.swift; sourceTree = "<group>"; };
 		C14DA0B62F12A190003D40CB /* GlacierImageCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = GlacierImageCache.swift; path = Glacier/Core/Models/GlacierImageCache.swift; sourceTree = SOURCE_ROOT; };
 		C14DA0C12F12A190003D40CB /* DnsOverTlsController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = DnsOverTlsController.swift; path = Glacier/Core/Managers/DnsOverTlsController.swift; sourceTree = SOURCE_ROOT; };
 		C14DA0C22F12A190003D40CB /* DnsOverTlsPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = DnsOverTlsPreferences.swift; path = Glacier/Core/Managers/DnsOverTlsPreferences.swift; sourceTree = SOURCE_ROOT; };
@@ -491,11 +488,9 @@
 		C14DA11F2F12A190003D40CB /* WireGuard-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "WireGuard-Bridging-Header.h"; sourceTree = "<group>"; };
 		C14DA1202F12A190003D40CB /* WireGuardAppError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WireGuardAppError.swift; sourceTree = "<group>"; };
 		C14DA1212F12A190003D40CB /* WireGuardResult.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WireGuardResult.swift; sourceTree = "<group>"; };
-		C14DA1DE2F12A562003D40CB /* DBManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DBManager.swift; sourceTree = "<group>"; };
-		C14DA1DF2F12A562003D40CB /* DBSchemaCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DBSchemaCoordinator.swift; sourceTree = "<group>"; };
-		C14DA1E02F12A562003D40CB /* DBStorageCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DBStorageCoordinator.swift; sourceTree = "<group>"; };
-		C14DA1E12F12A562003D40CB /* Transactable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Transactable.swift; sourceTree = "<group>"; };
-		C14DA1E22F12A562003D40CB /* Transaction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Transaction.swift; sourceTree = "<group>"; };
+		C14DA1DE2F12A562003D40CB /* AppDatabase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDatabase.swift; sourceTree = "<group>"; };
+		C14DA1DF2F12A562003D40CB /* AppDatabaseSchema.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDatabaseSchema.swift; sourceTree = "<group>"; };
+		C14DA1E02F12A562003D40CB /* DatabaseKey.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DatabaseKey.swift; sourceTree = "<group>"; };
 		C14DA1E42F12A562003D40CB /* AWSAcctManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AWSAcctManager.swift; sourceTree = "<group>"; };
 		C14DA1E52F12A562003D40CB /* CallManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CallManager.swift; sourceTree = "<group>"; };
 		C14DA1E72F12A562003D40CB /* LatestVersions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = LatestVersions.swift; path = Glacier/Core/Managers/LatestVersions.swift; sourceTree = SOURCE_ROOT; };
@@ -641,7 +636,6 @@
 		F55D66C32F86D1D8003E501B /* UIColor+Glacier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIColor+Glacier.swift"; sourceTree = "<group>"; };
 		F574E20B2EBE62230052C919 /* DNSProxy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DNSProxy.swift; sourceTree = "<group>"; };
 		F57F83402F3A6F2B00FE3B94 /* GlacierAPIHeaders.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlacierAPIHeaders.swift; sourceTree = "<group>"; };
-		F59958AF296F183200ACBFFC /* grdbschema.sql */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = grdbschema.sql; sourceTree = "<group>"; };
 		F59D74C62E97E03000A01CA3 /* StoreKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKit.framework; path = System/Library/Frameworks/StoreKit.framework; sourceTree = SDKROOT; };
 		F5A3A83B2F4DEC360078B432 /* Secrets.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Secrets.plist; sourceTree = "<group>"; };
 		F5AE286724993496009056F2 /* Glacier.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Glacier.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -743,6 +737,7 @@
 				F2040001000000000000AD08 /* UpstreamFanOutOrderTests.swift */,
 				F2040001000000000000AC08 /* InternationalDialStringTests.swift */,
 				AB9578A3E554459798EB779A /* CallerNumberTests.swift */,
+				A9D8B0C1E2F3A4B5C6D7E8F1 /* AppDatabaseUpgradeTests.swift */,
 			);
 			path = GlacierTests;
 			sourceTree = "<group>";
@@ -992,7 +987,6 @@
 				F5A3A8352F4DE1440078B432 /* Properties */,
 				C14DA0352F11859C003D40CB /* Localization */,
 				C14DA0612F1296DA003D40CB /* SplashScreen.storyboard */,
-				F59958AF296F183200ACBFFC /* grdbschema.sql */,
 				F5AE287524993CD1009056F2 /* Settings.bundle */,
 			);
 			path = Resources;
@@ -1332,11 +1326,9 @@
 		C14DA1E32F12A562003D40CB /* Persistance */ = {
 			isa = PBXGroup;
 			children = (
-				C14DA1DE2F12A562003D40CB /* DBManager.swift */,
-				C14DA1DF2F12A562003D40CB /* DBSchemaCoordinator.swift */,
-				C14DA1E02F12A562003D40CB /* DBStorageCoordinator.swift */,
-				C14DA1E12F12A562003D40CB /* Transactable.swift */,
-				C14DA1E22F12A562003D40CB /* Transaction.swift */,
+				C14DA1DE2F12A562003D40CB /* AppDatabase.swift */,
+				C14DA1DF2F12A562003D40CB /* AppDatabaseSchema.swift */,
+				C14DA1E02F12A562003D40CB /* DatabaseKey.swift */,
 			);
 			path = Persistance;
 			sourceTree = "<group>";
@@ -1370,9 +1362,8 @@
 		C177333C2F34FE160003A178 /* GRDB */ = {
 			isa = PBXGroup;
 			children = (
-				C14DA0A42F12A190003D40CB /* GRDBModel.swift */,
-				C14DA0A52F12A190003D40CB /* GRDBRecord.swift */,
-				C14DA0A32F12A190003D40CB /* GlacierError.swift */,
+				C14DA0A42F12A190003D40CB /* StoredModel.swift */,
+				C14DA0A52F12A190003D40CB /* StoredRecord.swift */,
 			);
 			path = GRDB;
 			sourceTree = "<group>";
@@ -1942,7 +1933,6 @@
 				C133A5FE2F561D8F0025A952 /* glacier-alerts.json in Resources */,
 				C133A5FF2F561D8F0025A952 /* glacier-DNS-VPN.json in Resources */,
 				C133A6002F561D8F0025A952 /* glacier-ringing.json in Resources */,
-				F59958B0296F183200ACBFFC /* grdbschema.sql in Resources */,
 				C133A5E22F55F1460025A952 /* glacier-black.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -2073,6 +2063,7 @@
 				F2040001000000000000AA09 /* VPNProtectionAlertTests.swift in Sources */,
 				F2040001000000000000AC09 /* InternationalDialStringTests.swift in Sources */,
 				FE12B17ED52C418287B218D7 /* CallerNumberTests.swift in Sources */,
+				A9D8B0C1E2F3A4B5C6D7E8F0 /* AppDatabaseUpgradeTests.swift in Sources */,
 				F2040001000000000000AB09 /* UpstreamExhaustionTrackerTests.swift in Sources */,
 				F2040001000000000000AD09 /* UpstreamFanOutOrderTests.swift in Sources */,
 			);
@@ -2128,10 +2119,9 @@
 				C13B0F4A2F519D8100C4EE79 /* GlacierToggleButtonType.swift in Sources */,
 				C14DA05C2F1257C5003D40CB /* GlacierApplicationDelegate.swift in Sources */,
 				C19A34342F1AB230000B3543 /* TrustedNetworksSetupScreen.swift in Sources */,
-				C14DA1372F12A190003D40CB /* GRDBRecord.swift in Sources */,
+				C14DA1372F12A190003D40CB /* StoredRecord.swift in Sources */,
 				C17733342F33252F0003A178 /* SettingsViewModel.swift in Sources */,
 				AF00000000000000000000B3 /* SubscriptionSettingsViewModel.swift in Sources */,
-				C14DA1382F12A190003D40CB /* GlacierError.swift in Sources */,
 				C133A6392F5782B30025A952 /* GlacierMenuView.swift in Sources */,
 				C147C6762F1D511C00298689 /* GlacierButton.swift in Sources */,
 				C1CD7A312F2762240094BED6 /* FirstAppearModifier.swift in Sources */,
@@ -2145,7 +2135,7 @@
 				C1E23EFE2F22A35900332C51 /* GlacierLabelButton.swift in Sources */,
 				C187454D2F484E91006EDC42 /* SecuritySettingsProgressView.swift in Sources */,
 				C17C816D2F190773007C4EE4 /* GlacierProgressIndicator.swift in Sources */,
-				C14DA1F62F12A562003D40CB /* DBStorageCoordinator.swift in Sources */,
+				C14DA1F62F12A562003D40CB /* DatabaseKey.swift in Sources */,
 				C13B0FAD2F541DA600C4EE79 /* HistoryViewModel.swift in Sources */,
 				C13B0F3B2F50D01200C4EE79 /* ManagePhoneNumbersScreen.swift in Sources */,
 				C1CD7A552F2D3BBF0094BED6 /* NewPasswordInputViewModel.swift in Sources */,
@@ -2155,7 +2145,7 @@
 				A1EC10032F48E700006EDC42 /* EnableCellularViewModel.swift in Sources */,
 				A1EC10072F48E700006EDC42 /* EnableVPNViewModel.swift in Sources */,
 				A1BC456B2F48E700006EDC42 /* WifiSetupViewModel.swift in Sources */,
-				C14DA1FA2F12A562003D40CB /* DBSchemaCoordinator.swift in Sources */,
+				C14DA1FA2F12A562003D40CB /* AppDatabaseSchema.swift in Sources */,
 				C19A34302F1AB213000B3543 /* DNSSetupScreen.swift in Sources */,
 				C107FD812F3902F7006E4AF5 /* PhoneNumberPlanPurchaseViewModel.swift in Sources */,
 				C158F9522F13FC8200194829 /* UserLoginScreen.swift in Sources */,
@@ -2167,7 +2157,6 @@
 				C14DA1FD2F12A562003D40CB /* AWSAcctManager.swift in Sources */,
 				C14DA1FE2F12A562003D40CB /* CallManager.swift in Sources */,
 				C147C6722F1D494100298689 /* GlacierViewContainer.swift in Sources */,
-				C14DA1FF2F12A562003D40CB /* Transaction.swift in Sources */,
 				C13B0F222F4E3CC200C4EE79 /* PhoneDialPadScreen.swift in Sources */,
 				C13B0F482F519D3B00C4EE79 /* GlacierToggleButton.swift in Sources */,
 				C13B0FB52F5420D500C4EE79 /* VoicemailItemDetailsView.swift in Sources */,
@@ -2175,9 +2164,8 @@
 				C190981E2F4C392300C0CA64 /* FloatingTabView.swift in Sources */,
 				C19A34382F1AB25D000B3543 /* PhoneNumberPlanPurchaseScreen.swift in Sources */,
 				C14DA2002F12A562003D40CB /* PushController.swift in Sources */,
-				C14DA2012F12A562003D40CB /* DBManager.swift in Sources */,
+				C14DA2012F12A562003D40CB /* AppDatabase.swift in Sources */,
 				C16707672F3A6F2800C49EA5 /* PhoneNumberSelectionViewModel.swift in Sources */,
-				C14DA2022F12A562003D40CB /* Transactable.swift in Sources */,
 				C14DA2042F12A562003D40CB /* WireGuardManager.swift in Sources */,
 				C19A342A2F1A5FB6000B3543 /* UserOnboardingCoordinator.swift in Sources */,
 				C100F10F2F49C1390071513B /* VPNActivationOverWiFiPolicy.swift in Sources */,
@@ -2270,7 +2258,7 @@
 				C14DA17D2F12A190003D40CB /* WireGuardResult.swift in Sources */,
 				C112193C2F41AB7400612DD1 /* GlacierPhoneNumberSubscriptionPlan.swift in Sources */,
 				A1A3D86BE5809A00AE439043 /* GlacierExtraPhoneNumberProduct.swift in Sources */,
-				C14DA1802F12A190003D40CB /* GRDBModel.swift in Sources */,
+				C14DA1802F12A190003D40CB /* StoredModel.swift in Sources */,
 				C19A34362F1AB247000B3543 /* PhoneNumberPlanPurchaseHomeScreen.swift in Sources */,
 				C1CD7A3D2F2934CA0094BED6 /* DeepLinkService.swift in Sources */,
 				C17C81602F18DAE9007C4EE4 /* GlacierScreen.swift in Sources */,
@@ -2404,7 +2392,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 101;
+				CURRENT_PROJECT_VERSION = 103;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = UG8VC96NZF;
 				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
@@ -2431,7 +2419,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/Glacier/Includes-Simulator",
 				);
-				MARKETING_VERSION = 1.2.2;
+				MARKETING_VERSION = 1.2.3;
 				PRODUCT_BUNDLE_IDENTIFIER = com.theglacierapp.Glacier;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE = "";
@@ -3023,7 +3011,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 101;
+				CURRENT_PROJECT_VERSION = 103;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = UG8VC96NZF;
 				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
@@ -3056,7 +3044,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/Glacier/Includes-Simulator",
 				);
-				MARKETING_VERSION = 1.2.2;
+				MARKETING_VERSION = 1.2.3;
 				PRODUCT_BUNDLE_IDENTIFIER = com.theglacierapp.Glacier;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE = "";
@@ -3088,7 +3076,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 101;
+				CURRENT_PROJECT_VERSION = 103;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = UG8VC96NZF;
 				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
@@ -3115,7 +3103,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/Glacier/Includes-Simulator",
 				);
-				MARKETING_VERSION = 1.2.2;
+				MARKETING_VERSION = 1.2.3;
 				PRODUCT_BUNDLE_IDENTIFIER = com.theglacierapp.Glacier;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE = "";

@@ -10,14 +10,14 @@ import Alamofire
 
 /**
  DiscoverySurveyService decides whether the last onboarding screen asks "How did you first hear
- about Glacier?", and sends the answer (glacierApp#225).
+ about Glacier?", and sends the answer.
 
  The backend owns the decision, so an answer or Skip on the website, Android or another device
  stops iOS asking too. Nothing here may slow onboarding down: the status is fetched in the
  background while the user is still on earlier onboarding screens, and if it isn't known by the
  time onboarding ends, the question is simply not asked.
 
- Backend contract (console#598):
+ Backend contract:
    GET  {consoleBaseEndpoint}/user/acquisition-survey   (no query parameters; any are rejected)
         → { "state": "unanswered" | "submitted" | "skipped", "eligible": true | false }
    POST {consoleBaseEndpoint}/user/acquisition-survey

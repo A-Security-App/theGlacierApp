@@ -145,6 +145,7 @@
 "Hides which sites you're visiting - faster connection, no ads, and enough privacy for everyday use." = "Masque les sites que vous visitez - connexion plus rapide, sans publicités et une confidentialité suffisante pour un usage quotidien.";
 "Enable Glacier DNS in Settings" = "Activer Glacier DNS dans Réglages";
 "In Settings page, navigate to:\n\nGeneral →\nVPN & Device Management →\nDNS →\n\nThen select Glacier." = "Dans Réglages, accédez à :\n\nGénéral →\nVPN et gestion de l’appareil →\nDNS →\n\nPuis sélectionnez Glacier.";
+"Don't see Glacier? Swipe Settings closed and open it again." = "Vous ne voyez pas Glacier ? Fermez complètement Réglages, puis rouvrez-le.";
 "Secure DNS Protection Required" = "Protection DNS sécurisé requise";
 "When your VPN turns off on this trusted network, Secure DNS protection requires our profile to be selected in iOS Settings.\n\nIn Settings page, navigate to:\n\nGeneral →\nVPN & Device Management →\nDNS →\n\nThen select Glacier." = "Lorsque votre VPN se désactive sur ce réseau de confiance, la protection DNS sécurisé nécessite que notre profil soit sélectionné dans les Réglages iOS.\n\nDans la page Réglages, accédez à :\n\nGénéral →\nVPN et gestion de l'appareil →\nDNS →\n\nPuis sélectionnez Glacier.";
 "Something went wrong while adding DNS configuration. Please try again." = "Une erreur s'est produite lors de l'ajout de la configuration DNS. Veuillez réessayer.";
@@ -519,7 +520,7 @@
 "Choose your preferred widget, then press " = "Choisissez le widget de votre choix, puis appuyez sur ";
 " to confirm" = " pour confirmer";
 
-/* VPN protection-off alert (issue #204) */
+/* VPN protection-off alert */
 "VPN protection is off" = "La protection VPN est désactivée";
 "Glacier's VPN stopped for an app update. Finish updating, then reconnect." = "Le VPN Glacier s'est arrêté pour une mise à jour. Terminez la mise à jour, puis reconnectez-vous.";
 "Your Glacier VPN stopped unexpectedly. Open Glacier to reconnect." = "Votre VPN Glacier s'est arrêté de façon inattendue. Ouvrez Glacier pour vous reconnecter.";
@@ -657,7 +658,7 @@
 /* Password reset screen button: send the reset email for an email linked to Google or Apple */
 "I have a password, send the email" = "J'ai un mot de passe, envoyer l'e-mail";
 
-/* Discovery survey: last onboarding screen, "How did you first hear about Glacier?" (glacierApp#225) */
+/* Discovery survey: last onboarding screen, "How did you first hear about Glacier?" */
 "Web search" = "Recherche web";
 "Podcast" = "Podcast";
 "YouTube" = "YouTube";

@@ -8,7 +8,7 @@
 import UIKit
 import Foundation
 import GRDB
-open class PhoneAccountModel: GRDBModel {
+open class PhoneAccountModel: StoredModel {
     var grdbRecord:PhoneAccount?
     private var acctColor: UIColor?
     public var color: UIColor? {
@@ -100,14 +100,14 @@ open class PhoneAccountModel: GRDBModel {
 }
 extension PhoneAccountModel {
     public func save(completion: @escaping () -> Void) {
-        self.grdbRecord?.storeInGRDB(completion: completion)
+        self.grdbRecord?.saveInBackground(completion: completion)
     }
     public func save() {
-        self.grdbRecord?.storeInGRDB()
+        self.grdbRecord?.saveInBackground()
     }
     public func remove(completion: @escaping () -> Void) {
-        DBManager.sharedDB().grdbStorage.asyncWrite(block: { transaction in
-            self.grdbRecord?.grdbRemove(transaction: transaction)
+        AppDatabase.shared.asyncWrite({ db in
+            try self.grdbRecord?.deleteByUniqueId(db)
         }, completion: completion)
     }
     public static func existingAccount(with phoneNumber:String) -> PhoneAccountModel? {
@@ -115,11 +115,9 @@ extension PhoneAccountModel {
         let sql = "SELECT * FROM \(PhoneAccount.databaseTableName) WHERE phoneNumber == ?"
         let sqlRequest = SQLRequest<Void>(sql: sql, arguments: [phoneNumber], cached: true)
         do {
-            try DBManager.sharedDB().grdbStorage.read(block: { transaction in
-                if let record = try PhoneAccount.fetchOne(transaction.database, sqlRequest) {
-                    account = PhoneAccountModel(account: record)
-                }
-            })
+            if let record = try AppDatabase.shared.read({ db in try PhoneAccount.fetchOne(db, sqlRequest) }) {
+                account = PhoneAccountModel(account: record)
+            }
         } catch {
             Log.database.debug("error: \(error)")
             return nil
@@ -139,13 +137,13 @@ extension PhoneAccountModel {
         }
         let sql = "SELECT * FROM \(PhoneAccount.databaseTableName) WHERE phoneNumber == ? ORDER BY id ASC LIMIT 1"
         do {
-            return try DBManager.sharedDB().grdbStorage.write(block: { transaction -> (account: PhoneAccountModel, inserted: Bool) in
-                if let existing = try PhoneAccount.fetchOne(transaction.database, sql: sql, arguments: [phoneNumber]) {
+            return try AppDatabase.shared.write { db -> (account: PhoneAccountModel, inserted: Bool) in
+                if let existing = try PhoneAccount.fetchOne(db, sql: sql, arguments: [phoneNumber]) {
                     return (PhoneAccountModel(account: existing), false)
                 }
-                record.grdbSave(transaction: transaction)
+                try record.upsert(db)
                 return (account, true)
-            })
+            }
         } catch {
             // Nothing was written. The caller keeps the in-memory account; the next sync retries.
             Log.database.error("PhoneAccountModel.insertIfAbsent error: \(error)")
@@ -159,16 +157,16 @@ extension PhoneAccountModel {
     @discardableResult
     static func removeDuplicateAccounts() -> [PhoneAccount] {
         do {
-            return try DBManager.sharedDB().grdbStorage.write(block: { transaction -> [PhoneAccount] in
+            return try AppDatabase.shared.write { db -> [PhoneAccount] in
                 let records = try PhoneAccount
                     .order(Column("id").asc)
-                    .fetchAll(transaction.database)
+                    .fetchAll(db)
                 var kept: [String: PhoneAccount] = [:]
                 var repaired: [String: PhoneAccount] = [:]
                 for record in records {
                     guard let phoneNumber = record.phoneNumber else { continue }
                     if let keeper = kept[phoneNumber] {
-                        record.grdbRemove(transaction: transaction)
+                        try record.deleteByUniqueId(db)
                         repaired[phoneNumber] = keeper
                     } else {
                         kept[phoneNumber] = record
@@ -178,7 +176,7 @@ extension PhoneAccountModel {
                     Log.database.notice("[PhoneAccount] Removed duplicate rows for \(repaired.count) number(s)")
                 }
                 return Array(repaired.values)
-            })
+            }
         } catch {
             Log.database.error("PhoneAccountModel.removeDuplicateAccounts error: \(error)")
             return []
@@ -187,13 +185,8 @@ extension PhoneAccountModel {
     public static func allAccounts() -> [PhoneAccountModel] {
         var accounts:[PhoneAccountModel] = []
         do {
-            try DBManager.sharedDB().grdbStorage.read(block: { transaction in
-                let records = try PhoneAccount
-                    .fetchAll(transaction.database)
-                for record in records {
-                    accounts.append(PhoneAccountModel(account: record))
-                }
-            })
+            let records = try AppDatabase.shared.read { db in try PhoneAccount.fetchAll(db) }
+            accounts = records.map { PhoneAccountModel(account: $0) }
         } catch {
             Log.database.debug("PhoneAccountModel.allConversations error: \(error)")
         }
@@ -226,7 +219,7 @@ extension PhoneAccountModel {
         return true
     }
 }
-struct PhoneAccount: GRDBRecord, TableRecord {
+struct PhoneAccount: StoredRecord, TableRecord {
     var id: Int64?
     var uniqueId: String
     var phoneNumber: String?
@@ -257,10 +250,7 @@ struct PhoneAccount: GRDBRecord, TableRecord {
     public static func allSMSAccounts() -> [PhoneAccount] {
         var accounts:[PhoneAccount] = []
         do {
-            try DBManager.sharedDB().grdbStorage.read(block: { transaction in
-                accounts = try PhoneAccount
-                    .fetchAll(transaction.database)
-            })
+            accounts = try AppDatabase.shared.read { db in try PhoneAccount.fetchAll(db) }
         } catch {
             Log.database.error("error: allSMSAccounts \(error)")
         }

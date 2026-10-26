@@ -20,7 +20,7 @@ import os
 
  1. `PacketTunnelProvider.stopTunnel(with:)` — the only party that is alive at the
     instant the tunnel goes down, and the only one that learns *why* (including
-    `.appUpdate`, the case reported in issue #204). The containing app is normally
+    `.appUpdate`, the case users reported). The containing app is normally
     suspended or terminated at that moment, so nothing else can react promptly.
  2. `VPNInterruptionMonitor` — the app's own `NEVPNStatusDidChange` observer, which
     only runs while the app process is alive but can evaluate the full on-demand
@@ -110,8 +110,8 @@ enum VPNProtectionAlert {
 
     /// What the user needs to do, which is the only distinction the copy makes.
     enum Kind: String {
-        /// The tunnel was torn down because the app was being updated. The customer
-        /// report in issue #204 is exactly this case: finishing the update comes
+        /// The tunnel was torn down because the app was being updated. This is the
+        /// case users reported: finishing the update comes
         /// before reconnecting, so the copy says so.
         case appUpdate
         /// The tunnel failed or was killed for a reason the user did not ask for.

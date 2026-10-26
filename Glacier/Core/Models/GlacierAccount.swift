@@ -10,7 +10,7 @@ import Foundation
 import GRDB
 import SAMKeychain
 import CryptoKit
-open class GlacierAccountModel: GRDBModel {
+open class GlacierAccountModel: StoredModel {
     public static let defaultPort:UInt = 80
     public static let accountImage = UIImage(named: "glacier-logo")
     var grdbRecord:GlacierAccount?
@@ -45,6 +45,9 @@ extension GlacierAccountModel {
     }
 }
 #endif
+enum KeychainError: Error {
+    case failure(description: String)
+}
 extension GlacierAccountModel {
     func removeKeychainPassword(_ error:NSError?) throws {
         var error: NSError?
@@ -199,8 +202,8 @@ extension GlacierAccountModel {
         }
     }
     /// Store billing the base plan, from the last successful backend status response.
-    /// `nil` when no store bills it, before the first response, or when the backend is older
-    /// than console#573. A failed request keeps the last known value.
+    /// `nil` when no store bills it, before the first response, or when the backend
+    /// predates the field. A failed request keeps the last known value.
     public var lastKnownBackendSubscriptionSource: BillingStore? {
         get {
             let key = GlacierAccountModel.backendSubscriptionSourceKeyPrefix + uniqueId
@@ -283,12 +286,9 @@ extension GlacierAccountModel {
     static func getGlacierAccount() -> GlacierAccountModel? {
         var account:GlacierAccountModel?
         do {
-            try DBManager.sharedDB().grdbStorage.read(block: { transaction in
-                if let caccount = try GlacierAccount
-                    .fetchOne(transaction.database) {
-                    account = GlacierAccountModel(account: caccount)
-                }
-            })
+            if let caccount = try AppDatabase.shared.read({ db in try GlacierAccount.fetchOne(db) }) {
+                account = GlacierAccountModel(account: caccount)
+            }
         } catch {
             Log.database.debug("GlacierAccountModel.firstAccount error: \(error)")
         }
@@ -296,19 +296,19 @@ extension GlacierAccountModel {
     }
     func saveAccount(){
         do {
-            try DBManager.sharedDB().grdbStorage.write(block: { transaction in
-                self.grdbRecord?.grdbSave(transaction: transaction)
+            try AppDatabase.shared.write { db in
+                try self.grdbRecord?.upsert(db)
                 GlacierAccountModel.currentAccount = nil
-            })
+            }
         } catch {
             Log.database.debug("GlacierAccountModel.save with error: \(error)")
         }
     }
     func saveAccountAsync(){
-        DBManager.sharedDB().grdbStorage.asyncWrite(block: { transaction in
-            self.grdbRecord?.grdbSave(transaction: transaction)
+        AppDatabase.shared.asyncWrite { db in
+            try self.grdbRecord?.upsert(db)
             GlacierAccountModel.currentAccount = nil
-        })
+        }
     }
     func removeAccount(){
         do {
@@ -316,9 +316,9 @@ extension GlacierAccountModel {
         } catch {
             Log.database.debug("GlacierAccountModel.remove account, removeKeychainPassword with error: \(error)")
         }
-        DBManager.sharedDB().grdbStorage.asyncWrite(block: { transaction in
-            self.grdbRecord?.grdbRemove(transaction: transaction)
-        })
+        AppDatabase.shared.asyncWrite { db in
+            try self.grdbRecord?.deleteByUniqueId(db)
+        }
     }
 }
 extension GlacierAccountModel {
@@ -339,7 +339,7 @@ extension GlacierAccountModel {
     }
 #endif
 }
-struct GlacierAccount: GRDBRecord, TableRecord {
+struct GlacierAccount: StoredRecord, TableRecord {
     public var id: Int64?
     public var uniqueId: String
     var username: String
@@ -364,15 +364,15 @@ struct GlacierAccount: GRDBRecord, TableRecord {
         self.modified = Date()
     }
     func touch() {
-        DBManager.sharedDB().grdbStorage.asyncWrite(block: { transaction in
+        AppDatabase.shared.asyncWrite { db in
             let nowdate = Date()
             var account = self
             do {
                 account.modified = nowdate
-                try account.update(transaction.database, columns: [Column("modified")])
+                try account.update(db, columns: [Column("modified")])
             } catch {
                 Log.database.debug("GlacierAccount.touch with error: \(error)")
             }
-        })
+        }
     }
 }

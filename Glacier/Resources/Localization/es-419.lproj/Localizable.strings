@@ -145,6 +145,7 @@
 "Hides which sites you're visiting - faster connection, no ads, and enough privacy for everyday use." = "Oculta qué sitios visitas - conexión más rápida, sin anuncios y privacidad suficiente para el uso diario.";
 "Enable Glacier DNS in Settings" = "Activar Glacier DNS en Ajustes";
 "In Settings page, navigate to:\n\nGeneral →\nVPN & Device Management →\nDNS →\n\nThen select Glacier." = "En Configuración, ve a:\n\nGeneral →\nVPN y administración de dispositivos →\nDNS →\n\nLuego selecciona Glacier.";
+"Don't see Glacier? Swipe Settings closed and open it again." = "¿No ves Glacier? Cierra Configuración por completo y vuelve a abrirla.";
 "Secure DNS Protection Required" = "Se requiere protección de DNS seguro";
 "When your VPN turns off on this trusted network, Secure DNS protection requires our profile to be selected in iOS Settings.\n\nIn Settings page, navigate to:\n\nGeneral →\nVPN & Device Management →\nDNS →\n\nThen select Glacier." = "Cuando tu VPN se apaga en esta red de confianza, la protección de DNS seguro requiere que nuestro perfil esté seleccionado en Ajustes de iOS.\n\nEn la página de Ajustes, navega a:\n\nGeneral →\nVPN y gestión del dispositivo →\nDNS →\n\nLuego selecciona Glacier.";
 "Something went wrong while adding DNS configuration. Please try again." = "Algo salió mal al agregar la configuración DNS. Por favor, inténtalo de nuevo.";
@@ -521,7 +522,7 @@
 "Choose your preferred widget, then press " = "Elige tu widget preferido y pulsa ";
 " to confirm" = " para confirmar";
 
-/* VPN protection-off alert (issue #204) */
+/* VPN protection-off alert */
 "VPN protection is off" = "La protección VPN está desactivada";
 "Glacier's VPN stopped for an app update. Finish updating, then reconnect." = "La VPN de Glacier se detuvo por una actualización. Termina de actualizar y vuelve a conectarte.";
 "Your Glacier VPN stopped unexpectedly. Open Glacier to reconnect." = "Tu VPN de Glacier se detuvo inesperadamente. Abre Glacier para reconectarte.";
@@ -659,7 +660,7 @@
 /* Password reset screen button: send the reset email for an email linked to Google or Apple */
 "I have a password, send the email" = "Tengo contraseña, enviar el correo";
 
-/* Discovery survey: last onboarding screen, "How did you first hear about Glacier?" (glacierApp#225) */
+/* Discovery survey: last onboarding screen, "How did you first hear about Glacier?" */
 "Web search" = "Búsqueda web";
 "Podcast" = "Pódcast";
 "YouTube" = "YouTube";

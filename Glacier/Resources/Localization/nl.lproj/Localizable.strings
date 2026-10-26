@@ -145,6 +145,7 @@
 "Hides which sites you're visiting - faster connection, no ads, and enough privacy for everyday use." = "Verbergt welke sites je bezoekt - snellere verbinding, geen advertenties en voldoende privacy voor dagelijks gebruik.";
 "Enable Glacier DNS in Settings" = "Activeer Glacier DNS in Instellingen";
 "In Settings page, navigate to:\n\nGeneral →\nVPN & Device Management →\nDNS →\n\nThen select Glacier." = "Ga in Instellingen naar:\n\nAlgemeen →\nVPN en apparaatbeheer →\nDNS →\n\nKies daarna Glacier.";
+"Don't see Glacier? Swipe Settings closed and open it again." = "Zie je Glacier niet? Sluit Instellingen helemaal af en open het opnieuw.";
 "Secure DNS Protection Required" = "Beveiligde DNS-bescherming vereist";
 "When your VPN turns off on this trusted network, Secure DNS protection requires our profile to be selected in iOS Settings.\n\nIn Settings page, navigate to:\n\nGeneral →\nVPN & Device Management →\nDNS →\n\nThen select Glacier." = "Wanneer je VPN wordt uitgeschakeld op dit vertrouwde netwerk, vereist beveiligde DNS-bescherming dat ons profiel is geselecteerd in iOS-instellingen.\n\nGa op de pagina Instellingen naar:\n\nAlgemeen →\nVPN en apparaatbeheer →\nDNS →\n\nSelecteer vervolgens Glacier.";
 "Something went wrong while adding DNS configuration. Please try again." = "Er is iets misgegaan bij het toevoegen van de DNS-configuratie. Probeer het opnieuw.";
@@ -521,7 +522,7 @@
 "Choose your preferred widget, then press " = "Kies je gewenste widget en tik vervolgens op ";
 " to confirm" = " om te bevestigen";
 
-/* VPN protection-off alert (issue #204) */
+/* VPN protection-off alert */
 "VPN protection is off" = "VPN-bescherming is uit";
 "Glacier's VPN stopped for an app update. Finish updating, then reconnect." = "De VPN van Glacier is gestopt voor een app-update. Rond de update af en verbind opnieuw.";
 "Your Glacier VPN stopped unexpectedly. Open Glacier to reconnect." = "Je Glacier-VPN is onverwacht gestopt. Open Glacier om opnieuw verbinding te maken.";
@@ -659,7 +660,7 @@
 /* Password reset screen button: send the reset email for an email linked to Google or Apple */
 "I have a password, send the email" = "Ik heb een wachtwoord, stuur de e-mail";
 
-/* Discovery survey: last onboarding screen, "How did you first hear about Glacier?" (glacierApp#225) */
+/* Discovery survey: last onboarding screen, "How did you first hear about Glacier?" */
 "Web search" = "Zoekmachine";
 "Podcast" = "Podcast";
 "YouTube" = "YouTube";

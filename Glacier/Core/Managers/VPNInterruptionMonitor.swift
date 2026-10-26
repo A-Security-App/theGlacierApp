@@ -11,7 +11,7 @@ import UserNotifications
 
 /**
  Watches the VPN connection for the whole life of the app process and alerts the
- user when protection stops without them asking for it (issue #204).
+ user when protection stops without them asking for it.
 
  This is the app-side half of the feature. `PacketTunnelProvider` handles the case
  where the app isn't running — it sees the stop reason and arms the banner directly.

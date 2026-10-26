@@ -6,6 +6,11 @@ users a day or two later.
 ## Unreleased
 
 
+## Version 1.2.3 (October 24, 2026)
+
+* Stronger sign-in security, Secure DNS setup fixed after restoring a phone
+  from a backup, internal persistence layer rewritten.
+
 ## Version 1.2.2 (October 21, 2026)
 
 * Optional question at the end of onboarding about how you heard about Glacier,

@@ -145,6 +145,7 @@
 "Hides which sites you're visiting - faster connection, no ads, and enough privacy for everyday use." = "Hides which sites you're visiting - faster connection, no ads, and enough privacy for everyday use.";
 "Enable Glacier DNS in Settings" = "Enable Glacier DNS in Settings";
 "In Settings page, navigate to:\n\nGeneral →\nVPN & Device Management →\nDNS →\n\nThen select Glacier." = "In Settings page, navigate to:\n\nGeneral →\nVPN & Device Management →\nDNS →\n\nThen select Glacier.";
+"Don't see Glacier? Swipe Settings closed and open it again." = "Don't see Glacier? Swipe Settings closed and open it again.";
 "Secure DNS Protection Required" = "Secure DNS Protection Required";
 "When your VPN turns off on this trusted network, Secure DNS protection requires our profile to be selected in iOS Settings.\n\nIn Settings page, navigate to:\n\nGeneral →\nVPN & Device Management →\nDNS →\n\nThen select Glacier." = "When your VPN turns off on this trusted network, Secure DNS protection requires our profile to be selected in iOS Settings.\n\nIn Settings page, navigate to:\n\nGeneral →\nVPN & Device Management →\nDNS →\n\nThen select Glacier.";
 "Something went wrong while adding DNS configuration. Please try again." = "Something went wrong while adding DNS configuration. Please try again.";
@@ -521,7 +522,7 @@
 "Choose your preferred widget, then press " = "Choose your preferred widget, then press ";
 " to confirm" = " to confirm";
 
-/* VPN protection-off alert (issue #204) */
+/* VPN protection-off alert */
 "VPN protection is off" = "VPN protection is off";
 "Glacier's VPN stopped for an app update. Finish updating, then reconnect." = "Glacier's VPN stopped for an app update. Finish updating, then reconnect.";
 "Your Glacier VPN stopped unexpectedly. Open Glacier to reconnect." = "Your Glacier VPN stopped unexpectedly. Open Glacier to reconnect.";
@@ -659,7 +660,7 @@
 /* Password reset screen button: send the reset email for an email linked to Google or Apple */
 "I have a password, send the email" = "I have a password, send the email";
 
-/* Discovery survey: last onboarding screen, "How did you first hear about Glacier?" (glacierApp#225) */
+/* Discovery survey: last onboarding screen, "How did you first hear about Glacier?" */
 "Web search" = "Web search";
 "Podcast" = "Podcast";
 "YouTube" = "YouTube";

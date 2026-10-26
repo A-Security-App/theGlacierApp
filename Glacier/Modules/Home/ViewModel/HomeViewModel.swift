@@ -1148,7 +1148,7 @@ extension HomeVM {
             description: NSLocalizedString(
                 "In Settings page, navigate to:\n\nGeneral →\nVPN & Device Management →\nDNS →\n\nThen select Glacier.",
                 comment: "DNS setup popup description"
-            ),
+            ) + "\n\n" + .dnsSettingsReopenTip,
             buttons: [
                 PopupButton(
                     style: .tertiary,
@@ -1170,9 +1170,16 @@ extension HomeVM {
                             // Let's add Glacier DNS configuration to user device
                             self.addDNSConfigurationToUserDevice()
                         } else {
-                            // Let's open iOS settings app
-                            guard let url = URL(string: UIApplication.settingsRootURL) else { return }
-                            UIApplication.shared.open(url)
+                            // Re-save the profile before opening Settings. The saved configuration
+                            // can say "enabled" while iOS holds no Glacier entry at all (a phone
+                            // restored from a backup gets the app's data back but not its network
+                            // configurations), and this popup can now appear unprompted, so it
+                            // must not send the user to an empty DNS list. An unchanged profile
+                            // saves as success. Settings opens either way.
+                            self.dnsController.apply(configuration: self.dnsController.loadSavedConfiguration()) { _ in
+                                guard let url = URL(string: UIApplication.settingsRootURL) else { return }
+                                UIApplication.shared.open(url)
+                            }
                         }
                     }
                 )

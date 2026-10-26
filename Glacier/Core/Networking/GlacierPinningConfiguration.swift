@@ -1,16 +1,22 @@
 //
 //  GlacierPinningConfiguration.swift
 //
-//  Centralised SSL certificate pinning for all backend connections.
-//  A TLS connection is accepted when standard validation passes AND at least
-//  one certificate in the server's chain has an SPKI SHA-256 hash that matches
-//  a value in GlacierPinningConfiguration.pinnedHashes.
+//  Centralised SSL certificate pinning for the app's requests to Glacier's
+//  backend. A TLS connection is accepted when standard validation passes AND
+//  at least one certificate in the server's chain has an SPKI SHA-256 hash that
+//  matches a value in GlacierPinningConfiguration.pinnedHashes.
+//
+//  Pinning applies only to sessions built with pinnedSession or
+//  makeServerTrustManager(), so new backend calls must use one of them.
 //
 //  Pinned CAs:
 //  Amazon Trust Services (AWS infrastructure: ALBs, NLBs):
 //    • Amazon RSA 2048 M01 — intermediate CA on ALB endpoints
 //    • Amazon RSA 2048 M04 — intermediate CA on NLB endpoints
 //    • Amazon Root CA 1    — backup pin; common root of both M01/M04 chains
+//  Google Trust Services (staging and tracking endpoints):
+//    • WE1                 — intermediate CA (EC P-256)
+//    • Root R4             — backup pin; root of the WE1 chain
 //
 //  To derive a new pin hash from a live endpoint:
 //    openssl s_client -connect <host>:443 -showcerts </dev/null 2>/dev/null | \

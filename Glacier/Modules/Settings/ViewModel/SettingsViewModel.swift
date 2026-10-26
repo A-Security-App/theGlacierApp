@@ -463,9 +463,8 @@ final class SettingsVM: SettingsViewModel, ObservableObject {
     }
 
     private func removeUserAddedPhoneNumbersFromDB() {
-        let internalQueue = DispatchQueue(label: "settings-module-queue", qos: .userInitiated)
-        internalQueue.async {
-            PhoneAccount.allSMSAccounts().forEach { $0.remove {} }
+        AppDatabase.shared.asyncWrite { db in
+            _ = try PhoneAccount.deleteAll(db)
         }
     }
 }
@@ -477,7 +476,7 @@ final class SettingsVM: SettingsViewModel, ObservableObject {
  what happens to them. Built from persisted values only (`mobile/status` sources, the last-known
  backend state, and the reconciled StoreKit + backend flags), so it never waits on the network.
 
- Deleting the account cancels a website (Stripe) subscription on the backend (console#563).
+ Deleting the account cancels a website (Stripe) subscription on the backend.
  App Store and Google Play subscriptions can only be cancelled by the user, so they outlive it.
  */
 struct DeletionBillingRoute: Equatable {
@@ -509,7 +508,7 @@ struct DeletionBillingRoute: Equatable {
         if let account {
             // A family member's plan is billed to whoever runs the family plan, not to them.
             if account.hasActiveSubscription && !account.lastKnownBackendFamilyMember {
-                // No source (a backend before console#573, or no successful status call yet):
+                // No source (a backend that predates the field, or no successful status call yet):
                 // if the backend doesn't see a subscription either, StoreKit is what granted it.
                 add(account.lastKnownBackendSubscriptionSource,
                     unknownMeansApple: !account.lastKnownBackendSubscribed)

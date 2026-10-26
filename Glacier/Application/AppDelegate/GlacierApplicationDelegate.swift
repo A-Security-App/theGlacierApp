@@ -60,9 +60,10 @@ public class GlacierApplicationDelegate: UIResponder, UIApplicationDelegate {
         // entitlements and device services that an unsigned simulator build
         // (CI runs with CODE_SIGNING_ALLOWED=NO) does not have. On a fresh
         // keychain the access-group write fails with errSecMissingEntitlement
-        // and DBManager.init() hits fatalError("Could not generate key for
-        // GRDB"), crashing the host with SIGTRAP before tests can run. None of
-        // the unit tests need this bootstrap, so skip it under XCTest.
+        // and opening AppDatabase.shared hits fatalError, crashing the host
+        // with SIGTRAP before tests can run. The database tests build their
+        // own databases, and none of the unit tests need this bootstrap, so
+        // skip it under XCTest.
         if ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil {
             return true
         }
@@ -90,11 +91,11 @@ public class GlacierApplicationDelegate: UIResponder, UIApplicationDelegate {
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(whenDatabaseReady(_:)),
-            name: DBManager.didSetupDatabase,
+            name: AppDatabase.didSetupDatabase,
             object: nil
         )
         
-        DBManager.sharedDB()
+        _ = AppDatabase.shared
 
         handledCallIDs = []
         enteringForeground = true
@@ -127,7 +128,7 @@ public class GlacierApplicationDelegate: UIResponder, UIApplicationDelegate {
 
         scheduleWeeklyRebootReminder()
 
-        // Watches for the VPN stopping without the user asking (issue #204). Started
+        // Watches for the VPN stopping without the user asking. Started
         // here rather than from a screen so it is running before any view model can
         // create or replace the TunnelsManager.
         VPNInterruptionMonitor.shared.start()
@@ -254,7 +255,7 @@ public class GlacierApplicationDelegate: UIResponder, UIApplicationDelegate {
     /// until the user next opened Glacier *and* backgrounded it. That is precisely the
     /// user it exists for: the one who doesn't know their VPN stopped and therefore has
     /// no reason to open the app at all. An app update disarming the only thing that
-    /// could report an app update is the likely explanation for the silence in #204.
+    /// could report an app update is the likely explanation for reports of no alert at all.
     ///
     /// Submitting unconditionally would trade one bug for another — each submit resets
     /// `earliestBeginDate` to +15 min, so anyone who opens Glacier every few minutes

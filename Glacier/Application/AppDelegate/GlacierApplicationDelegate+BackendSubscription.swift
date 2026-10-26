@@ -33,7 +33,7 @@ extension GlacierApplicationDelegate {
         /// `0` indicates no phone-number add-on.
         let phoneNumbers: Int
         /// Store billing the base plan (`stripe` / `apple` / `google_play`), or absent/null when
-        /// none does. Optional so a backend older than console#573 still decodes.
+        /// none does. Optional so a backend that predates this field still decodes.
         let subscriptionSource: String?
         /// Store billing the phone-line add-on, with the same values as `subscriptionSource`.
         let phoneLineSource: String?

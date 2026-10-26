@@ -33,6 +33,13 @@ extension String {
         NSLocalizedString("Please try again.", comment: "Try again text")
     }
     
+    /// Appended to every "select Glacier in iOS Settings" popup. A Settings app already running
+    /// in the background keeps showing the DNS list it loaded earlier, so a profile we just saved
+    /// isn't listed until Settings is relaunched.
+    static var dnsSettingsReopenTip: String {
+        NSLocalizedString("Don't see Glacier? Swipe Settings closed and open it again.", comment: "Tip under the select-Glacier-DNS-in-Settings steps")
+    }
+
     //No Wi-Fi Connection
     static var wifiText: String {
         NSLocalizedString("No Wi-Fi Connection", comment: "No Wi-Fi Connection text")

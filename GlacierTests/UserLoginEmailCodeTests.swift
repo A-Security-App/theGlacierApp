@@ -27,42 +27,6 @@ final class UserLoginEmailCodeTests: XCTestCase {
         }
     }
 
-    // MARK: - Fallback detection
-
-    /// The exact error Cognito returns when the app client has no
-    /// `ALLOW_CUSTOM_AUTH`. An earlier matcher looked for "auth flow", which this
-    /// message does not contain, so the SRP fallback never fired and sign-in
-    /// failed closed instead of degrading. This pins the real message.
-    func testCustomAuthUnavailableMatchesTheRealCognitoMessage() {
-        let error = AuthError.service(
-            "CUSTOM_AUTH is not enabled for the client",
-            "Make sure that the parameters passed are valid",
-            AWSCognitoAuthError.invalidParameter
-        )
-        XCTAssertTrue(AmplifyAuthenticationService.isCustomAuthUnavailable(error))
-    }
-
-    /// An unrelated `.invalidParameter` must NOT be treated as "custom auth off",
-    /// or a genuine bad request would be silently downgraded to a codeless login.
-    func testUnrelatedInvalidParameterIsNotTreatedAsCustomAuthUnavailable() {
-        let error = AuthError.service(
-            "2 validation errors detected: value at 'password' failed to satisfy constraint",
-            "Make sure that the parameters passed are valid",
-            AWSCognitoAuthError.invalidParameter
-        )
-        XCTAssertFalse(AmplifyAuthenticationService.isCustomAuthUnavailable(error))
-    }
-
-    /// A different Cognito error class must not trigger the fallback either.
-    func testNonInvalidParameterErrorIsNotTreatedAsCustomAuthUnavailable() {
-        let error = AuthError.notAuthorized(
-            "Incorrect username or password",
-            "Check whether the given values are correct",
-            AWSCognitoAuthError.userNotFound
-        )
-        XCTAssertFalse(AmplifyAuthenticationService.isCustomAuthUnavailable(error))
-    }
-
     // MARK: - Login
 
     func testLoginRequestsTheEmailCodeFlow() async {
