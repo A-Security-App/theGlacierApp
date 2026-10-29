@@ -23,6 +23,12 @@ protocol ManagePhoneNumbersViewModel: GlacierViewModelWithRootCoordinator {
     func getUserPhoneNumbers()
     func presentPhoneNumberSelectionView()
     func presentPhoneNumberPlanPurchaseView()
+    func refreshVoicemailSetting()
+    func isVoicemailEnabled(for phoneNumber: PhoneAccountModel) -> Bool
+    func isUpdatingVoicemail(for phoneNumber: PhoneAccountModel) -> Bool
+
+    @MainActor
+    func setVoicemailEnabled(_ enabled: Bool, for phoneNumber: PhoneAccountModel)
     
     @MainActor
     func presentEditPhoneNumberNamePrompt(for phoneNumber: PhoneAccountModel)
@@ -56,6 +62,13 @@ final class ManagePhoneNumbersVM: ManagePhoneNumbersViewModel, ObservableObject 
     }
     
     @Published var canUpgradeToHigherPhoneNumberPlan: Bool = false
+
+    /// Voicemail flag per phone number. Starts from the cached values so the toggles render
+    /// immediately; `refreshVoicemailSetting()` reconciles them with the backend.
+    @Published private(set) var voicemailEnabledByNumber: [String: Bool] = VoicemailSettingsManager.shared.cachedVoicemailEnabledByNumber
+
+    /// Numbers whose voicemail change is being saved, so their toggle can't be flipped again mid-request.
+    @Published private(set) var numbersUpdatingVoicemail: Set<String> = []
     
     let rootCoordinator: any GlacierRootCoordinator
     
@@ -89,6 +102,61 @@ final class ManagePhoneNumbersVM: ManagePhoneNumbersViewModel, ObservableObject 
         presentPhoneNumberPlanPurchase(orWarnManagedElsewhere: {
             self.presentSheet(.phoneNumberPlanPurchase)
         })
+    }
+
+    /// Reconciles the voicemail toggles with the backend. No-ops on fetch failure so a
+    /// dropped request never clobbers the last known values.
+    func refreshVoicemailSetting() {
+        VoicemailSettingsManager.shared.fetchVoicemail { [weak self] remote in
+            guard let remote else { return }
+            DispatchQueue.main.async {
+                guard let self else { return }
+                // Keep the optimistic value for any number whose change is still being saved.
+                var merged = remote
+                for number in self.numbersUpdatingVoicemail {
+                    merged[number] = self.voicemailEnabledByNumber[number]
+                }
+                self.voicemailEnabledByNumber = merged
+            }
+        }
+    }
+
+    func isVoicemailEnabled(for phoneNumber: PhoneAccountModel) -> Bool {
+        guard let number = phoneNumber.grdbRecord?.phoneNumber else {
+            return VoicemailSettingsManager.defaultVoicemailEnabled
+        }
+        return voicemailEnabledByNumber[number] ?? VoicemailSettingsManager.defaultVoicemailEnabled
+    }
+
+    func isUpdatingVoicemail(for phoneNumber: PhoneAccountModel) -> Bool {
+        guard let number = phoneNumber.grdbRecord?.phoneNumber else { return false }
+        return numbersUpdatingVoicemail.contains(number)
+    }
+
+    /// Flips the toggle optimistically and reverts it if the backend rejects the change.
+    @MainActor
+    func setVoicemailEnabled(_ enabled: Bool, for phoneNumber: PhoneAccountModel) {
+        guard let number = phoneNumber.grdbRecord?.phoneNumber,
+              !numbersUpdatingVoicemail.contains(number),
+              enabled != isVoicemailEnabled(for: phoneNumber) else { return }
+        let previousValue = voicemailEnabledByNumber[number]
+        voicemailEnabledByNumber[number] = enabled
+        numbersUpdatingVoicemail.insert(number)
+
+        VoicemailSettingsManager.shared.setVoicemail(enabled: enabled, for: number) { didSave in
+            DispatchQueue.main.async {
+                self.numbersUpdatingVoicemail.remove(number)
+                guard !didSave else { return }
+                self.voicemailEnabledByNumber[number] = previousValue
+                self.presentAlertWith(
+                    title: .errorText,
+                    description: NSLocalizedString(
+                        "Something went wrong while updating voicemail. Please try again.",
+                        comment: "Manage phone numbers screen update voicemail error"
+                    )
+                )
+            }
+        }
     }
     
     @MainActor
@@ -354,6 +422,8 @@ final class ManagePhoneNumbersVM: ManagePhoneNumbersViewModel, ObservableObject 
     @objc private func onNewPhoneNumberAdded() {
         DispatchQueue.main.async {
             self.getUserPhoneNumbers()
+            // Pick up the voicemail choice made in the add-number flow.
+            self.refreshVoicemailSetting()
         }
     }
 }

@@ -6,6 +6,11 @@ users a day or two later.
 ## Unreleased
 
 
+## Version 1.3 (October 29, 2026)
+
+* Step-by-step Secure DNS setup guide that finishes on its own once Glacier is
+  selected, choice of whether unanswered calls go to voicemail for each number.
+
 ## Version 1.2.3 (October 24, 2026)
 
 * Stronger sign-in security, Secure DNS setup fixed after restoring a phone

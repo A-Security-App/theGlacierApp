@@ -101,6 +101,8 @@ final class UserDefaultsService: LocalStorageService {
         
         // Phone module
         var phoneNumberGradientAvatarDictionary: String { "phoneNumberGradientAvatarDictionary" }
+        /// Last known backend `voicemail_enabled` per phone number. A missing number = on.
+        var voicemailEnabledByNumber: String { "voicemailEnabledByNumber" }
         
         // Settings module
         var userSelectedColorScheme: String { "userSelectedColorScheme" }

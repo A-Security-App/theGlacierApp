@@ -690,3 +690,21 @@
 
 /* Call history and voicemail: shown when a caller's number is hidden or unknown */
 "Number unavailable" = "Nummer utilgjengelig";
+
+/* Add-number voicemail popup: title */
+"Enable voicemail?" = "Slå på talepost?";
+
+/* Add-number voicemail popup: description; %@ is the new phone number */
+"Let callers leave a voicemail on %@ when you miss a call, and listen to it in the app. You can change this anytime in Manage numbers." = "La de som ringer legge igjen en talepost på %@ når du ikke svarer, og lytt til den i appen. Du kan endre dette når som helst under Administrer numre.";
+
+/* Add-number voicemail popup: button that leaves voicemail off */
+"Not now" = "Ikke nå";
+
+/* Add-number voicemail popup: button that turns voicemail on */
+"Enable voicemail" = "Slå på talepost";
+
+/* Add-number voicemail popup: shown when saving the choice fails */
+"We couldn’t save your voicemail choice. You can set it later in Manage numbers." = "Vi kunne ikke lagre valget ditt for talepost. Du kan angi det senere under Administrer numre.";
+
+/* Manage numbers: shown when the voicemail toggle fails to save */
+"Something went wrong while updating voicemail. Please try again." = "Noe gikk galt under oppdateringen av talepost. Vennligst prøv igjen.";

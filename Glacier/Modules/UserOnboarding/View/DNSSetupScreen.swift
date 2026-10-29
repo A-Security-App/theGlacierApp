@@ -15,8 +15,6 @@ struct DNSSetupScreen<ViewModel: DNSSetupViewModel>: View {
     
     // MARK: - Private properties
     
-    @Environment(\.scenePhase) private var scenePhase
-    
     @State private var visibleIndices: Set<Int> = []
     private var viewModel: ViewModel
     
@@ -92,11 +90,6 @@ struct DNSSetupScreen<ViewModel: DNSSetupViewModel>: View {
         }
         .onAppear {
             animateContentAppearance()
-        }
-        .onChange(of: scenePhase) { newPhase in
-            if newPhase == .background, viewModel.didShowDeviceSettings {
-                viewModel.presentVPNSetupView()
-            }
         }
     }
     

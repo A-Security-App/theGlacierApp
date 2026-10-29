@@ -99,9 +99,12 @@ final class HomeVM: HomeViewModel, ObservableObject {
     private var hasPendingRequestForVPNConnection = false
     private var hasPendingFirstTimeVPNSetup = false
     private var didUserTappedDNSConnectionButton: Bool = false
-    /// True while the "Enable Glacier DNS in Settings" popup we presented is on screen.
+    /// True while the "Enable Glacier DNS" setup guide we presented is on screen.
     /// Lets a later successful verification dismiss it (self-heal).
     private var isShowingDNSSetupPrompt = false
+    /// Set once the user taps Open Settings in that guide. From then on the guide stays up for the
+    /// user to tap Done, rather than self-healing away when DNS verifies.
+    private var didOpenSettingsFromDNSSetupPrompt = false
     /// Guards the DNS-setup prompt to at most once per connect attempt, so the early
     /// prompt and the final verdict don't both fire it (and it doesn't re-appear after
     /// the user has dismissed it).
@@ -1140,54 +1143,50 @@ extension HomeVM {
     /// the device is not routing through Glacier DNS — user needs to select the
     /// profile in iOS Settings (General → VPN & Device Management → DNS).
     private func presentDNSSetupConfirmationPrompt(shouldDownloadAndAddDNSProfile: Bool = true) {
-        let popupConfiguration = PopupConfiguration(
-            title: NSLocalizedString(
-                "Enable Glacier DNS in Settings",
-                comment: "DNS setup popup title"
-            ),
-            description: NSLocalizedString(
-                "In Settings page, navigate to:\n\nGeneral →\nVPN & Device Management →\nDNS →\n\nThen select Glacier.",
-                comment: "DNS setup popup description"
-            ) + "\n\n" + .dnsSettingsReopenTip,
-            buttons: [
-                PopupButton(
-                    style: .tertiary,
-                    title: NSLocalizedString("Cancel", comment: "Cancel button title"),
-                    onTap: {
-                        self.isShowingDNSSetupPrompt = false
-                        self.dismissPopup()
-                    }
-                ),
-                PopupButton(
-                    style: .primary,
-                    title: NSLocalizedString("Open Settings", comment: "Open settings button title"),
-                    onTap: {
-                        self.isShowingDNSSetupPrompt = false
-                        self.dismissPopup()
-                        self.hasPendingRequestForDNSConnection = true
-                        
-                        if shouldDownloadAndAddDNSProfile {
-                            // Let's add Glacier DNS configuration to user device
-                            self.addDNSConfigurationToUserDevice()
-                        } else {
-                            // Re-save the profile before opening Settings. The saved configuration
-                            // can say "enabled" while iOS holds no Glacier entry at all (a phone
-                            // restored from a backup gets the app's data back but not its network
-                            // configurations), and this popup can now appear unprompted, so it
-                            // must not send the user to an empty DNS list. An unchanged profile
-                            // saves as success. Settings opens either way.
-                            self.dnsController.apply(configuration: self.dnsController.loadSavedConfiguration()) { _ in
-                                guard let url = URL(string: UIApplication.settingsRootURL) else { return }
-                                UIApplication.shared.open(url)
-                            }
-                        }
-                    }
-                )
-            ],
-            buttonsAlignment: .horizontal
-        )
+        // The verdict that follows a return from Settings can ask again while the guide is still
+        // up. That second request is a no-op (the popup slot is taken), so keep the guide's state.
+        if !isShowingDNSSetupPrompt {
+            didOpenSettingsFromDNSSetupPrompt = false
+        }
         isShowingDNSSetupPrompt = true
-        presentPopup(with: popupConfiguration)
+        presentDNSSetupGuide(
+            onCancel: {
+                self.isShowingDNSSetupPrompt = false
+                self.dismissPopup()
+            },
+            onOpenSettings: {
+                // The guide stays up so the user can tap Done when they come back.
+                self.didOpenSettingsFromDNSSetupPrompt = true
+                self.hasPendingRequestForDNSConnection = true
+
+                if shouldDownloadAndAddDNSProfile {
+                    // Let's add Glacier DNS configuration to user device
+                    self.addDNSConfigurationToUserDevice()
+                } else {
+                    // Re-save the profile before opening Settings. The saved configuration
+                    // can say "enabled" while iOS holds no Glacier entry at all (a phone
+                    // restored from a backup gets the app's data back but not its network
+                    // configurations), and this guide can appear unprompted, so it must not
+                    // send the user to an empty DNS list. An unchanged profile saves as
+                    // success. Settings opens either way.
+                    self.dnsController.apply(configuration: self.dnsController.loadSavedConfiguration()) { _ in
+                        guard let url = URL(string: UIApplication.settingsRootURL) else { return }
+                        UIApplication.shared.open(url)
+                    }
+                }
+            },
+            onDone: {
+                self.isShowingDNSSetupPrompt = false
+                self.dismissPopup()
+            }
+        )
+    }
+
+    /// Closes the DNS setup guide so an error alert can take the popup slot.
+    private func dismissDNSSetupPromptForAlert() {
+        guard isShowingDNSSetupPrompt else { return }
+        isShowingDNSSetupPrompt = false
+        dismissPopup()
     }
 
     private func addDNSConfigurationToUserDevice() {
@@ -1208,6 +1207,7 @@ extension HomeVM {
             // it rather than leaving the user looking at an unchanged screen.
             guard let profile = dnsProfile else {
                 DispatchQueue.main.async {
+                    strongSelf.dismissDNSSetupPromptForAlert()
                     strongSelf.presentAlertWith(
                         title: .errorText,
                         description: NSLocalizedString(
@@ -1233,6 +1233,7 @@ extension HomeVM {
             dnsOverTlsController.apply(configuration: configuration) { result in
                 guard case .success(_) = result else {
                     DispatchQueue.main.async {
+                        strongSelf.dismissDNSSetupPromptForAlert()
                         strongSelf.presentAlertWith(
                             title: .errorText,
                             description: NSLocalizedString("Something went wrong while adding DNS configuration. Please try again.", comment: "DNS setup screen add DNS configuration error")
@@ -1447,7 +1448,9 @@ extension HomeVM: DNSStatusDelegate {
                 // "select the profile in Settings" prompt during this connect attempt —
                 // e.g. an early negative that the profile then corrected — dismiss it, since
                 // the situation it warned about no longer holds.
-                if strongSelf.isShowingDNSSetupPrompt {
+                // Not once the user has been to Settings from it, though: then the guide is
+                // waiting for them to tap Done.
+                if strongSelf.isShowingDNSSetupPrompt, !strongSelf.didOpenSettingsFromDNSSetupPrompt {
                     strongSelf.isShowingDNSSetupPrompt = false
                     strongSelf.dismissPopup()
                 }

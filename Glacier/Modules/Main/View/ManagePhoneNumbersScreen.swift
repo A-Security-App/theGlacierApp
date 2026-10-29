@@ -14,6 +14,7 @@ import SwiftUI
  - Burning any existing phone number
  - Changing phone number display name
  - Copy phone number
+ - Turning voicemail on/off for each number
  */
 struct ManagePhoneNumbersScreen<ViewModel: ManagePhoneNumbersViewModel & ObservableObject>: View {
     
@@ -28,10 +29,8 @@ struct ManagePhoneNumbersScreen<ViewModel: ManagePhoneNumbersViewModel & Observa
     @State private var activePhoneNumberBackgroundColor: Color = Color.grey90
     @State private var backgroundColor: Color = Color.grey95
     
-    @State private var menuFrame: CGRect = .zero
-    @State private var showMenu = false
-    
-    @State private var selectedPhoneNumber: PhoneAccountModel?
+    @State private var actionsSheetItem: PhoneNumberActionsSheetItem?
+    @State private var actionsSheetHeight: CGFloat = 360
     
     // MARK: - Initializer
     
@@ -69,12 +68,8 @@ struct ManagePhoneNumbersScreen<ViewModel: ManagePhoneNumbersViewModel & Observa
                             onCopyNumberButtonTap: {
                                 viewModel.copyPhoneNumber(number)
                             },
-                            onMenuButtonTap: { frame in
-                                selectedPhoneNumber = number
-                                menuFrame = frame
-                                withAnimation(.easeIn(duration: 0.3)) {
-                                    showMenu = true
-                                }
+                            onMenuButtonTap: { _ in
+                                actionsSheetItem = PhoneNumberActionsSheetItem(number: number)
                             }
                         )
                     }
@@ -174,56 +169,19 @@ struct ManagePhoneNumbersScreen<ViewModel: ManagePhoneNumbersViewModel & Observa
             .padding(.horizontal, 0)
             .padding(.top, 8)
             .padding(.bottom, 16)
-            
-            // Phone number context menu
-            if showMenu {
-                Color.black.opacity(0.01)
-                    .onTapGesture {
-                        showMenu = false
-                        selectedPhoneNumber = nil
-                    }
-                
-                GlacierMenuView(menuItems: [
-                    GlacierMenuItem(
-                        icon: "edit-icon",
-                        title: NSLocalizedString("Edit name", comment: "Mnage phone number screen edit phone number name"),
-                        action: {
-                            showMenu = false
-                            guard let phoneNumber = selectedPhoneNumber else {
-                                return
-                            }
-                            viewModel.presentEditPhoneNumberNamePrompt(for: phoneNumber)
-                            selectedPhoneNumber = nil
-                        }
-                    ),
-                    GlacierMenuItem(
-                        icon: "trash-icon",
-                        title: NSLocalizedString("Burn number", comment: "Mnage phone number screen burn phone number"),
-                        action: {
-                            showMenu = false
-                            guard let phoneNumber = selectedPhoneNumber else {
-                                return
-                            }
-                            viewModel.presentBurnNumberConfirmationPrompt(for: phoneNumber)
-                            selectedPhoneNumber = nil
-                        }
-                    ),
-                    GlacierMenuItem(
-                        icon: "trash-icon",
-                        title: NSLocalizedString("Delete history", comment: "Mnage phone number screen delete call history"),
-                        action: {
-                            showMenu = false
-                            guard let phoneNumber = selectedPhoneNumber else {
-                                return
-                            }
-                            viewModel.presentDeleteHistoryConfirmationPrompt(for: phoneNumber)
-                            selectedPhoneNumber = nil
-                        }
-                    )
-                ]
-                )
-                .position(x: menuFrame.minX - 40, y: menuFrame.minY - 60)
-            }
+        }
+        // `sheet(item:)` hands the number straight to the content. With `isPresented:`
+        // the first open could build the content before the number was set → blank sheet.
+        .sheet(item: $actionsSheetItem) { item in
+            phoneNumberActionsSheet(for: item.number)
+                .onGeometryChange(for: CGFloat.self) { proxy in
+                    proxy.size.height
+                } action: { height in
+                    actionsSheetHeight = height
+                }
+                .presentationDetents([.height(actionsSheetHeight)])
+                .presentationDragIndicator(.visible)
+                .presentationBackground(backgroundColor)
         }
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -237,6 +195,7 @@ struct ManagePhoneNumbersScreen<ViewModel: ManagePhoneNumbersViewModel & Observa
         .onFirstAppear {
             viewModel.initialize()
             viewModel.getUserPhoneNumbers()
+            viewModel.refreshVoicemailSetting()
         }
         .onAppear {
             isAppearing = true
@@ -251,6 +210,125 @@ struct ManagePhoneNumbersScreen<ViewModel: ManagePhoneNumbersViewModel & Observa
         }
     }
     
+    // MARK: - Subviews
+
+    /// Half-height sheet with the actions for one number, matching the Android layout.
+    private func phoneNumberActionsSheet(for phoneNumber: PhoneAccountModel) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            VStack(alignment: .leading, spacing: 4) {
+                GlacierLabel(
+                    text: phoneNumber.grdbRecord?.phoneNumber ?? "",
+                    font: .bodyThick,
+                    customTextColor: $primaryTextColor
+                )
+
+                if phoneNumber.hasValidDisplayName, let name = phoneNumber.grdbRecord?.displayName {
+                    GlacierLabel(
+                        text: name,
+                        font: .bodySmall,
+                        customTextColor: $secondaryTextColor
+                    )
+                }
+            }
+            .padding(.horizontal, 24)
+            .padding(.top, 32)
+            .padding(.bottom, 16)
+
+            GlacierLineSeparator(lineThickness: 1)
+
+            VStack(alignment: .leading, spacing: 0) {
+                actionRow(icon: "copy-icon", title: NSLocalizedString("Copy number", comment: "Manage phone number screen copy phone number")) {
+                    viewModel.copyPhoneNumber(phoneNumber)
+                    actionsSheetItem = nil
+                }
+
+                actionRow(icon: "edit-icon", title: NSLocalizedString("Edit name", comment: "Mnage phone number screen edit phone number name")) {
+                    dismissSheetThen { viewModel.presentEditPhoneNumberNamePrompt(for: phoneNumber) }
+                }
+
+                HStack(alignment: .center, spacing: 16) {
+                    GlacierImage(
+                        systemName: .constant("recordingtape"),
+                        width: 20,
+                        height: 20,
+                        shouldAdaptToColorSchemeChange: false,
+                        customTintColor: $secondaryTextColor
+                    )
+
+                    GlacierLabel(
+                        text: NSLocalizedString("Voicemail", comment: "Manage phone numbers screen voicemail toggle title"),
+                        font: .bodyThick,
+                        customTextColor: $primaryTextColor
+                    )
+
+                    Spacer()
+
+                    Toggle(
+                        isOn: Binding(
+                            get: { viewModel.isVoicemailEnabled(for: phoneNumber) },
+                            set: { viewModel.setVoicemailEnabled($0, for: phoneNumber) }
+                        ),
+                        label: { Text("") }
+                    )
+                    .labelsHidden()
+                    .fixedSize()
+                    .toggleStyle(SwitchToggleStyle(tint: .green50))
+                    .disabled(viewModel.isUpdatingVoicemail(for: phoneNumber))
+                }
+                .padding(.horizontal, 24)
+                .frame(height: 48)
+
+                actionRow(icon: "trash-icon", title: NSLocalizedString("Burn number", comment: "Mnage phone number screen burn phone number"), isDestructive: true) {
+                    dismissSheetThen { viewModel.presentBurnNumberConfirmationPrompt(for: phoneNumber) }
+                }
+
+                actionRow(icon: "trash-icon", title: NSLocalizedString("Delete history", comment: "Mnage phone number screen delete call history"), isDestructive: true) {
+                    dismissSheetThen { viewModel.presentDeleteHistoryConfirmationPrompt(for: phoneNumber) }
+                }
+            }
+            .padding(.top, 8)
+            .padding(.bottom, 16)
+        }
+        // Report the rows' natural height so the sheet fits them instead of using half the screen.
+        .fixedSize(horizontal: false, vertical: true)
+    }
+
+    private func actionRow(icon: String, title: String, isDestructive: Bool = false, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(alignment: .center, spacing: 16) {
+                GlacierImage(
+                    name: .constant(icon),
+                    width: 20,
+                    height: 20,
+                    shouldAdaptToColorSchemeChange: false,
+                    customTintColor: isDestructive ? .constant(.ember) : $secondaryTextColor
+                )
+
+                GlacierLabel(
+                    text: title,
+                    font: .bodyThick,
+                    customTextColor: isDestructive ? .constant(.ember) : $primaryTextColor
+                )
+
+                Spacer()
+            }
+            .padding(.horizontal, 24)
+            .frame(height: 48)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+
+    /// Prompts are presented in the overlay window, so close the sheet first to keep
+    /// them (and the rename keyboard) from stacking on top of it.
+    private func dismissSheetThen(_ action: @escaping @MainActor () -> Void) {
+        actionsSheetItem = nil
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 400_000_000)
+            action()
+        }
+    }
+
     // MARK: - Private methods
     
     private func setupColors(for scheme: ColorScheme) {
@@ -259,4 +337,10 @@ struct ManagePhoneNumbersScreen<ViewModel: ManagePhoneNumbersViewModel & Observa
         activePhoneNumberBackgroundColor = scheme == .dark ? .grey20 : .grey90
         backgroundColor = scheme == .dark ? .grey90 : .white
     }
+}
+
+/// Identifiable wrapper so the actions sheet can be driven by `sheet(item:)`.
+private struct PhoneNumberActionsSheetItem: Identifiable {
+    let number: PhoneAccountModel
+    var id: String { number.uniqueId }
 }

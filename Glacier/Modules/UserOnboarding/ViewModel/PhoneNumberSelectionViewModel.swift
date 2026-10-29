@@ -523,7 +523,7 @@ final class PhoneNumberSelectionVM: PhoneNumberSelectionViewModel, ObservableObj
                     onTap: {
                         self.dismissPopup()
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                            self.presentAddDisplayNameSuccessPrompt()
+                            self.presentVoicemailPrompt(for: phoneNumber)
                         }
                     }
                 )
@@ -550,9 +550,95 @@ final class PhoneNumberSelectionVM: PhoneNumberSelectionViewModel, ObservableObj
             }
             
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                self.presentVoicemailPrompt(for: phoneNumber)
+            }
+        }
+    }
+
+    /// Asks whether unanswered calls to the new number should go to voicemail, worded
+    /// like the Android dialog. Shown after the display name step.
+    @MainActor
+    private func presentVoicemailPrompt(for phoneNumber: String) {
+        let description = String(
+            format: NSLocalizedString(
+                "Let callers leave a voicemail on %@ when you miss a call, and listen to it in the app. You can change this anytime in Manage numbers.",
+                comment: "Phone number selection screen voicemail popup description"
+            ),
+            phoneNumber
+        )
+
+        let configuration = PopupConfiguration(
+            title: NSLocalizedString(
+                "Enable voicemail?",
+                comment: "Phone number selection screen voicemail popup title"
+            ),
+            description: description,
+            descriptionAlignment: .leading,
+            buttons: [
+                PopupButton(
+                    style: .tertiary,
+                    title: NSLocalizedString("Not now", comment: "Phone number selection screen disable voicemail button title"),
+                    onTap: {
+                        self.dismissPopup()
+                        self.setVoicemail(enabled: false, for: phoneNumber)
+                    }
+                ),
+                PopupButton(
+                    style: .tertiary,
+                    title: NSLocalizedString("Enable voicemail", comment: "Phone number selection screen enable voicemail button title"),
+                    onTap: {
+                        self.dismissPopup()
+                        self.setVoicemail(enabled: true, for: phoneNumber)
+                    }
+                )
+            ],
+            buttonsAlignment: .horizontal
+        )
+        presentPopup(with: configuration)
+    }
+
+    @MainActor
+    private func setVoicemail(enabled: Bool, for phoneNumber: String) {
+        presentProgressIndicator()
+        VoicemailSettingsManager.shared.setVoicemail(enabled: enabled, for: phoneNumber) { didSave in
+            DispatchQueue.main.async {
+                self.dismissProgressIndicator()
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                // The number itself was added fine, so a failed save must not block
+                // the success flow — tell the user where to fix it instead.
+                guard didSave else {
+                    self.presentVoicemailSaveFailedPrompt()
+                    return
+                }
                 self.presentAddDisplayNameSuccessPrompt()
             }
         }
+    }
+
+    @MainActor
+    private func presentVoicemailSaveFailedPrompt() {
+        let configuration = PopupConfiguration(
+            title: .errorText,
+            description: NSLocalizedString(
+                "We couldn’t save your voicemail choice. You can set it later in Manage numbers.",
+                comment: "Phone number selection screen voicemail save error"
+            ),
+            buttons: [
+                PopupButton(
+                    style: .primary,
+                    title: .okText,
+                    onTap: {
+                        self.dismissPopup()
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                            self.presentAddDisplayNameSuccessPrompt()
+                        }
+                    }
+                )
+            ],
+            buttonsAlignment: .vertical
+        )
+        presentPopup(with: configuration)
     }
     
     @MainActor

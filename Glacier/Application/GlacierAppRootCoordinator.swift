@@ -107,6 +107,23 @@ final class GlacierAppRootCoordinator: GlacierRootCoordinator, ObservableObject 
         }
     }
     
+    func presentDNSSetupGuide(
+        onCancel: @escaping () -> Void,
+        onOpenSettings: @escaping () -> Void,
+        onDone: @escaping () -> Void
+    ) {
+        Task { @MainActor in
+            OverlayViewManager.shared.presentPopupView(
+                GlacierDNSSetupGuide(
+                    onCancel: onCancel,
+                    onOpenSettings: onOpenSettings,
+                    onDone: onDone,
+                    checkDNSSelected: DnsOverTlsController.shared.isSelectedInSettings
+                )
+            )
+        }
+    }
+
     func dismissPopup() {
         Task { @MainActor in
             OverlayViewManager.shared.dismissPopupView()

@@ -94,7 +94,19 @@ protocol GlacierViewModelWithRootCoordinator: AnyObject {
      It checks if a popup is presented over the current app window
      */
     func isPresentingPopup() async -> Bool
-    
+
+    /**
+     It presents the slide-up guide for selecting Glacier DNS in iOS Settings. It lives in the popup
+     slot, so `dismissPopup()` dismisses it; `onCancel` and `onDone` should call `dismissPopup()`.
+     `onOpenSettings` leaves the guide up, so the user can come back to it and tap Done once
+     Glacier is selected.
+     */
+    func presentDNSSetupGuide(
+        onCancel: @escaping () -> Void,
+        onOpenSettings: @escaping () -> Void,
+        onDone: @escaping () -> Void
+    )
+
     /**
      It dismisses the presented popup view
      */
@@ -160,6 +172,17 @@ extension GlacierViewModelWithRootCoordinator {
         appRootCoordinator.presentPopup(with: configuration)
     }
     
+    func presentDNSSetupGuide(
+        onCancel: @escaping () -> Void,
+        onOpenSettings: @escaping () -> Void,
+        onDone: @escaping () -> Void
+    ) {
+        guard let appRootCoordinator = rootCoordinator as? GlacierAppRootCoordinator else {
+            return
+        }
+        appRootCoordinator.presentDNSSetupGuide(onCancel: onCancel, onOpenSettings: onOpenSettings, onDone: onDone)
+    }
+
     func dismissPopup() {
         guard let appRootCoordinator = rootCoordinator as? GlacierAppRootCoordinator else {
             return

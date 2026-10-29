@@ -38,6 +38,7 @@
 		AF00000000000000000000B1 /* SubscriptionSettingsScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF00000000000000000000B2 /* SubscriptionSettingsScreen.swift */; };
 		AF00000000000000000000B3 /* SubscriptionSettingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF00000000000000000000B4 /* SubscriptionSettingsViewModel.swift */; };
 		AF0000000000000000000101 /* DNSProfileHealer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF0000000000000000000102 /* DNSProfileHealer.swift */; };
+		AF0000000000000000000201 /* VoicemailSettingsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF0000000000000000000202 /* VoicemailSettingsManager.swift */; };
 		AF10DE0000000000000000B1 /* RemovePhoneNumbersView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF10DE0000000000000000A1 /* RemovePhoneNumbersView.swift */; };
 		B00000000000000000000001 /* DeepLinkTargetTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F00000000000000000000001 /* DeepLinkTargetTests.swift */; };
 		B00000000000000000000002 /* UserPasswordValidationChecklistTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F00000000000000000000002 /* UserPasswordValidationChecklistTests.swift */; };
@@ -247,6 +248,7 @@
 		C1F0A3222F4D7E9A00AA1101 /* EndpointService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1F0A3212F4D7E9A00AA1101 /* EndpointService.swift */; };
 		D5CA4E87F2F09612D1780602 /* WidgetSettingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A682009216C17DA5D7DA84E /* WidgetSettingsViewModel.swift */; };
 		D718D543D712F42B0B0E8649 /* GlacierApplicationDelegate+BackendSubscription.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9D635C907A4C8B95FD8AFCB /* GlacierApplicationDelegate+BackendSubscription.swift */; };
+		D7A1C0DE2F60000200A1B2C3 /* GlacierDNSSetupGuide.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7A1C0DE2F60000100A1B2C3 /* GlacierDNSSetupGuide.swift */; };
 		DA5C00000000000000000011 /* DiscoverySurvey.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA5C00000000000000000010 /* DiscoverySurvey.swift */; };
 		DA5C00000000000000000013 /* DiscoverySurveyService.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA5C00000000000000000012 /* DiscoverySurveyService.swift */; };
 		DA5C00000000000000000015 /* DiscoverySurveyViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA5C00000000000000000014 /* DiscoverySurveyViewModel.swift */; };
@@ -384,6 +386,7 @@
 		AF00000000000000000000B2 /* SubscriptionSettingsScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionSettingsScreen.swift; sourceTree = "<group>"; };
 		AF00000000000000000000B4 /* SubscriptionSettingsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionSettingsViewModel.swift; sourceTree = "<group>"; };
 		AF0000000000000000000102 /* DNSProfileHealer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DNSProfileHealer.swift; sourceTree = "<group>"; };
+		AF0000000000000000000202 /* VoicemailSettingsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoicemailSettingsManager.swift; sourceTree = "<group>"; };
 		AF10DE0000000000000000A1 /* RemovePhoneNumbersView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemovePhoneNumbersView.swift; sourceTree = "<group>"; };
 		B6E27707A6E6D4DC8104C83B /* Pods_GlacierPods_Glacier.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_GlacierPods_Glacier.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		B7D2A5A361F42812631E47D6 /* Pods-GlacierTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-GlacierTests.debug.xcconfig"; path = "Pods/Target Support Files/Pods-GlacierTests/Pods-GlacierTests.debug.xcconfig"; sourceTree = "<group>"; };
@@ -592,6 +595,7 @@
 		C4BD799FD76442D08B938A53 /* GlacierToast.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlacierToast.swift; sourceTree = "<group>"; };
 		CCD1F8E85C658C8D3865B584 /* Pods.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		D71AB5AD5457CAEF5397CBA3 /* GlacierExtraPhoneNumberProduct.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlacierExtraPhoneNumberProduct.swift; sourceTree = "<group>"; };
+		D7A1C0DE2F60000100A1B2C3 /* GlacierDNSSetupGuide.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlacierDNSSetupGuide.swift; sourceTree = "<group>"; };
 		D9D635C907A4C8B95FD8AFCB /* GlacierApplicationDelegate+BackendSubscription.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "GlacierApplicationDelegate+BackendSubscription.swift"; sourceTree = "<group>"; };
 		DA5C00000000000000000010 /* DiscoverySurvey.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverySurvey.swift; sourceTree = "<group>"; };
 		DA5C00000000000000000012 /* DiscoverySurveyService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverySurveyService.swift; sourceTree = "<group>"; };
@@ -1108,6 +1112,7 @@
 				AF0000000000000000000006 /* PrivacyReportManager.swift */,
 				AF0000000000000000000102 /* DNSProfileHealer.swift */,
 				AF0000000000000000000008 /* AccountDeletionManager.swift */,
+				AF0000000000000000000202 /* VoicemailSettingsManager.swift */,
 				C14DA1F22F12A562003D40CB /* TwilioBackendManager.swift */,
 				C14DA1E52F12A562003D40CB /* CallManager.swift */,
 				C14DA1EE2F12A562003D40CB /* SecurityCenter.swift */,
@@ -1185,6 +1190,7 @@
 				C147C6752F1D511C00298689 /* GlacierButton.swift */,
 				C17C816C2F190773007C4EE4 /* GlacierProgressIndicator.swift */,
 				C17C81702F19094D007C4EE4 /* GlacierPopup.swift */,
+				D7A1C0DE2F60000100A1B2C3 /* GlacierDNSSetupGuide.swift */,
 				C4BD799FD76442D08B938A53 /* GlacierToast.swift */,
 				C1E23EF92F21432800332C51 /* GlacierTextField.swift */,
 				C121AD712F3FA8E2001955F2 /* GlacierSearchBar.swift */,
@@ -2245,6 +2251,7 @@
 				C17C81622F18DB78007C4EE4 /* Sheet.swift in Sources */,
 				C19A34452F1AB9B3000B3543 /* UserOnboardingScreen.swift in Sources */,
 				C17C81712F19094D007C4EE4 /* GlacierPopup.swift in Sources */,
+				D7A1C0DE2F60000200A1B2C3 /* GlacierDNSSetupGuide.swift in Sources */,
 				801194DF4BB54E0B9D13C13E /* GlacierToast.swift in Sources */,
 				C187452E2F436CA1006EDC42 /* HomeViewModel.swift in Sources */,
 				F55D66C22F86C2E4003E501B /* UIImage+Scale.swift in Sources */,
@@ -2275,6 +2282,7 @@
 				AF0000000000000000000005 /* PrivacyReportManager.swift in Sources */,
 				AF0000000000000000000101 /* DNSProfileHealer.swift in Sources */,
 				AF0000000000000000000007 /* AccountDeletionManager.swift in Sources */,
+				AF0000000000000000000201 /* VoicemailSettingsManager.swift in Sources */,
 				1FC1B4FD9AB5CA2A3E9E4509 /* WidgetSettingsScreen.swift in Sources */,
 				C18745372F4392F7006EDC42 /* DeviceSecuritySetting.swift in Sources */,
 				C147C6702F1D453000298689 /* GlacierBackground.swift in Sources */,
@@ -2392,7 +2400,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 103;
+				CURRENT_PROJECT_VERSION = 107;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = UG8VC96NZF;
 				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
@@ -2419,7 +2427,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/Glacier/Includes-Simulator",
 				);
-				MARKETING_VERSION = 1.2.3;
+				MARKETING_VERSION = 1.3;
 				PRODUCT_BUNDLE_IDENTIFIER = com.theglacierapp.Glacier;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE = "";
@@ -3011,7 +3019,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 103;
+				CURRENT_PROJECT_VERSION = 107;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = UG8VC96NZF;
 				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
@@ -3044,7 +3052,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/Glacier/Includes-Simulator",
 				);
-				MARKETING_VERSION = 1.2.3;
+				MARKETING_VERSION = 1.3;
 				PRODUCT_BUNDLE_IDENTIFIER = com.theglacierapp.Glacier;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE = "";
@@ -3076,7 +3084,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 103;
+				CURRENT_PROJECT_VERSION = 107;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = UG8VC96NZF;
 				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
@@ -3103,7 +3111,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/Glacier/Includes-Simulator",
 				);
-				MARKETING_VERSION = 1.2.3;
+				MARKETING_VERSION = 1.3;
 				PRODUCT_BUNDLE_IDENTIFIER = com.theglacierapp.Glacier;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE = "";

@@ -690,3 +690,21 @@
 
 /* Call history and voicemail: shown when a caller's number is hidden or unknown */
 "Number unavailable" = "Number unavailable";
+
+/* Add-number voicemail popup: title */
+"Enable voicemail?" = "Enable voicemail?";
+
+/* Add-number voicemail popup: description; %@ is the new phone number */
+"Let callers leave a voicemail on %@ when you miss a call, and listen to it in the app. You can change this anytime in Manage numbers." = "Let callers leave a voicemail on %@ when you miss a call, and listen to it in the app. You can change this anytime in Manage numbers.";
+
+/* Add-number voicemail popup: button that leaves voicemail off */
+"Not now" = "Not now";
+
+/* Add-number voicemail popup: button that turns voicemail on */
+"Enable voicemail" = "Enable voicemail";
+
+/* Add-number voicemail popup: shown when saving the choice fails */
+"We couldn’t save your voicemail choice. You can set it later in Manage numbers." = "We couldn’t save your voicemail choice. You can set it later in Manage numbers.";
+
+/* Manage numbers: shown when the voicemail toggle fails to save */
+"Something went wrong while updating voicemail. Please try again." = "Something went wrong while updating voicemail. Please try again.";

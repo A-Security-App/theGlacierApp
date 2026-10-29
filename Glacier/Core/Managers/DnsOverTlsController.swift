@@ -247,6 +247,17 @@ final class DnsOverTlsController {
         }
     }
     
+    /// Whether the user has selected Glacier under Settings → General → VPN & Device Management →
+    /// DNS. Only iOS can switch the profile on, so this reflects the user's choice rather than our
+    /// saved configuration, and it doesn't need the network. Calls back on the main queue.
+    func isSelectedInSettings(completion: @escaping (Bool) -> Void) {
+        dnsManager.loadFromPreferences { [dnsManager] _ in
+            DispatchQueue.main.async {
+                completion(dnsManager.isEnabled)
+            }
+        }
+    }
+
     func getResolvedHosts() -> [String] {
         return self.resolvedHosts
     }

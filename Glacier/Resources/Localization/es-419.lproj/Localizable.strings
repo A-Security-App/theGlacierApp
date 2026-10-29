@@ -690,3 +690,21 @@
 
 /* Call history and voicemail: shown when a caller's number is hidden or unknown */
 "Number unavailable" = "Número no disponible";
+
+/* Add-number voicemail popup: title */
+"Enable voicemail?" = "¿Activar el buzón de voz?";
+
+/* Add-number voicemail popup: description; %@ is the new phone number */
+"Let callers leave a voicemail on %@ when you miss a call, and listen to it in the app. You can change this anytime in Manage numbers." = "Permite que quienes te llamen dejen un mensaje de voz en %@ cuando no contestes, y escúchalo en la app. Puedes cambiar esto en cualquier momento en Administrar números.";
+
+/* Add-number voicemail popup: button that leaves voicemail off */
+"Not now" = "Ahora no";
+
+/* Add-number voicemail popup: button that turns voicemail on */
+"Enable voicemail" = "Activar buzón de voz";
+
+/* Add-number voicemail popup: shown when saving the choice fails */
+"We couldn’t save your voicemail choice. You can set it later in Manage numbers." = "No pudimos guardar tu elección del buzón de voz. Puedes configurarlo más tarde en Administrar números.";
+
+/* Manage numbers: shown when the voicemail toggle fails to save */
+"Something went wrong while updating voicemail. Please try again." = "Algo salió mal al actualizar el buzón de voz. Por favor, inténtalo de nuevo.";

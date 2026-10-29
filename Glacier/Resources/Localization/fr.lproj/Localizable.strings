@@ -688,3 +688,21 @@
 
 /* Call history and voicemail: shown when a caller's number is hidden or unknown */
 "Number unavailable" = "Numéro indisponible";
+
+/* Add-number voicemail popup: title */
+"Enable voicemail?" = "Activer la messagerie vocale ?";
+
+/* Add-number voicemail popup: description; %@ is the new phone number */
+"Let callers leave a voicemail on %@ when you miss a call, and listen to it in the app. You can change this anytime in Manage numbers." = "Permettez à vos correspondants de laisser un message vocal sur le %@ lorsque vous manquez un appel, et écoutez-le dans l’application. Vous pouvez modifier ce choix à tout moment dans Gérer les numéros.";
+
+/* Add-number voicemail popup: button that leaves voicemail off */
+"Not now" = "Pas maintenant";
+
+/* Add-number voicemail popup: button that turns voicemail on */
+"Enable voicemail" = "Activer la messagerie vocale";
+
+/* Add-number voicemail popup: shown when saving the choice fails */
+"We couldn’t save your voicemail choice. You can set it later in Manage numbers." = "Nous n’avons pas pu enregistrer votre choix de messagerie vocale. Vous pourrez le définir plus tard dans Gérer les numéros.";
+
+/* Manage numbers: shown when the voicemail toggle fails to save */
+"Something went wrong while updating voicemail. Please try again." = "Une erreur s'est produite lors de la mise à jour de la messagerie vocale. Veuillez réessayer.";

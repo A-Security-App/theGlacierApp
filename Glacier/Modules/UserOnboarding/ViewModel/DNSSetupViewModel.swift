@@ -14,8 +14,6 @@ import NetworkExtension
  DNSSetupViewModel defines requirements for DNSSetupScreen view models.
  */
 protocol DNSSetupViewModel: GlacierViewModelWithRootCoordinator, GlacierViewModelWithUserOnboardingCoordinator {
-    var didShowDeviceSettings: Bool { get }
-
     init(rootCoordinator: any GlacierRootCoordinator, userOnboardingCoordinator: any GlacierCoordinator)
 
     @MainActor
@@ -31,8 +29,7 @@ protocol DNSSetupViewModel: GlacierViewModelWithRootCoordinator, GlacierViewMode
 final class DNSSetupVM: DNSSetupViewModel {
     
     // MARK: - Public properties
-    
-    var didShowDeviceSettings: Bool
+
     let rootCoordinator: any GlacierRootCoordinator
     let userOnboardingCoordinator: any GlacierCoordinator
     
@@ -55,7 +52,6 @@ final class DNSSetupVM: DNSSetupViewModel {
     // MARK: - Initializer
     
     init(rootCoordinator: any GlacierRootCoordinator, userOnboardingCoordinator: any GlacierCoordinator) {
-        self.didShowDeviceSettings = false
         self.rootCoordinator = rootCoordinator
         self.userOnboardingCoordinator = userOnboardingCoordinator
     }
@@ -64,33 +60,24 @@ final class DNSSetupVM: DNSSetupViewModel {
     
     @MainActor
     func presentDNSSetupConfirmationPrompt() {
-        // Save the profile while the user reads the popup rather than after "Open Settings".
+        // Save the profile while the user reads the guide rather than after "Open Settings".
         // It is saved disabled, so leaving it behind on Cancel changes nothing.
         saveDNSProfile()
 
-        let popupConfiguration = PopupConfiguration(
-            title: NSLocalizedString("Enable Glacier DNS in Settings", comment: "DNS setup popup title"),
-            description: NSLocalizedString("In Settings page, navigate to:\n\nGeneral →\nVPN & Device Management →\nDNS →\n\nThen select Glacier.", comment: "DNS setup popup description") + "\n\n" + .dnsSettingsReopenTip,
-            buttons: [
-                PopupButton(
-                    style: .tertiary,
-                    title: NSLocalizedString("Cancel", comment: "Cancel button title"),
-                    onTap: {
-                        self.dismissPopup()
-                    }
-                ),
-                PopupButton(
-                    style: .primary,
-                    title: NSLocalizedString("Open Settings", comment: "Open settings button title"),
-                    onTap: {
-                        self.dismissPopup()
-                        self.openSettingsWhenProfileSaved()
-                    }
-                )
-            ],
-            buttonsAlignment: .horizontal
+        // The guide stays up while the user is in Settings; Done (offered once Glacier is
+        // selected) is what moves onboarding on.
+        presentDNSSetupGuide(
+            onCancel: {
+                self.dismissPopup()
+            },
+            onOpenSettings: {
+                self.openSettingsWhenProfileSaved()
+            },
+            onDone: {
+                self.dismissPopup()
+                self.presentVPNSetupView()
+            }
         )
-        presentPopup(with: popupConfiguration)
     }
     
     func presentVPNSetupView() {
@@ -174,7 +161,6 @@ final class DNSSetupVM: DNSSetupViewModel {
             // Let's open iOS settings so that user can select Glacier DNS
             guard let url = URL(string: UIApplication.settingsRootURL) else { return }
             UIApplication.shared.open(url)
-            didShowDeviceSettings = true
             UserDefaultsService.shared.set(true, for: \.didCompleteDNSSetupDuringOnboarding)
         case .saving:
             shouldOpenSettingsWhenSaved = true
@@ -186,6 +172,8 @@ final class DNSSetupVM: DNSSetupViewModel {
         case .failed(let missingProfile):
             // Back to idle so the next tap on the card starts a fresh attempt.
             profileSaveState = .idle
+            // The guide holds the popup slot, so close it for the alert to show.
+            dismissPopup()
             let description = missingProfile
                 ? NSLocalizedString(
                     "We couldn't finish setting up Secure DNS right now. Try again in a minute, or skip this step and turn it on later in Settings.",
