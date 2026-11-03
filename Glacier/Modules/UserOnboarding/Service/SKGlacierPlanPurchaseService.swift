@@ -360,6 +360,9 @@ final class SKGlacierPlanPurchaseService: GlacierPlanPurchaseService {
     /// retried on the next entitlement refresh. Only base-plan transactions are sent here —
     /// phone-line add-ons are out of scope for this endpoint.
     ///
+    /// The answer feeds `AppleSubscriptionOwnershipMonitor`: a 409 means another Glacier account owns
+    /// this purchase, and a success clears any conflict reported earlier.
+    ///
     /// `static` on purpose: this must run to completion independently of the calling service
     /// instance. Entitlement refresh creates throwaway `SKGlacierPlanPurchaseService()` instances
     /// (see resolveSubscriptionStatus / refreshBackendSubscription) that deallocate as soon as
@@ -379,8 +382,11 @@ final class SKGlacierPlanPurchaseService: GlacierPlanPurchaseService {
         }
 
         let body = AppleSubscriptionLinkRequest(transactionId: String(transaction.originalID))
+        // The account the request is made for. A sign-out or account switch while it's in flight
+        // must not hand this answer to whoever is signed in when it lands.
+        let accountId = await SKGlacierPlanPurchaseService().resolveAppAccountToken()
 
-        await withCheckedContinuation { continuation in
+        let (linked, isConflict): (Bool, Bool) = await withCheckedContinuation { continuation in
             GlacierPinningConfiguration.pinnedSession
                 .request(url,
                          method: .post,
@@ -394,14 +400,31 @@ final class SKGlacierPlanPurchaseService: GlacierPlanPurchaseService {
                     switch response.result {
                     case .success:
                         Log.general.info("[AppleSubLink] linked Apple subscription (status \(statusCode))")
+                        continuation.resume(returning: (true, false))
                     case .failure(let error):
                         // Includes 4xx/5xx (validate() fails non-2xx) and transport errors.
                         // Left as best-effort: a locally-verified entitlement still grants access,
-                        // and the link retries on the next refresh.
+                        // and the link retries on the next refresh. The one exception is an
+                        // ownership conflict, which no retry will fix.
                         Log.general.notice("[AppleSubLink] link request failed (status \(statusCode)): \(error)")
+                        let isConflict = AppleSubscriptionOwnershipMonitor.isOwnershipConflict(statusCode: statusCode,
+                                                                                               body: response.data)
+                        continuation.resume(returning: (false, isConflict))
                     }
-                    continuation.resume()
                 }
+        }
+
+        guard linked || isConflict else { return }
+        guard await SKGlacierPlanPurchaseService().resolveAppAccountToken() == accountId else {
+            Log.general.info("[AppleSubLink] signed-in account changed during the link request — ignoring its result")
+            return
+        }
+        await MainActor.run {
+            if isConflict {
+                AppleSubscriptionOwnershipMonitor.shared.reportConflict(accountId: accountId)
+            } else {
+                AppleSubscriptionOwnershipMonitor.shared.reportLinked(accountId: accountId)
+            }
         }
     }
 }

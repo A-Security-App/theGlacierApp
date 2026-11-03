@@ -6,6 +6,12 @@ users a day or two later.
 ## Unreleased
 
 
+## Version 1.3.1 (November 2, 2026)
+
+* Clear explanation and a way to switch accounts when the App Store
+  subscription belongs to a different Glacier account, networking security
+  updates.
+
 ## Version 1.3 (October 29, 2026)
 
 * Step-by-step Secure DNS setup guide that finishes on its own once Glacier is

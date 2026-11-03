@@ -81,6 +81,16 @@ struct GlacierAppRootScreen: View {
     /// itself, and any lapse notification that arrives while it is in flight is based on stale or
     /// temporarily-reset state (e.g. the hasActiveSubscription = false reset at the start of the check).
     @State private var subscriptionCheckInFlight = false
+    /// Set while this device's Apple subscription belongs to another Glacier account. Shows the
+    /// ownership-conflict cover instead of the lapse paywall, whose Restore and Buy can't fix it.
+    @ObservedObject private var ownershipMonitor = AppleSubscriptionOwnershipMonitor.shared
+
+    /// Whether the ownership-conflict cover is up: a conflict, and the user is past sign-in.
+    private var isShowingOwnershipConflict: Bool {
+        ownershipMonitor.isConflicted
+            && isUserAuthenticationVerified
+            && (glacierAppCoordinator.currentScreen == .main || glacierAppCoordinator.currentScreen == .userOnboarding)
+    }
 
     // MARK: - UI/UX
 
@@ -304,8 +314,9 @@ struct GlacierAppRootScreen: View {
                     case .enforce:
                         // Confirmed lapse, no grace owed. The handler has already torn protection
                         // down (DoT off, VPN stopped, widget status cleared), recording what it
-                        // turned off so restore can put it back. Just show the paywall.
-                        showSubscriptionLapsedPaywall = true
+                        // turned off so restore can put it back. Just show the paywall — unless
+                        // the subscription is another account's, which the paywall can't fix.
+                        showSubscriptionLapsedPaywall = !ownershipMonitor.isConflicted
                     case .inconclusive:
                         // Network unavailable (e.g. WireGuard tunnel mid-reconnect) — cannot
                         // distinguish a genuine lapse from a transient outage. Give benefit of the
@@ -334,11 +345,11 @@ struct GlacierAppRootScreen: View {
             // records both, so a teardown on a StoreKit blip is undone automatically by the
             // next confirmed reading rather than leaving the VPN off for good.
             BaseSubscriptionLifecycleHandler.shared.performTeardown()
-            showSubscriptionLapsedPaywall = true
+            showSubscriptionLapsedPaywall = !ownershipMonitor.isConflicted
         }
         // Present a dismissible renew paywall when the grace nag's "Renew now" is tapped.
         .onReceive(NotificationCenter.default.publisher(for: .glacierPresentRenewPaywall)) { _ in
-            guard isUserAuthenticationVerified else { return }
+            guard isUserAuthenticationVerified, !ownershipMonitor.isConflicted else { return }
             showGraceRenewPaywall = true
         }
         // Dismiss the lapse paywall once the user successfully restores their subscription.
@@ -374,20 +385,36 @@ struct GlacierAppRootScreen: View {
             // keeps it from recording onboarding progress (which would re-enter purchase on next login).
             GlacierPlanPurchaseScreen(viewModel: viewModel, isLapsePaywall: false, isGraceRenewal: true)
         }
+        // Non-dismissible: it goes away only when the conflict clears (a successful link) or the
+        // user signs out, both of which change what isShowingOwnershipConflict reads.
+        .fullScreenCover(isPresented: Binding(get: { isShowingOwnershipConflict }, set: { _ in })) {
+            SubscriptionOwnershipConflictScreen(accountActions: SettingsVM(rootCoordinator: glacierAppCoordinator))
+                .environmentObject(glacierColorScheme)
+        }
+        // A conflict replaces the paywalls: they can only offer Buy and Restore, and neither helps.
+        .onChange(of: ownershipMonitor.isConflicted) { isConflicted in
+            if isConflicted {
+                showSubscriptionLapsedPaywall = false
+                showGraceRenewPaywall = false
+            }
+            BaseSubscriptionLifecycleHandler.shared.setPaywallPresented(showGraceRenewPaywall || showSubscriptionLapsedPaywall || isConflicted)
+        }
         // Keep the grace nag from popping up over a renew/lapse paywall (e.g. when
         // applicationDidBecomeActive fires as the StoreKit purchase sheet dismisses mid-renewal).
         .onChange(of: showGraceRenewPaywall) { _ in
-            BaseSubscriptionLifecycleHandler.shared.setPaywallPresented(showGraceRenewPaywall || showSubscriptionLapsedPaywall)
+            BaseSubscriptionLifecycleHandler.shared.setPaywallPresented(showGraceRenewPaywall || showSubscriptionLapsedPaywall || ownershipMonitor.isConflicted)
         }
         .onChange(of: showSubscriptionLapsedPaywall) { _ in
-            BaseSubscriptionLifecycleHandler.shared.setPaywallPresented(showGraceRenewPaywall || showSubscriptionLapsedPaywall)
+            BaseSubscriptionLifecycleHandler.shared.setPaywallPresented(showGraceRenewPaywall || showSubscriptionLapsedPaywall || ownershipMonitor.isConflicted)
         }
         // Sign-out / account deletion from the lapse paywall route to login via setRootScreen, but
         // the paywall is our own cover, not coordinator state — drop it so it doesn't sit over login.
+        // The ownership conflict belonged to the account that signed out, so it goes too.
         .onChange(of: glacierAppCoordinator.currentScreen) { screen in
             guard screen == .userAuthentication else { return }
             showSubscriptionLapsedPaywall = false
             showGraceRenewPaywall = false
+            ownershipMonitor.clear()
         }
     }
 

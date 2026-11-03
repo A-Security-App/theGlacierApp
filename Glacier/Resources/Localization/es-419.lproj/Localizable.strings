@@ -708,3 +708,18 @@
 
 /* Manage numbers: shown when the voicemail toggle fails to save */
 "Something went wrong while updating voicemail. Please try again." = "Algo salió mal al actualizar el buzón de voz. Por favor, inténtalo de nuevo.";
+
+/* Subscription ownership conflict screen title */
+"Subscription belongs to another account" = "La suscripción pertenece a otra cuenta";
+
+/* Subscription ownership conflict screen explanation */
+"Your App Store subscription belongs to a different Glacier account. To use it, sign out and sign in the way you first signed up, such as Continue with Apple." = "Tu suscripción de App Store pertenece a otra cuenta de Glacier. Para usarla, cierra sesión e inicia sesión como te registraste por primera vez, por ejemplo con Continuar con Apple.";
+
+/* Subscription ownership conflict screen: the signed-in email; %@ is the email address */
+"Signed in as %@" = "Sesión iniciada como %@";
+
+/* Subscription ownership conflict screen sign out button title */
+"Switch Account" = "Cambiar de cuenta";
+
+/* Subscription ownership conflict screen contact support button title */
+"Contact Support" = "Contactar con soporte";
