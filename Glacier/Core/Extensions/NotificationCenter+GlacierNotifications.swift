@@ -57,13 +57,6 @@ extension Notification.Name {
     // MARK: - Home screen
 
     static let userSelectedConnectionType = Notification.Name("didSelectConnectionType")
-    /// Fired when the iOS 16 widget deep link (glacierapp://vpn/toggle) is opened.
-    /// HomeVM observes this and calls handleWidgetToggle() without a confirmation popup.
-    static let widgetVPNDNSToggleRequested = Notification.Name("widgetVPNDNSToggleRequested")
-    /// Fired by the widget Link (glacierapp://widget/disconnect) — disconnect DNS and VPN.
-    static let widgetDisconnectRequested = Notification.Name("widgetDisconnectRequested")
-    /// Fired by the widget Link (glacierapp://widget/connect) — reconnect to last used type.
-    static let widgetConnectRequested = Notification.Name("widgetConnectRequested")
     static let twilioAccessTokenUpdated = Notification.Name("twilioAccessTokenUpdated")
     
     // MARK: - Phone screen

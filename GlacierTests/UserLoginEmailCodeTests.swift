@@ -22,9 +22,37 @@ final class UserLoginEmailCodeTests: XCTestCase {
         guard case .customWithSRP = GlacierSignInFlow.emailCodeChallenge.authFlowType else {
             return XCTFail("emailCodeChallenge must request CUSTOM_WITH_SRP")
         }
-        guard case .userSRP = GlacierSignInFlow.passwordOnly.authFlowType else {
-            return XCTFail("passwordOnly must request USER_SRP_AUTH")
-        }
+    }
+
+    // MARK: - Prefilled email
+
+    /// After a new account is confirmed, the login opens on the password step
+    /// for the verified address.
+    func testPrefilledEmailStartsOnThePasswordStep() {
+        let coordinator = StubRootCoordinator()
+        let viewModel = UserLoginVM(
+            rootCoodinator: coordinator,
+            passwordResetCoordinator: coordinator,
+            authenticationService: MockAuthenticationService(),
+            prefilledEmail: " person@example.com "
+        )
+
+        XCTAssertEqual(viewModel.email, "person@example.com")
+        XCTAssertTrue(viewModel.isValidEmail)
+        XCTAssertTrue(viewModel.shouldShowPasswordTextField)
+        XCTAssertEqual(viewModel.passwordTextFieldState, .active)
+        XCTAssertFalse(viewModel.isContinueButtonEnabled)
+
+        viewModel.password = "hunter2hunter2"
+        XCTAssertTrue(viewModel.isContinueButtonEnabled)
+    }
+
+    func testNoPrefilledEmailStartsOnTheEmailStep() {
+        let viewModel = makeViewModel(service: MockAuthenticationService())
+
+        XCTAssertEqual(viewModel.email, "")
+        XCTAssertFalse(viewModel.shouldShowPasswordTextField)
+        XCTAssertEqual(viewModel.passwordTextFieldState, .idle)
     }
 
     // MARK: - Login

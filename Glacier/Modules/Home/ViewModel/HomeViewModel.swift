@@ -170,10 +170,25 @@ final class HomeVM: HomeViewModel, ObservableObject {
         registerForNotifications()
         securityCenter.dnsStatusDelegate = self
         setupWireGuardManager()
+        // A cold launch posts no willEnterForeground, so onAppBecameActive never runs for it.
+        // Without this, a Shortcuts request made while the app was killed sat waiting and fired
+        // on some later return from the background. Same 1s settle delay as the foreground path.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1) { [weak self] in
+            self?.consumeWidgetPendingToggleIfNeeded()
+        }
     }
     
     deinit {
         NotificationCenter.default.removeObserver(self)
+        // The Darwin observer holds an unretained pointer to self; leaving it registered after
+        // deinit (e.g. MainScreen rebuilt on sign-out/sign-in) would hand the next Shortcuts
+        // signal a dangling pointer.
+        CFNotificationCenterRemoveObserver(
+            CFNotificationCenterGetDarwinNotifyCenter(),
+            Unmanaged.passUnretained(self).toOpaque(),
+            CFNotificationName(kWidgetDarwinNotification as CFString),
+            nil
+        )
     }
     
     // MARK: - Public methods
@@ -259,31 +274,6 @@ final class HomeVM: HomeViewModel, ObservableObject {
         presentSheet(.connectionTypeSelection)
     }
     
-    /// Called by the iOS 16 widget deep link (glacierapp://vpn/toggle).
-    /// Mirrors the AppIntent logic: disconnects if connected, or reconnects to the
-    /// last chosen type if disconnected. Skips the VPN confirmation popup since the
-    /// action is already an explicit user gesture on the widget.
-    func handleWidgetToggle() {
-        if isConnectedToVPN {
-            toggleVPNConnection(false)
-            toggleDNSConnection(false)
-        } else if isConnectedToDNS || isDNSTurnedOnByUser {
-            toggleDNSConnection(false)
-        } else {
-            let lastType = UserDefaults(suiteName: kGlacierGroup)?.string(forKey: kLastConnectionTypeKey) ?? SecuredConnectionType.dns.rawValue
-            if lastType == SecuredConnectionType.vpn.rawValue {
-                guard hasVPNConfiguration() else { return }
-                recordLastConnectionType(.vpn)
-                toggleVPNConnection(true)
-            } else {
-                guard hasDNSConfiguration() else { return }
-                recordLastConnectionType(.dns)
-                didUserTappedDNSConnectionButton = true
-                toggleDNSConnection(true)
-            }
-        }
-    }
-
     func disconnectFromSecuredNetwork() {
         if isConnectedToVPN {
             let popupConfiguration = PopupConfiguration(
@@ -475,24 +465,6 @@ final class HomeVM: HomeViewModel, ObservableObject {
             object: nil
         )
 
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(onWidgetToggleRequested),
-            name: .widgetVPNDNSToggleRequested,
-            object: nil
-        )
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(onWidgetDisconnectRequested),
-            name: .widgetDisconnectRequested,
-            object: nil
-        )
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(onWidgetConnectRequested),
-            name: .widgetConnectRequested,
-            object: nil
-        )
         
         NotificationCenter.default.addObserver(
             self,
@@ -539,8 +511,10 @@ final class HomeVM: HomeViewModel, ObservableObject {
     private func registerForWidgetDarwinNotification() {
         let callback: CFNotificationCallback = { _, observer, _, _, _ in
             guard let observer else { return }
+            // Valid here: deinit unregisters before self goes away. Hold it weakly across the
+            // hop to main in case it is released in between.
             let vm = Unmanaged<HomeVM>.fromOpaque(observer).takeUnretainedValue()
-            DispatchQueue.main.async { vm.executeWidgetRequestedAction() }
+            DispatchQueue.main.async { [weak vm] in vm?.executeWidgetRequestedAction() }
         }
         CFNotificationCenterAddObserver(
             CFNotificationCenterGetDarwinNotifyCenter(),
@@ -879,34 +853,6 @@ final class HomeVM: HomeViewModel, ObservableObject {
         UserDefaults(suiteName: kGlacierGroup)?.set(type.rawValue, forKey: kLastConnectionTypeKey)
     }
 
-    @objc private func onWidgetToggleRequested() {
-        handleWidgetToggle()
-    }
-
-    /// Widget Link: glacierapp://widget/disconnect
-    /// Action is explicit in the URL — no need to guess from NE/UserDefaults state.
-    @objc private func onWidgetDisconnectRequested() {
-        toggleVPNConnection(false)
-        toggleDNSConnection(false)
-    }
-
-    /// Widget Link: glacierapp://widget/connect
-    /// Reconnects to whichever type was last used.
-    @objc private func onWidgetConnectRequested() {
-        let lastType = UserDefaults(suiteName: kGlacierGroup)?.string(forKey: kLastConnectionTypeKey)
-            ?? SecuredConnectionType.dns.rawValue
-        if lastType == SecuredConnectionType.vpn.rawValue {
-            guard hasVPNConfiguration() else { return }
-            recordLastConnectionType(.vpn)
-            toggleVPNConnection(true)
-        } else {
-            guard hasDNSConfiguration() else { return }
-            recordLastConnectionType(.dns)
-            didUserTappedDNSConnectionButton = true
-            toggleDNSConnection(true)
-        }
-    }
-
     /// Fired when the persisted DoT configuration changes (enable/disable). Recompute the
     /// displayed status from the now-persisted flag and re-verify against the live resolver.
     /// This is what catches the onboarding auto-connect (`connectDNSIfSetUpDuringOnboarding`),
@@ -972,11 +918,21 @@ final class HomeVM: HomeViewModel, ObservableObject {
         }
     }
 
-    /// Executes a widget-requested action if the app was killed when the widget
-    /// button was tapped (Darwin notification path covers the backgrounded case).
-    private func consumeWidgetPendingToggleIfNeeded() {
+    /// Executes a Shortcuts-requested action that arrived while the app was killed or
+    /// suspended (the Darwin notification covers the running case). Called on launch and on
+    /// every return to the foreground.
+    ///
+    /// On a cold launch the WireGuard tunnels manager loads asynchronously, and the VPN toggle
+    /// silently does nothing without it, so wait briefly for it before acting.
+    private func consumeWidgetPendingToggleIfNeeded(tunnelsManagerWaitsLeft: Int = 20) {
         let defaults = UserDefaults(suiteName: kGlacierGroup)
         guard defaults?.bool(forKey: kWidgetPendingToggleKey) == true else { return }
+        if wireGuardManager.tunnelsManager == nil, tunnelsManagerWaitsLeft > 0 {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { [weak self] in
+                self?.consumeWidgetPendingToggleIfNeeded(tunnelsManagerWaitsLeft: tunnelsManagerWaitsLeft - 1)
+            }
+            return
+        }
         executeWidgetRequestedAction()
     }
 
@@ -994,8 +950,18 @@ final class HomeVM: HomeViewModel, ObservableObject {
     private func executeWidgetRequestedAction() {
         let defaults = UserDefaults(suiteName: kGlacierGroup)
         guard let action = defaults?.string(forKey: kWidgetRequestedActionKey) else { return }
+        let requestedAt = defaults?.object(forKey: kWidgetRequestedAtKey) as? Double
         defaults?.removeObject(forKey: kWidgetRequestedActionKey)
         defaults?.removeObject(forKey: kWidgetPendingToggleKey)
+        defaults?.removeObject(forKey: kWidgetRequestedAtKey)
+
+        // A request that waited too long is dropped, not run: switching protection at some
+        // unrelated later moment is worse than not switching it. The intent's optimistic widget
+        // state is corrected by the app's next status write.
+        guard WidgetToggleRequest.isFresh(requestedAt: requestedAt) else {
+            Log.general.notice("Dropping stale Shortcuts toggle request (\(action, privacy: .public))")
+            return
+        }
 
         if action == "disconnect" {
             toggleVPNConnection(false)
@@ -1586,5 +1552,22 @@ extension HomeVM: TunnelsManagerActivationDelegate {
     // Status changed to disconnected
     func tunnelDeactivating(tunnel: TunnelContainer) {
         isConnectedToVPN = false
+    }
+}
+
+/// Freshness rule for a VPNDNSToggleIntent request waiting in the app-group defaults.
+enum WidgetToggleRequest {
+    /// Long enough to run the shortcut and then open Glacier; short enough that a forgotten
+    /// request can't fire much later.
+    static let maxAge: TimeInterval = 60
+    /// Tolerated clock skew for a timestamp slightly in the future.
+    static let futureTolerance: TimeInterval = 5
+
+    /// `requestedAt` is seconds since 1970. A missing timestamp (a request written by an older
+    /// build of the intent) counts as stale.
+    static func isFresh(requestedAt: Double?, now: Date = Date()) -> Bool {
+        guard let requestedAt else { return false }
+        let age = now.timeIntervalSince1970 - requestedAt
+        return age >= -futureTolerance && age <= maxAge
     }
 }

@@ -381,15 +381,13 @@ final class SignInMethodLookupTests: XCTestCase {
     /// with what it needs, instead of showing a generic failure.
     func testLoginToAnUnverifiedAccountSetsUpAccountConfirmation() async {
         let service = UnverifiedAccountAuthenticationService()
-        let savedPassword = SavedPassword()
         let coordinator = LookupStubRootCoordinator()
         let viewModel = UserLoginVM(
             rootCoodinator: coordinator,
             passwordResetCoordinator: coordinator,
             authenticationService: service,
             signInMethodService: MockSignInMethodLookup(method: .password),
-            lastSignInProvider: nil,
-            pendingCredentialStore: savedPassword.access
+            lastSignInProvider: nil
         )
         viewModel.email = " person@example.com "
         viewModel.password = "Valid-password1!"
@@ -397,7 +395,6 @@ final class SignInMethodLookupTests: XCTestCase {
         viewModel.signInWithEmail()
         await waitUntil { service.resentCodeFor == ["person@example.com"] }
 
-        XCTAssertEqual(savedPassword.value, "Valid-password1!")
         XCTAssertEqual(UserDefaultsService.shared.get(for: \.userEmail) as String?, "person@example.com")
         XCTAssertEqual(UserDefaultsService.shared.get(for: \.isUserAccountCreated) as Bool?, true)
         XCTAssertEqual(UserDefaultsService.shared.get(for: \.isUserAccountConfirmed) as Bool?, false)
@@ -593,26 +590,6 @@ private final class ResetRecordingAuthenticationService: GlacierAuthenticationSe
     func getCurrentUser() async throws -> AuthUser { throw UserAuthenticationError.authenticationFailure }
     func getCurrentAuthSession() async throws -> AuthSession? { nil }
     func signOut() async -> Bool { true }
-}
-
-/// In memory, because the real store's shared Keychain group needs signing
-/// entitlements the unit-test run doesn't have.
-private final class SavedPassword: @unchecked Sendable {
-    private let lock = NSLock()
-    private var stored: String?
-
-    var value: String? {
-        lock.lock(); defer { lock.unlock() }
-        return stored
-    }
-
-    var access: PendingSignupCredentialAccess {
-        PendingSignupCredentialAccess(
-            save: { [self] password in lock.lock(); stored = password; lock.unlock() },
-            read: { [self] in value },
-            clear: { [self] in lock.lock(); stored = nil; lock.unlock() }
-        )
-    }
 }
 
 private final class LookupStubRootCoordinator: GlacierRootCoordinator {

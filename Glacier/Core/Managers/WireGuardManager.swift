@@ -26,7 +26,11 @@ open class WireGuardManager: NSObject
     var tunnelsManager: TunnelsManager?
     var onTunnelsManagerReady: ((TunnelsManager) -> Void)?
     var vpnIsActive = false
-    let sessionManager = Alamofire.Session(configuration: URLSessionConfiguration.ephemeral)
+    /// Pinned like every other backend session: covers both the authenticated profile POST
+    /// (which carries the Cognito access token) and the config download (which carries the
+    /// WireGuard private key).
+    let sessionManager = Alamofire.Session(configuration: URLSessionConfiguration.ephemeral,
+                                           serverTrustManager: GlacierPinningConfiguration.makeServerTrustManager())
     let internalQueue = DispatchQueue(label: "WG Internal Queue")
     private static var isSimulatorBuild: Bool {
         #if SIMULATOR_BUILD
@@ -101,15 +105,17 @@ open class WireGuardManager: NSObject
     }
 
     func queryForProfiles(region: String = "us-east-2", onDemandOption: ActivateOnDemandOption = .off, responseHandler: ((Bool) -> Void)? = nil) {
-        guard !SecurityCenter.isProxyDetected else { responseHandler?(false); return }
+        // Every path below ends in exactly one `finish` call, delivered on main.
+        let finish = WireGuardManager.onceOnMain(responseHandler)
+        guard !SecurityCenter.isProxyDetected else { finish(false); return }
         if WireGuardManager.isSimulatorBuild {
-            responseHandler?(false)
+            finish(false)
             return
         }
         Task { [weak self] in
-            guard let self else { return }
+            guard let self else { finish(false); return }
             guard let headers = await GlacierAPIHeaders.authHeaders() else {
-                responseHandler?(false)
+                finish(false)
                 return
             }
             self.sessionManager.request(WireGuardManager.PROFILE_ENDPOINT, method: .post, parameters: ["region": region], encoding: JSONEncoding.default, headers: headers)
@@ -117,56 +123,56 @@ open class WireGuardManager: NSObject
             .responseData(queue: self.internalQueue) { response in
                 switch response.result {
                 case .success(let value):
-                    if let profiles = String(data: value, encoding: .utf8) {
-                        Log.vpn.debug("\(profiles)")
-                        self.handleProfiles(profiles, region: region, onDemandOption: onDemandOption) { didLoadProfiles in
-                            responseHandler?(didLoadProfiles)
-                        }
-                    } else {
-                        //self.handleNoCoreProfiles()
-                        responseHandler?(false)
-                    }
-                    return
+                    // Never log the body: its `data` field is a presigned URL, a bearer
+                    // link to this device's WireGuard private key.
+                    self.handleProfiles(value, region: region, onDemandOption: onDemandOption, responseHandler: finish)
                 case .failure(let error):
                     Log.vpn.error("Error accessing wireguard profiles: \(error)")
-                    responseHandler?(false)
-                    return
+                    finish(false)
                 }
             }
         }
     }
-    func handleProfiles(_ profiles: String, region: String, onDemandOption: ActivateOnDemandOption = .off, responseHandler: ((Bool) -> Void)? = nil) {
+    func handleProfiles(_ profiles: Data, region: String, onDemandOption: ActivateOnDemandOption = .off, responseHandler: ((Bool) -> Void)? = nil) {
+        let finish = WireGuardManager.onceOnMain(responseHandler)
         if WireGuardManager.isSimulatorBuild {
+            finish(false)
             return
         }
-        if let jsonData = profiles.data(using: .utf8) {
-            do {
-                if let jsonDictionary = try JSONSerialization.jsonObject(with: jsonData, options: []) as? [String: Any] {
-                    if let profileStr = jsonDictionary["data"] as? String, let url = URL(string: profileStr) {
-                        if let existingTunnel = self.tunnelsManager?.tunnel(named: region) {
-                            self.downloadAndApply(configFrom: url, region: region, onDemandOption: onDemandOption, to: existingTunnel) { success in
-                                responseHandler?(success)
-                            }
-                        } else {
-                            self.downloadAndAdd(configFrom: url, region: region, onDemandOption: onDemandOption) { success in
-                                responseHandler?(success)
-                            }
-                        }
-                    } else {
-                        Log.vpn.error("Invalid URL string: \(profiles)")
-                        responseHandler?(false)
+        let url: URL
+        switch WireGuardProfileDownload.configURL(fromProfileResponse: profiles) {
+        case .success(let configURL):
+            url = configURL
+        case .failure(let error):
+            Log.vpn.error("Rejected WireGuard profile response: \(String(describing: error), privacy: .public)")
+            finish(false)
+            return
+        }
+        downloadConfig(from: url, region: region) { [weak self] result in
+            guard let self, let tunnelsManager = self.tunnelsManager else {
+                finish(false)
+                return
+            }
+            switch result {
+            case .failure(let error):
+                // localizedDescription only: the full error can carry the presigned URL
+                // (URLError's failing-URL key) or a config line holding the private key.
+                Log.vpn.error("Error downloading or parsing WireGuard config: \(error.localizedDescription, privacy: .public)")
+                finish(false)
+            case .success(let newConfig):
+                if let existingTunnel = tunnelsManager.tunnel(named: region) {
+                    tunnelsManager.modify(tunnel: existingTunnel, tunnelConfiguration: newConfig, onDemandOption: onDemandOption) { error in
+                        finish(error == nil)
                     }
                 } else {
-                    Log.vpn.error("Failed to cast JSON object to dictionary.")
-                    responseHandler?(false)
+                    tunnelsManager.add(tunnelConfiguration: newConfig, region: region, onDemandOption: onDemandOption) { result in
+                        switch result {
+                        case .success: finish(true)
+                        case .failure: finish(false)
+                        }
+                    }
                 }
-            } catch {
-                Log.vpn.error("Error deserializing JSON: \(error.localizedDescription)")
-                responseHandler?(false)
             }
-        } else {
-            Log.vpn.error("Failed to convert JSON string to Data.")
-            responseHandler?(false)
         }
     }
     func setTunnelListDelegate(_ del: TunnelListDelegate) {
@@ -178,47 +184,45 @@ open class WireGuardManager: NSObject
     func getWGView() -> UIViewController? {
         return self.uiDelegate
     }
-    private func downloadAndApply(configFrom url: URL, region: String?, onDemandOption: ActivateOnDemandOption, to existingTunnel: TunnelContainer, responseHandler: ((Bool) -> Void)?) {
-        DispatchQueue.global(qos: .userInitiated).async {
-            do {
-                let fileContents = try String(contentsOf: url)
-                let newConfig = try TunnelConfiguration(fromWgQuickConfig: fileContents, called: region ?? "us-east-2")
-                DispatchQueue.main.async { [weak self] in
-                    guard let self, let tunnelsManager = self.tunnelsManager else {
-                        responseHandler?(false)
-                        return
-                    }
-                    tunnelsManager.modify(tunnel: existingTunnel, tunnelConfiguration: newConfig, onDemandOption: onDemandOption) { error in
-                        responseHandler?(error == nil)
+    /// Fetches the wg-quick config on the pinned session and parses it. `completion` runs on main.
+    ///
+    /// The URL is the backend's short link on tinyurl.theglacierapp.com (validated as https by
+    /// `WireGuardProfileDownload`), which 302s to a presigned S3 URL; the pinned session checks
+    /// both hops (Amazon RSA 2048 M04 → Amazon Root CA 1 as of Nov 2026). The link carries its
+    /// own authorization, so no Cognito headers are sent: the access token would leak to the
+    /// storage host, and S3 rejects a presigned request that also has an Authorization header.
+    private func downloadConfig(from url: URL, region: String, completion: @escaping (Result<TunnelConfiguration, Error>) -> Void) {
+        sessionManager.request(url, method: .get)
+            .validate()
+            .responseData(queue: internalQueue) { response in
+                let result: Result<TunnelConfiguration, Error>
+                switch response.result {
+                case .failure(let error):
+                    result = .failure(error)
+                case .success(let data):
+                    if let fileContents = String(data: data, encoding: .utf8) {
+                        result = Result { try TunnelConfiguration(fromWgQuickConfig: fileContents, called: region) }
+                    } else {
+                        result = .failure(WireGuardProfileDownload.Failure.unreadableConfig)
                     }
                 }
-            } catch {
-                Log.vpn.error("Error downloading or parsing WireGuard config: \(error)")
-                DispatchQueue.main.async { responseHandler?(false) }
+                DispatchQueue.main.async { completion(result) }
             }
-        }
     }
-
-    private func downloadAndAdd(configFrom url: URL, region: String, onDemandOption: ActivateOnDemandOption, responseHandler: ((Bool) -> Void)?) {
-        DispatchQueue.global(qos: .userInitiated).async {
-            do {
-                let fileContents = try String(contentsOf: url)
-                let newConfig = try TunnelConfiguration(fromWgQuickConfig: fileContents, called: region)
-                DispatchQueue.main.async { [weak self] in
-                    guard let self, let tunnelsManager = self.tunnelsManager else {
-                        responseHandler?(false)
-                        return
-                    }
-                    tunnelsManager.add(tunnelConfiguration: newConfig, region: region, onDemandOption: onDemandOption) { result in
-                        switch result {
-                        case .success: responseHandler?(true)
-                        case .failure: responseHandler?(false)
-                        }
-                    }
-                }
-            } catch {
-                Log.vpn.error("Error downloading or parsing WireGuard config: \(error)")
-                DispatchQueue.main.async { responseHandler?(false) }
+    /// Wraps a completion so it fires at most once and always on the main thread.
+    private static func onceOnMain(_ handler: ((Bool) -> Void)?) -> (Bool) -> Void {
+        let lock = NSLock()
+        var didFire = false
+        return { success in
+            lock.lock()
+            let isFirst = !didFire
+            didFire = true
+            lock.unlock()
+            guard isFirst else { return }
+            if Thread.isMainThread {
+                handler?(success)
+            } else {
+                DispatchQueue.main.async { handler?(success) }
             }
         }
     }
@@ -328,5 +332,34 @@ open class WireGuardManager: NSObject
     }
     public class func shared() -> WireGuardManager {
         return sharedWGMgr
+    }
+}
+
+/// Validation of the profile endpoint's response, kept apart from `WireGuardManager` so it can
+/// be unit tested without a tunnels manager.
+enum WireGuardProfileDownload {
+    enum Failure: Error, Equatable {
+        case notJSONObject
+        case missingDataURL
+        case insecureScheme
+        case unreadableConfig
+    }
+
+    /// Extracts the config URL from `{"data": "<url>"}`. Only an absolute https URL with a host
+    /// is accepted: anything else (http, file, a custom scheme) would fetch the private key
+    /// outside pinned TLS, so it is rejected before any request is made.
+    static func configURL(fromProfileResponse data: Data) -> Result<URL, Failure> {
+        guard let object = try? JSONSerialization.jsonObject(with: data),
+              let dictionary = object as? [String: Any] else {
+            return .failure(.notJSONObject)
+        }
+        guard let urlString = dictionary["data"] as? String,
+              let url = URL(string: urlString) else {
+            return .failure(.missingDataURL)
+        }
+        guard url.scheme?.lowercased() == "https", let host = url.host, !host.isEmpty else {
+            return .failure(.insecureScheme)
+        }
+        return .success(url)
     }
 }

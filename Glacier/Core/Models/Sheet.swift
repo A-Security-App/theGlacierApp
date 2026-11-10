@@ -13,7 +13,9 @@ import Foundation
  */
 enum Sheet: Identifiable, Hashable {
     case userRegistration
-    case userLogin
+    /// `prefilledEmail` opens the login on the password step for that address,
+    /// as after confirming a new account.
+    case userLogin(prefilledEmail: String? = nil)
     case passwordReset
     case glacierPlanPurchase
     case phoneNumberPlanPurchase
@@ -30,7 +32,7 @@ enum Sheet: Identifiable, Hashable {
     var name: String {
         switch self {
         case .userRegistration: "userRegistration"
-        case .userLogin: "userLogin"
+        case .userLogin(_): "userLogin"
         case .passwordReset: "passwordReset"
         case .glacierPlanPurchase: "glacierPlanPurchase"
         case .phoneNumberPlanPurchase: "phoneNumberPlanPurchase"

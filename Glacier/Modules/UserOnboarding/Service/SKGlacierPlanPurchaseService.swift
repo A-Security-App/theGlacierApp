@@ -304,6 +304,14 @@ final class SKGlacierPlanPurchaseService: GlacierPlanPurchaseService {
             return result
         }
 
+        // Says whether there is anything to link at all: no entitlement here means no receipt link,
+        // so no [AppleSubLink] result lines and no ownership-conflict check this refresh.
+        if let activeTransaction {
+            Log.general.info("[AppleSubLink] StoreKit base-plan entitlement \(activeTransaction.productID) (environment \(activeTransaction.environment.rawValue)) — linking")
+        } else {
+            Log.general.info("[AppleSubLink] no StoreKit base-plan entitlement (\(wasDefinitive ? "StoreKit answered" : "timed out")) — nothing to link")
+        }
+
         guard let transaction = activeTransaction else {
             NotificationCenter.default.post(
                 name: .glacierPlanPurchaseVerificationFailed,
@@ -387,6 +395,15 @@ final class SKGlacierPlanPurchaseService: GlacierPlanPurchaseService {
         let accountId = await SKGlacierPlanPurchaseService().resolveAppAccountToken()
 
         let (linked, isConflict): (Bool, Bool) = await withCheckedContinuation { continuation in
+            #if GLACIER_TEST_SWITCHES
+            // Sandbox transactions never conflict on the backend, so this is the only way to see
+            // the conflict path outside production. Nothing is sent, so nothing gets linked.
+            if AppleSubscriptionOwnershipMonitor.isConflictForcedForTesting {
+                Log.general.notice("[AppleSubLink] TEST SWITCH -GlacierForceAppleOwnershipConflict: reporting a conflict instead of linking")
+                continuation.resume(returning: (false, true))
+                return
+            }
+            #endif
             GlacierPinningConfiguration.pinnedSession
                 .request(url,
                          method: .post,
@@ -421,7 +438,13 @@ final class SKGlacierPlanPurchaseService: GlacierPlanPurchaseService {
         }
         await MainActor.run {
             if isConflict {
-                AppleSubscriptionOwnershipMonitor.shared.reportConflict(accountId: accountId)
+                // An account that is paid some other way (website, family plan) still works, so it
+                // must not be locked out over an Apple subscription the device happens to hold.
+                // Unknown (never answered on this device) waits for the live status rather than
+                // assuming "not subscribed", so a paid account never sees the cover flash up.
+                let entitledOnBackend = GlacierAccountModel.getGlacierAccount()?.lastKnownBackendSubscribedIfKnown
+                AppleSubscriptionOwnershipMonitor.shared.reportConflict(accountId: accountId,
+                                                                       entitledOnBackend: entitledOnBackend)
             } else {
                 AppleSubscriptionOwnershipMonitor.shared.reportLinked(accountId: accountId)
             }

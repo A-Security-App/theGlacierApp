@@ -71,5 +71,7 @@ let kWidgetPendingToggleKey         = "glacier.widgetPendingToggle"
 let kWidgetDarwinNotification       = "com.theglacierapp.widgetToggle"
 /// Explicit action the widget requested: "disconnect" or "connect". Read and cleared by the main app.
 let kWidgetRequestedActionKey       = "glacier.widgetRequestedAction"
+/// When the widget AppIntent made its request (seconds since 1970). See WidgetToggleRequest.
+let kWidgetRequestedAtKey           = "glacier.widgetRequestedAt"
 /// Today's blocked-tracker count from DNS analytics; written on each successful queryForDNSAnalytics response.
 let kWidgetBlockedTrackersCountKey  = "glacier.blockedTrackersCount"

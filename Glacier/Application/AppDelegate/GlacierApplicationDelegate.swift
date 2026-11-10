@@ -69,6 +69,7 @@ public class GlacierApplicationDelegate: UIResponder, UIApplicationDelegate {
         }
 
         SAMKeychain.setAccessibilityType(kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly)
+        PendingSignupCredentialStore.removeLeftovers()
 
         // Purge any existing on-disk HTTP cache, then disable the process-wide
         // shared URLCache before any networking (Amplify/Cognito included) starts.

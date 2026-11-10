@@ -9,6 +9,8 @@ final class UserRegistrationBootstrapTests: XCTestCase {
     override func tearDown() {
         UserDefaultsService.shared.remove(for: \.userEmail)
         UserDefaultsService.shared.remove(for: \.isUserLoggedIn)
+        UserDefaultsService.shared.remove(for: \.isUserAccountCreated)
+        UserDefaultsService.shared.remove(for: \.isUserAccountConfirmed)
         super.tearDown()
     }
 
@@ -31,34 +33,13 @@ final class UserRegistrationBootstrapTests: XCTestCase {
         XCTAssertEqual(progress.transitions, [true, false])
     }
 
-    func testImmediateSignUpWaitsForBootstrapBeforeRouting() async {
+    // Confirming an account never signs in by itself. Both ways an account gets
+    // confirmed end on the login sheet, with the address filled in, and no
+    // sign-in is attempted.
+
+    func testImmediateSignUpRoutesToLoginWithoutSigningIn() async {
         let service = RegistrationAuthenticationService()
         service.signUpResult = AuthSignUpResult(.done)
-        service.passwordSignInResult = AuthSignInResult(nextStep: .done)
-        let gate = RegistrationBootstrapGate()
-        let progress = RegistrationProgressRecorder()
-        let (viewModel, coordinator) = makeViewModel(service: service, gate: gate, progress: progress)
-        viewModel.email = "person@example.com"
-        viewModel.password = "Valid-password1!"
-
-        viewModel.signInWithEmail()
-        await waitUntil { gate.didStart }
-
-        XCTAssertEqual(service.requestedFlows, [.passwordOnly])
-        XCTAssertEqual(service.requestedCredentials, [.init(email: "person@example.com", password: "Valid-password1!")])
-        XCTAssertTrue(progress.isPresented)
-        XCTAssertEqual(progress.transitions, [true])
-        XCTAssertNil(coordinator.currentScreen)
-        gate.release()
-        await waitUntil { coordinator.currentScreen == .userOnboarding }
-        XCTAssertFalse(progress.isPresented)
-        XCTAssertEqual(progress.transitions, [true, false])
-    }
-
-    func testImmediateSignUpRoutesToLoginWhenPasswordSignInFails() async {
-        let service = RegistrationAuthenticationService()
-        service.signUpResult = AuthSignUpResult(.done)
-        service.passwordSignInResult = nil
         let gate = RegistrationBootstrapGate()
         let progress = RegistrationProgressRecorder()
         let (viewModel, coordinator) = makeViewModel(service: service, gate: gate, progress: progress)
@@ -68,35 +49,29 @@ final class UserRegistrationBootstrapTests: XCTestCase {
         viewModel.signInWithEmail()
         await waitUntil { coordinator.currentScreen == .userAuthentication }
 
-        XCTAssertEqual(service.requestedFlows, [.passwordOnly])
+        XCTAssertEqual(service.requestedFlows, [])
+        XCTAssertEqual(coordinator.sheet, .userLogin(prefilledEmail: "person@example.com"))
+        XCTAssertNotEqual(UserDefaultsService.shared.get(for: \.isUserLoggedIn) as Bool?, true)
         XCTAssertFalse(gate.didStart)
         XCTAssertFalse(progress.isPresented)
         XCTAssertEqual(progress.transitions, [true, false])
     }
 
-    func testPostConfirmationAutoLoginWaitsForBootstrapBeforeRouting() async {
+    func testPostConfirmationRoutesToLoginWithoutSigningIn() async {
         let service = RegistrationAuthenticationService()
         service.confirmSignUpResult = AuthSignUpResult(.done)
-        service.passwordSignInResult = AuthSignInResult(nextStep: .done)
         let gate = RegistrationBootstrapGate()
         let progress = RegistrationProgressRecorder()
-        // Seed the pending sign-up password through an in-memory store instead of the real
-        // Keychain: the Keychain uses a shared access group that requires code-signing
-        // entitlements, which the CODE_SIGNING_ALLOWED=NO unit-test run does not apply.
-        let credentialStore = InMemoryPendingCredentialStore()
-        credentialStore.seed("Valid-password1!")
-        let (viewModel, coordinator) = makeViewModel(service: service, gate: gate, progress: progress, credentialStore: credentialStore)
+        let (viewModel, coordinator) = makeViewModel(service: service, gate: gate, progress: progress)
         UserDefaultsService.shared.set("person@example.com", for: \.userEmail)
 
         viewModel.confirmAccount(userName: "person@example.com", confirmationCode: "123456")
-        await waitUntil { gate.didStart }
+        await waitUntil { coordinator.currentScreen == .userAuthentication }
 
-        XCTAssertEqual(service.requestedFlows, [.passwordOnly])
-        XCTAssertTrue(progress.isPresented)
-        XCTAssertEqual(progress.transitions, [true])
-        XCTAssertNil(coordinator.currentScreen)
-        gate.release()
-        await waitUntil { coordinator.currentScreen == .userOnboarding }
+        XCTAssertEqual(service.requestedFlows, [])
+        XCTAssertEqual(coordinator.sheet, .userLogin(prefilledEmail: "person@example.com"))
+        XCTAssertNotEqual(UserDefaultsService.shared.get(for: \.isUserLoggedIn) as Bool?, true)
+        XCTAssertFalse(gate.didStart)
         XCTAssertFalse(progress.isPresented)
         XCTAssertEqual(progress.transitions, [true, false])
     }
@@ -104,16 +79,14 @@ final class UserRegistrationBootstrapTests: XCTestCase {
     private func makeViewModel(
         service: RegistrationAuthenticationService,
         gate: RegistrationBootstrapGate,
-        progress: RegistrationProgressRecorder,
-        credentialStore: InMemoryPendingCredentialStore = InMemoryPendingCredentialStore()
+        progress: RegistrationProgressRecorder
     ) -> (UserRegistrationVM, GlacierAppRootCoordinator) {
         let coordinator = GlacierAppRootCoordinator()
         let viewModel = UserRegistrationVM(
             rootCoodinator: coordinator,
             authenticationService: service,
             postAuthenticationBootstrap: { await gate.run() },
-            registrationProgressChanged: { progress.isPresented = $0 },
-            pendingCredentialStore: credentialStore.access
+            registrationProgressChanged: { progress.isPresented = $0 }
         )
         return (viewModel, coordinator)
     }
@@ -137,23 +110,6 @@ private final class RegistrationProgressRecorder {
     private(set) var transitions: [Bool] = []
     var isPresented = false {
         didSet { transitions.append(isPresented) }
-    }
-}
-
-/// In-memory stand-in for `PendingSignupCredentialStore`, injected via
-/// `PendingSignupCredentialAccess` so the post-confirmation auto-login path can read back a
-/// seeded password without the real Keychain (unavailable under CODE_SIGNING_ALLOWED=NO).
-private final class InMemoryPendingCredentialStore: @unchecked Sendable {
-    private var storedPassword: String?
-
-    func seed(_ password: String) { storedPassword = password }
-
-    var access: PendingSignupCredentialAccess {
-        PendingSignupCredentialAccess(
-            save: { self.storedPassword = $0 },
-            read: { self.storedPassword },
-            clear: { self.storedPassword = nil }
-        )
     }
 }
 

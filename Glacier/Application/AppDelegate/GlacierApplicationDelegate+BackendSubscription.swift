@@ -353,6 +353,12 @@ extension GlacierApplicationDelegate {
                         // Display-only, for Settings → Subscription. An unparseable date is dropped.
                         account.lastKnownBackendExpiry = body.data.expiryTime.flatMap(Self.parseBackendDate)
                         account.lastKnownBackendAutoRenewing = body.data.autoRenewing
+                        // A subscribed account isn't blocked by an Apple subscription that belongs
+                        // to someone else; this lifts (or restores) the ownership-conflict cover.
+                        let subscribed = body.data.subscribed
+                        Task { @MainActor in
+                            AppleSubscriptionOwnershipMonitor.shared.reportBackendEntitlement(subscribed)
+                        }
                         self.applyBackendSubscription(subscribed: body.data.subscribed,
                                                       phoneNumbers: body.data.phoneNumbers,
                                                       account: account)

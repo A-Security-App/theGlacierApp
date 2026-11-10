@@ -125,7 +125,6 @@ final class UserLoginVM: UserLoginViewModel, ObservableObject {
     var passwordResetCoordinator: any GlacierCoordinator
     let authenticationService: GlacierAuthenticationService
     private let signInMethodService: SignInMethodLookup
-    private let pendingCredentialStore: PendingSignupCredentialAccess
 
     /// The lookup for the email it was started with. Reused while the email is
     /// unchanged, so a failed password attempt doesn't ask a second time.
@@ -133,6 +132,7 @@ final class UserLoginVM: UserLoginViewModel, ObservableObject {
     
     // MARK: - Initializer
     
+    /// The protocol's initializer: an empty login form.
     convenience init(
         rootCoodinator: any GlacierRootCoordinator,
         passwordResetCoordinator: any GlacierCoordinator,
@@ -142,8 +142,23 @@ final class UserLoginVM: UserLoginViewModel, ObservableObject {
             rootCoodinator: rootCoodinator,
             passwordResetCoordinator: passwordResetCoordinator,
             authenticationService: authenticationService,
+            prefilledEmail: nil
+        )
+    }
+
+    convenience init(
+        rootCoodinator: any GlacierRootCoordinator,
+        passwordResetCoordinator: any GlacierCoordinator,
+        authenticationService: GlacierAuthenticationService,
+        prefilledEmail: String?
+    ) {
+        self.init(
+            rootCoodinator: rootCoodinator,
+            passwordResetCoordinator: passwordResetCoordinator,
+            authenticationService: authenticationService,
             signInMethodService: ConsoleSignInMethodService(),
-            lastSignInProvider: LastSignInProviderStore.provider
+            lastSignInProvider: LastSignInProviderStore.provider,
+            prefilledEmail: prefilledEmail
         )
     }
 
@@ -153,14 +168,27 @@ final class UserLoginVM: UserLoginViewModel, ObservableObject {
         authenticationService: GlacierAuthenticationService,
         signInMethodService: SignInMethodLookup,
         lastSignInProvider: FederatedSignInProvider?,
-        pendingCredentialStore: PendingSignupCredentialAccess = .keychain
+        prefilledEmail: String? = nil
     ) {
         self.rootCoordinator = rootCoodinator
         self.passwordResetCoordinator = passwordResetCoordinator
         self.authenticationService = authenticationService
         self.signInMethodService = signInMethodService
         self.lastSignInProvider = lastSignInProvider
-        self.pendingCredentialStore = pendingCredentialStore
+
+        // Straight after confirming a new account: start on the password step
+        // for the address that was just verified. `email`'s didSet does run
+        // here (it is @Published) and enables Continue while the password field
+        // is still hidden, so the password-step state is set after it, the same
+        // way the email step leaves it: Continue waits for a password.
+        let prefilledEmail = prefilledEmail?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        if !prefilledEmail.isEmpty {
+            email = prefilledEmail
+            isValidEmail = true
+            shouldShowPasswordTextField = true
+            isContinueButtonEnabled = false
+            passwordTextFieldState = .active
+        }
     }
     
     // MARK: - Public methods
@@ -360,14 +388,13 @@ final class UserLoginVM: UserLoginViewModel, ObservableObject {
 
     /// The account was created but its email never verified. Cognito only says
     /// so once the password is right, and Amplify reports it as a sign-up step
-    /// rather than an error. Hand over to the confirmation screen sign-up uses:
-    /// it reads the email and the pending password from the same places, and
-    /// signs the user in once the code is entered.
+    /// rather than an error. Hand over to the confirmation screen sign-up uses.
+    /// Once the address is verified it comes back here, with the email filled
+    /// in, to sign in with the emailed code.
     @MainActor
     private func routeToAccountConfirmation() async {
         let email = self.email.trimmingCharacters(in: .whitespacesAndNewlines)
         UserDefaultsService.shared.set(email, for: \.userEmail)
-        pendingCredentialStore.save(password)
         UserDefaultsService.shared.set(true, for: \.isUserAccountCreated)
         UserDefaultsService.shared.set(false, for: \.isUserAccountConfirmed)
 

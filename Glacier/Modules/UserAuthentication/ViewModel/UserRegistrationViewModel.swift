@@ -111,7 +111,6 @@ final class UserRegistrationVM: UserRegistrationViewModel, ObservableObject {
     let authenticationService: GlacierAuthenticationService
     private let postAuthenticationBootstrap: @MainActor () async -> Void
     private let registrationProgressChanged: @MainActor (Bool) -> Void
-    private let pendingCredentialStore: PendingSignupCredentialAccess
     private let signInMethodService: SignInMethodLookup
     /// The lookup for the email it was started with, reused if the sign-up is
     /// later refused.
@@ -135,29 +134,22 @@ final class UserRegistrationVM: UserRegistrationViewModel, ObservableObject {
             await GlacierApplicationDelegate.appDelegate.resolveSubscriptionStatus()
         }
         self.registrationProgressChanged = { _ in }
-        self.pendingCredentialStore = .keychain
         self.signInMethodService = ConsoleSignInMethodService()
     }
 
     /// Injectable for tests so registration routing can be held until account
     /// hydration and backend subscription reconciliation have both completed.
-    /// `pendingCredentialStore` is also injectable because the real store uses a
-    /// shared-access-group Keychain that is unavailable under the unit-test run
-    /// (`CODE_SIGNING_ALLOWED=NO` applies no entitlements), so tests supply an
-    /// in-memory implementation instead.
     init(
         rootCoodinator: any GlacierRootCoordinator,
         authenticationService: GlacierAuthenticationService,
         postAuthenticationBootstrap: @escaping @MainActor () async -> Void,
         registrationProgressChanged: @escaping @MainActor (Bool) -> Void = { _ in },
-        pendingCredentialStore: PendingSignupCredentialAccess = .keychain,
         signInMethodService: SignInMethodLookup = ConsoleSignInMethodService()
     ) {
         self.rootCoordinator = rootCoodinator
         self.authenticationService = authenticationService
         self.postAuthenticationBootstrap = postAuthenticationBootstrap
         self.registrationProgressChanged = registrationProgressChanged
-        self.pendingCredentialStore = pendingCredentialStore
         self.signInMethodService = signInMethodService
     }
     
@@ -341,7 +333,7 @@ final class UserRegistrationVM: UserRegistrationViewModel, ObservableObject {
                 isUserAccountConfirmationPending = false
                 UserDefaultsService.shared.set(true, for: \.isUserAccountConfirmed)
                 
-                autoLoginUserAfterAccountConfirmation()
+                finishAccountConfirmation()
             } catch {
                 isConfirmationInProgress = false
                 
@@ -352,7 +344,7 @@ final class UserRegistrationVM: UserRegistrationViewModel, ObservableObject {
                 if let authError = error as? AuthError, case .notAuthorized = authError {
                     isUserAccountConfirmationPending = false
                     UserDefaultsService.shared.set(true, for: \.isUserAccountConfirmed)
-                    autoLoginUserAfterAccountConfirmation()
+                    finishAccountConfirmation()
                     return
                 }
 
@@ -428,7 +420,6 @@ final class UserRegistrationVM: UserRegistrationViewModel, ObservableObject {
                     isUserAccountConfirmationPending = true
                  
                     UserDefaultsService.shared.set(email, for: \.userEmail)
-                    pendingCredentialStore.save(password)
                     UserDefaultsService.shared.set(true, for: \.isUserAccountCreated)
                     UserDefaultsService.shared.set(false, for: \.isUserAccountConfirmed)
                     
@@ -436,24 +427,14 @@ final class UserRegistrationVM: UserRegistrationViewModel, ObservableObject {
                     setRootScreen(.userAccountConfirmation)
                     dismissSheet()
                 case .done:
-                    let signInResult = try? await authenticationService.signIn(
-                        with: email,
-                        password: password,
-                        flow: .passwordOnly
-                    )
-                    guard let signInResult, signInResult.isSignedIn else {
-                        dismissRegistrationProgress()
-                        routeToLoginAfterAccountConfirmation()
-                        return
-                    }
-
+                    // Cognito confirmed the account without a code. Signing in
+                    // still takes the emailed code, so send the user to log in
+                    // rather than trading the password alone for a session.
+                    UserDefaultsService.shared.set(email, for: \.userEmail)
                     UserDefaultsService.shared.set(true, for: \.isUserAccountCreated)
                     UserDefaultsService.shared.set(true, for: \.isUserAccountConfirmed)
-                    UserDefaultsService.shared.set(true, for: \.isUserLoggedIn)
-                    await postAuthenticationBootstrap()
                     dismissRegistrationProgress()
-                    setRootScreen(.userOnboarding)
-                    dismissSheet()
+                    routeToLoginAfterAccountConfirmation(email: email)
                 default:
                     dismissRegistrationProgress()
                     break
@@ -495,60 +476,24 @@ final class UserRegistrationVM: UserRegistrationViewModel, ObservableObject {
         }
     }
     
+    /// The address is verified. Confirming never signs the user in: a session
+    /// always goes through the email-code flow, like every other login.
+    /// Android and the web console do the same. For the first few minutes after
+    /// sign-up the server skips the emailed code (`SIGNUP_GRACE_MS` in the
+    /// console's `web-login-challenge` Lambda), so a prompt login after
+    /// confirming needs only the password.
     @MainActor
-    private func autoLoginUserAfterAccountConfirmation() {
-        guard let email: String = UserDefaultsService.shared.get(for: \.userEmail),
-              let password = pendingCredentialStore.read(),
-              !password.isEmpty else {
-            // No usable stored credentials (verification completed after a
-            // relaunch, or the password was already cleared by a previous
-            // login). The account is verified — send the user to log in
-            // instead of returning silently.
-            dismissRegistrationProgress()
-            routeToLoginAfterAccountConfirmation()
-            return
-        }
-        
-        Task {
-            do {
-                presentRegistrationProgress()
-                // A session from a previously used account can still exist on
-                // this device. `signIn` clears such a stale session itself (it
-                // recovers from Amplify's `.invalidState`), so no pre-sign-out is
-                // needed here.
-                // `.passwordOnly` on purpose. The user has just typed a code out
-                // of their inbox to confirm this account; asking for the email
-                // challenge here would mail them a second one straight away, and
-                // this sign-in expects `isSignedIn` rather than a challenge step.
-                let signInResult = try await authenticationService.signIn(
-                    with: email,
-                    password: password,
-                    flow: .passwordOnly
-                )
-                guard let result = signInResult, result.isSignedIn else {
-                    dismissRegistrationProgress()
-                    routeToLoginAfterAccountConfirmation()
-                    return
-                }
-                
-                pendingCredentialStore.clear()
-                UserDefaultsService.shared.set(true, for: \.isUserLoggedIn)
-                await postAuthenticationBootstrap()
-                dismissRegistrationProgress()
-                setRootScreen(.userOnboarding)
-            } catch {
-                dismissRegistrationProgress()
-                // The account IS confirmed at this point — only the automatic
-                // sign-in failed. Don't report it as a confirmation failure;
-                // let the user log in manually.
-                routeToLoginAfterAccountConfirmation()
-            }
-        }
+    private func finishAccountConfirmation() {
+        dismissRegistrationProgress()
+        routeToLoginAfterAccountConfirmation(email: UserDefaultsService.shared.get(for: \.userEmail))
     }
-    
+
+    /// Opens the login sheet with the verified address filled in, so the user
+    /// only types the password.
     @MainActor
-    private func routeToLoginAfterAccountConfirmation() {
-        pendingCredentialStore.clear()
+    private func routeToLoginAfterAccountConfirmation(email: String?) {
+        setRootScreen(.userAuthentication)
+        presentSheet(.userLogin(prefilledEmail: email))
         presentAlertWith(
             title: .successText,
             description: NSLocalizedString(
@@ -556,7 +501,6 @@ final class UserRegistrationVM: UserRegistrationViewModel, ObservableObject {
                 comment: "User account confirmation screen verified, manual login required"
             )
         )
-        setRootScreen(.userAuthentication)
     }
 
     @MainActor
@@ -588,81 +532,13 @@ final class UserRegistrationVM: UserRegistrationViewModel, ObservableObject {
 }
 
 /**
- Indirection over `PendingSignupCredentialStore` used by `UserRegistrationVM`.
-
- The production value (`.keychain`) forwards straight to the Keychain-backed store. Tests inject
- an in-memory implementation instead: the real store uses a shared-access-group Keychain that
- requires code-signing entitlements, and the unit-test run builds with `CODE_SIGNING_ALLOWED=NO`
- (no entitlements), so a real `save`/`read` round-trip does not persist under test. Routing the
- view model's save/read/clear through this seam lets the post-confirmation auto-login path be
- exercised deterministically without a real Keychain.
- */
-struct PendingSignupCredentialAccess: Sendable {
-    var save: @Sendable (String) -> Void
-    var read: @Sendable () -> String?
-    var clear: @Sendable () -> Void
-
-    /// Production implementation backed by the Keychain store.
-    static let keychain = PendingSignupCredentialAccess(
-        save: { PendingSignupCredentialStore.save($0) },
-        read: { PendingSignupCredentialStore.read() },
-        clear: { PendingSignupCredentialStore.clear() }
-    )
-}
-
-/**
- Stores the sign-up password only for the short window between account creation and the
- automatic sign-in that runs after email confirmation.
-
- The password used to live in `UserDefaults` (an unencrypted plist), which is inappropriate
- for a credential. It now lives in the Keychain, using the app's shared service/access group
- and the global accessibility set in `GlacierApplicationDelegate`
- (`kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly` — device-only, not iCloud-synced, and
- available after first unlock so the confirmation deep link can complete in the background).
-
- The value is written at account creation and deleted as soon as auto sign-in succeeds or the
- user is routed to manual login, so it is never persisted long-term.
+ Removes the sign-up password that older builds kept in the Keychain.
  */
 enum PendingSignupCredentialStore {
 
-    /// Legacy `UserDefaults` key that previously held the plaintext password. Retained only so
-    /// `clear()` can purge values written by older builds. Do not write to it.
     private static let legacyUserDefaultsKey = "userPassword"
 
-    /// Persists the sign-up password to the Keychain for the pending-confirmation flow.
-    static func save(_ password: String) {
-        var error: NSError?
-        let stored = SAMKeychain.setPassword(
-            password,
-            forService: kServiceName,
-            account: kGlacierPendingSignupAcct,
-            accessGroup: kGlacierKeyGroup,
-            error: &error
-        )
-        if !stored {
-            Log.auth.error("Failed to store pending sign-up password: \(String(describing: error?.localizedDescription))")
-        }
-    }
-
-    /// Returns the stored sign-up password, or `nil` if none is present.
-    static func read() -> String? {
-        var error: NSError?
-        let password = SAMKeychain.password(
-            forService: kServiceName,
-            account: kGlacierPendingSignupAcct,
-            accessGroup: kGlacierKeyGroup,
-            error: &error
-        )
-        // errSecItemNotFound is expected when nothing is stored; don't log it as an error.
-        if let error, error.code != Int(errSecItemNotFound) {
-            Log.auth.error("Failed to read pending sign-up password: \(error.localizedDescription)")
-        }
-        return password
-    }
-
-    /// Removes the stored sign-up password from the Keychain and purges any legacy plaintext
-    /// value left in `UserDefaults` by an older build.
-    static func clear() {
+    static func removeLeftovers() {
         var error: NSError?
         SAMKeychain.deletePassword(
             forService: kServiceName,
@@ -670,9 +546,18 @@ enum PendingSignupCredentialStore {
             accessGroup: kGlacierKeyGroup,
             error: &error
         )
-        if let error, error.code != Int(errSecItemNotFound) {
-            Log.auth.error("Failed to delete pending sign-up password: \(error.localizedDescription)")
+        // Not found is the normal case. Locked (before first unlock) is retried
+        // on the next launch.
+        if let error,
+           error.code != Int(errSecItemNotFound),
+           error.code != Int(errSecInteractionNotAllowed) {
+            Log.auth.error("Failed to delete leftover sign-up password: \(error.localizedDescription)")
         }
-        UserDefaults.standard.removeObject(forKey: legacyUserDefaultsKey)
+        // Write only when the key is there: this runs on every launch, including
+        // locked background launches when the prefs file is unreadable, and almost
+        // no one has the key. A locked launch reads nil and leaves it for a later one.
+        if UserDefaults.standard.object(forKey: legacyUserDefaultsKey) != nil {
+            UserDefaults.standard.removeObject(forKey: legacyUserDefaultsKey)
+        }
     }
 }

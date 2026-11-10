@@ -3,8 +3,12 @@
 Dates are when the build was submitted to the App Store; it normally reaches
 users a day or two later.
 
-## Unreleased
+## Version 1.3.2 (November 10, 2026)
 
+* Fix for accounts being locked out when the iPhone's Apple ID holds a Glacier
+  subscription that belongs to a different account, smoother login right after
+  creating an account with your email prefilled, the "Toggle VPN/Secure DNS"
+  shortcut now taking effect as soon as Glacier opens, security hardening.
 
 ## Version 1.3.1 (November 2, 2026)
 

@@ -215,7 +215,7 @@ final class GlacierAppRootCoordinator: GlacierRootCoordinator, ObservableObject 
             )
             UserRegistrationScreen(viewModel: viewModel)
             
-        case .userLogin:
+        case .userLogin(let prefilledEmail):
             let coordinator = PasswordResetCoordinator(
                 rootCoordinator: self,
                 isPresentedFromLoginScreen: true
@@ -223,7 +223,8 @@ final class GlacierAppRootCoordinator: GlacierRootCoordinator, ObservableObject 
             let viewModel = UserLoginVM(
                 rootCoodinator: self,
                 passwordResetCoordinator: coordinator,
-                authenticationService: AmplifyAuthenticationService()
+                authenticationService: AmplifyAuthenticationService(),
+                prefilledEmail: prefilledEmail
             )
             UserLoginScreen(viewModel: viewModel, coordinator: coordinator)
             

@@ -18,29 +18,19 @@ enum DeepLinkTarget: Equatable {
     /// Cognito custom-auth session that already knows the user, so no username is
     /// needed (or wanted) in the link.
     case loginSecurityApp(confirmationCode: String)
-    /// Legacy iOS 16 widget button: glacierapp://vpn/toggle
-    case vpnToggle
-    /// Widget button — disconnect whatever is currently active: glacierapp://widget/disconnect
-    case widgetDisconnect
-    /// Widget button — reconnect to the last used type: glacierapp://widget/connect
-    case widgetConnect
 
     /**
-     It converts raw URLs into typed targets
+     Converts raw URLs into typed targets
      */
+    ///
+    /// No route changes protection. Any app or web page can open a custom-scheme URL, so
+    /// VPN and Secure DNS are switched only from inside the app, behind its confirmation,
+    /// or by VPNDNSToggleIntent, which requires an unlocked device.
     static func from(url: URL) -> DeepLinkTarget? {
-        // Widget action deep links — host "widget"
-        if url.host == "widget" {
-            if url.path == "/disconnect" { return .widgetDisconnect }
-            if url.path == "/connect"    { return .widgetConnect }
-        }
-
-        // Legacy widget deep link — host "vpn", path "/toggle"
-        if url.host == "vpn" && url.path == "/toggle" {
-            return .vpnToggle
-        }
-
-        guard url.host == "console.theglacierapp.com" else { return nil }
+        // Console links (email confirmation, password reset, login code) arrive as universal
+        // links, which are always https. Only those are accepted, so codes can't arrive
+        // through a custom scheme that any app can open.
+        guard url.scheme?.lowercased() == "https", url.host == "console.theglacierapp.com" else { return nil }
 
         let components = URLComponents(url: url, resolvingAgainstBaseURL: false)
         let queryItems = components?.queryItems

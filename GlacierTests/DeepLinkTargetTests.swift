@@ -49,33 +49,27 @@ final class DeepLinkTargetTests: XCTestCase {
         XCTAssertNil(DeepLinkTarget.from(url: url))
     }
 
-    // MARK: - Widget deep links
+    // MARK: - Removed protection-changing routes
 
-    func testWidgetDisconnect() throws {
-        let url = try XCTUnwrap(URL(string: "glacierapp://widget/disconnect"))
-        XCTAssertEqual(DeepLinkTarget.from(url: url), .widgetDisconnect)
-    }
-
-    func testWidgetConnect() throws {
-        let url = try XCTUnwrap(URL(string: "glacierapp://widget/connect"))
-        XCTAssertEqual(DeepLinkTarget.from(url: url), .widgetConnect)
-    }
-
-    func testWidgetHostWithUnknownPathReturnsNil() throws {
-        let url = try XCTUnwrap(URL(string: "glacierapp://widget/refresh"))
-        XCTAssertNil(DeepLinkTarget.from(url: url))
-    }
-
-    // MARK: - Legacy vpnToggle
-
-    func testLegacyVpnToggle() throws {
-        let url = try XCTUnwrap(URL(string: "glacierapp://vpn/toggle"))
-        XCTAssertEqual(DeepLinkTarget.from(url: url), .vpnToggle)
-    }
-
-    func testVpnHostWithWrongPathReturnsNil() throws {
-        let url = try XCTUnwrap(URL(string: "glacierapp://vpn/start"))
-        XCTAssertNil(DeepLinkTarget.from(url: url))
+    /// Any app or web page can open a custom-scheme URL, so no deep link may switch
+    /// protection on or off. 
+    func testWidgetAndVpnToggleLinksAreNotRouted() throws {
+        let links = [
+            "glacierapp://widget/disconnect",
+            "glacierapp://widget/connect",
+            "glacierapp://widget/disconnect?t=abc",
+            "GlacierApp://widget/disconnect",
+            "com.theglacierapp.glacier://widget/disconnect",
+            "com.theglacierapp.glacier://widget/connect",
+            "glacierapp://vpn/toggle",
+            "com.theglacierapp.glacier://vpn/toggle",
+            "https://widget/disconnect",
+        ]
+        for raw in links {
+            let url = try XCTUnwrap(URL(string: raw))
+            XCTAssertNil(DeepLinkTarget.from(url: url), raw)
+            XCTAssertFalse(DeepLinkService.shared.handle(url: url), raw)
+        }
     }
 
     // MARK: - Host validation
@@ -90,6 +84,34 @@ final class DeepLinkTargetTests: XCTestCase {
     func testHostSuffixSpoofIsRejected() throws {
         let url = try XCTUnwrap(URL(string: "https://console.theglacierapp.com.attacker.example/open-securityapp?userid=alice&code=ABC123"))
         XCTAssertNil(DeepLinkTarget.from(url: url))
+    }
+
+    // MARK: - Console links require https
+
+    func testConsoleRoutesRejectCustomSchemes() throws {
+        let routes = [
+            "/open-securityapp?userid=alice&code=ABC123",
+            "/reset-securityapp?code=XYZ789",
+            "/login-securityapp?code=123456",
+        ]
+        for route in routes {
+            for scheme in ["glacierapp", "com.theglacierapp.glacier", "http"] {
+                let url = try XCTUnwrap(URL(string: "\(scheme)://console.theglacierapp.com\(route)"))
+                XCTAssertNil(DeepLinkTarget.from(url: url), url.absoluteString)
+            }
+        }
+    }
+
+    func testConsoleRoutesAcceptHTTPS() throws {
+        let cases: [(String, DeepLinkTarget)] = [
+            ("/open-securityapp?userid=alice&code=ABC123", .openSecurityApp(userName: "alice", confirmationCode: "ABC123")),
+            ("/reset-securityapp?code=XYZ789", .resetSecurityApp(confirmationCode: "XYZ789")),
+            ("/login-securityapp?code=123456", .loginSecurityApp(confirmationCode: "123456")),
+        ]
+        for (route, expected) in cases {
+            let url = try XCTUnwrap(URL(string: "https://console.theglacierapp.com\(route)"))
+            XCTAssertEqual(DeepLinkTarget.from(url: url), expected, route)
+        }
     }
 
     func testUnknownPathOnValidHostReturnsNil() throws {

@@ -40,19 +40,17 @@ protocol GlacierAuthenticationService {
  and would also catch flows that must not be challenged. Instead the pool runs
  three custom auth challenge triggers, and `CUSTOM_WITH_SRP` is what routes a
  sign-in through them so the `web-login-challenge` Lambda emails a code.
+
+ There is deliberately no password-only case. 
  */
 enum GlacierSignInFlow {
 
     /// SRP, then the custom challenge that emails a six-digit code.
     case emailCodeChallenge
 
-    /// SRP alone. No code is emailed.
-    case passwordOnly
-
     var authFlowType: AuthFlowType {
         switch self {
         case .emailCodeChallenge: .customWithSRP
-        case .passwordOnly: .userSRP
         }
     }
 }
@@ -120,10 +118,9 @@ final class AmplifyAuthenticationService: GlacierAuthenticationService {
     /**
      Calls Amplify.Auth.signIn() method to log user in with given email and password.
 
-     `flow` decides whether Cognito runs the custom challenge that emails a
-     six-digit code. Login asks for `.emailCodeChallenge`. The automatic sign-in
-     that follows account confirmation asks for `.passwordOnly`, so confirming a
-     brand new account does not immediately mail a second code.
+     `flow` is always `.emailCodeChallenge`, so Cognito runs the custom
+     challenge that emails a six-digit code. Confirming a new account does not
+     sign in at all: it sends the user to the login screen.
 
      A login that asks for the code never falls back to a sign-in without one:
      if Cognito refuses the custom flow, the error reaches the user.

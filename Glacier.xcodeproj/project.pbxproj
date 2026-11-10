@@ -25,6 +25,7 @@
 		A1EC10072F48E700006EDC42 /* EnableVPNViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1EC10082F48E700006EDC42 /* EnableVPNViewModel.swift */; };
 		A51C0DE00000000000000002 /* SignInMethodService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A51C0DE00000000000000001 /* SignInMethodService.swift */; };
 		A51C0DE00000000000000004 /* LinkedProviderNotice.swift in Sources */ = {isa = PBXBuildFile; fileRef = A51C0DE00000000000000003 /* LinkedProviderNotice.swift */; };
+		A5B0C0DE000000000000F002 /* AppleSubscriptionOwnershipMonitorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B0C0DE000000000000F001 /* AppleSubscriptionOwnershipMonitorTests.swift */; };
 		A9D8B0C1E2F3A4B5C6D7E8F0 /* AppDatabaseUpgradeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9D8B0C1E2F3A4B5C6D7E8F1 /* AppDatabaseUpgradeTests.swift */; };
 		AC10000000000000000000BA /* GlacierWidgetBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC10000000000000000000B5 /* GlacierWidgetBundle.swift */; };
 		AC10000000000000000000BB /* GlacierWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC10000000000000000000B6 /* GlacierWidget.swift */; };
@@ -48,6 +49,8 @@
 		B00000000000000000000004 /* UserLoginEmailCodeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F00000000000000000000004 /* UserLoginEmailCodeTests.swift */; };
 		B00000000000000000000005 /* UserRegistrationBootstrapTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F00000000000000000000005 /* UserRegistrationBootstrapTests.swift */; };
 		B00000000000000000000006 /* SignInMethodLookupTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F00000000000000000000006 /* SignInMethodLookupTests.swift */; };
+		B00000000000000000000007 /* WireGuardProfileDownloadTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F00000000000000000000007 /* WireGuardProfileDownloadTests.swift */; };
+		B00000000000000000000008 /* WidgetToggleRequestTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F00000000000000000000008 /* WidgetToggleRequestTests.swift */; };
 		B244424C164EF95A6767F3D2 /* Pods_GlacierPods_Glacier.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B6E27707A6E6D4DC8104C83B /* Pods_GlacierPods_Glacier.framework */; };
 		C100F10F2F49C1390071513B /* VPNActivationOverWiFiPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = C100F10E2F49C1390071513B /* VPNActivationOverWiFiPolicy.swift */; };
 		C100F1112F4A25770071513B /* TrustedNetwork.swift in Sources */ = {isa = PBXBuildFile; fileRef = C100F1102F4A25770071513B /* TrustedNetwork.swift */; };
@@ -370,6 +373,7 @@
 		A1EC10082F48E700006EDC42 /* EnableVPNViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnableVPNViewModel.swift; sourceTree = "<group>"; };
 		A51C0DE00000000000000001 /* SignInMethodService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignInMethodService.swift; sourceTree = "<group>"; };
 		A51C0DE00000000000000003 /* LinkedProviderNotice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LinkedProviderNotice.swift; sourceTree = "<group>"; };
+		A5B0C0DE000000000000F001 /* AppleSubscriptionOwnershipMonitorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleSubscriptionOwnershipMonitorTests.swift; sourceTree = "<group>"; };
 		A9D8B0C1E2F3A4B5C6D7E8F1 /* AppDatabaseUpgradeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDatabaseUpgradeTests.swift; sourceTree = "<group>"; };
 		AB9578A3E554459798EB779A /* CallerNumberTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CallerNumberTests.swift; sourceTree = "<group>"; };
 		AC10000000000000000000AF /* GlacierWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = GlacierWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -615,6 +619,8 @@
 		F00000000000000000000004 /* UserLoginEmailCodeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserLoginEmailCodeTests.swift; sourceTree = "<group>"; };
 		F00000000000000000000005 /* UserRegistrationBootstrapTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserRegistrationBootstrapTests.swift; sourceTree = "<group>"; };
 		F00000000000000000000006 /* SignInMethodLookupTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignInMethodLookupTests.swift; sourceTree = "<group>"; };
+		F00000000000000000000007 /* WireGuardProfileDownloadTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WireGuardProfileDownloadTests.swift; sourceTree = "<group>"; };
+		F00000000000000000000008 /* WidgetToggleRequestTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetToggleRequestTests.swift; sourceTree = "<group>"; };
 		F1D9ED03FE1944E8BBC805B2 /* nl */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = nl; path = nl.lproj/Localizable.strings; sourceTree = "<group>"; };
 		F2040001000000000000AA01 /* VPNProtectionAlert.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = VPNProtectionAlert.swift; sourceTree = "<group>"; };
 		F2040001000000000000AA04 /* VPNOnDemandPolicyEvaluator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNOnDemandPolicyEvaluator.swift; sourceTree = "<group>"; };
@@ -739,6 +745,8 @@
 				F00000000000000000000005 /* UserRegistrationBootstrapTests.swift */,
 				DA5C00000000000000000020 /* DiscoverySurveyTests.swift */,
 				F00000000000000000000006 /* SignInMethodLookupTests.swift */,
+				F00000000000000000000007 /* WireGuardProfileDownloadTests.swift */,
+				F00000000000000000000008 /* WidgetToggleRequestTests.swift */,
 				2FFA452E8AE63489185CCAA6 /* GlacierJailbreakChecksTests.swift */,
 				F2040001000000000000AA08 /* VPNProtectionAlertTests.swift */,
 				F2040001000000000000AB08 /* UpstreamExhaustionTrackerTests.swift */,
@@ -746,6 +754,7 @@
 				F2040001000000000000AC08 /* InternationalDialStringTests.swift */,
 				AB9578A3E554459798EB779A /* CallerNumberTests.swift */,
 				A9D8B0C1E2F3A4B5C6D7E8F1 /* AppDatabaseUpgradeTests.swift */,
+				A5B0C0DE000000000000F001 /* AppleSubscriptionOwnershipMonitorTests.swift */,
 			);
 			path = GlacierTests;
 			sourceTree = "<group>";
@@ -2064,6 +2073,7 @@
 			files = (
 				E91100000000000000000002 /* EmergencyCallPolicyTests.swift in Sources */,
 				949B0C3D7A9C4E5883E499EA /* DnsOverTlsControllerTests.swift in Sources */,
+				A5B0C0DE000000000000F002 /* AppleSubscriptionOwnershipMonitorTests.swift in Sources */,
 				B00000000000000000000001 /* DeepLinkTargetTests.swift in Sources */,
 				B00000000000000000000002 /* UserPasswordValidationChecklistTests.swift in Sources */,
 				B00000000000000000000003 /* GlacierDateFormatterTests.swift in Sources */,
@@ -2071,6 +2081,8 @@
 				B00000000000000000000005 /* UserRegistrationBootstrapTests.swift in Sources */,
 				DA5C00000000000000000021 /* DiscoverySurveyTests.swift in Sources */,
 				B00000000000000000000006 /* SignInMethodLookupTests.swift in Sources */,
+				B00000000000000000000007 /* WireGuardProfileDownloadTests.swift in Sources */,
+				B00000000000000000000008 /* WidgetToggleRequestTests.swift in Sources */,
 				F2DE36DE44E908551C60DAAA /* GlacierJailbreakChecksTests.swift in Sources */,
 				F2040001000000000000AA09 /* VPNProtectionAlertTests.swift in Sources */,
 				F2040001000000000000AC09 /* InternationalDialStringTests.swift in Sources */,
@@ -2408,7 +2420,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 109;
+				CURRENT_PROJECT_VERSION = 114;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = UG8VC96NZF;
 				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
@@ -2435,7 +2447,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/Glacier/Includes-Simulator",
 				);
-				MARKETING_VERSION = 1.3.1;
+				MARKETING_VERSION = 1.3.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.theglacierapp.Glacier;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE = "";
@@ -3027,7 +3039,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 109;
+				CURRENT_PROJECT_VERSION = 114;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = UG8VC96NZF;
 				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
@@ -3060,7 +3072,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/Glacier/Includes-Simulator",
 				);
-				MARKETING_VERSION = 1.3.1;
+				MARKETING_VERSION = 1.3.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.theglacierapp.Glacier;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE = "";
@@ -3068,7 +3080,8 @@
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
-				"SWIFT_ACTIVE_COMPILATION_CONDITIONS[sdk=iphonesimulator*]" = "SIMULATOR_BUILD $(inherited)";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "GLACIER_TEST_SWITCHES $(inherited)";
+				"SWIFT_ACTIVE_COMPILATION_CONDITIONS[sdk=iphonesimulator*]" = "SIMULATOR_BUILD GLACIER_TEST_SWITCHES $(inherited)";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_PRECOMPILE_BRIDGING_HEADER = NO;
 				SWIFT_VERSION = 5.0;
@@ -3092,7 +3105,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 109;
+				CURRENT_PROJECT_VERSION = 114;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = UG8VC96NZF;
 				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
@@ -3119,7 +3132,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/Glacier/Includes-Simulator",
 				);
-				MARKETING_VERSION = 1.3.1;
+				MARKETING_VERSION = 1.3.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.theglacierapp.Glacier;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE = "";

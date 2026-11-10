@@ -211,33 +211,6 @@ struct GlacierWidgetEntryView: View {
                     .fill(badgeBg)
             )
     }
-
-    @ViewBuilder
-    private func connectButton(height: CGFloat, fontSize: CGFloat) -> some View {
-        let action = isConnected ? "disconnect" : "connect"
-        let title  = isConnected ? "Disconnect" : "Connect"
-
-        Link(destination: URL(string: "glacierapp://widget/\(action)")!) {
-            ZStack {
-                if isConnected {
-                    // Tertiary style — matches GlacierButton(.tertiary)
-                    RoundedRectangle(cornerRadius: 16)
-                        .fill(colorScheme == .dark ? Color.glacierGrey90 : .white)
-                    RoundedRectangle(cornerRadius: 16)
-                        .strokeBorder(colorScheme == .dark ? Color.glacierGrey70 : .glacierGrey20, lineWidth: 1)
-                } else {
-                    // Primary style — matches GlacierButton(.primary)
-                    RoundedRectangle(cornerRadius: 16)
-                        .fill(Color.glacierHighlight)
-                }
-                Text(title)
-                    .font(.system(size: fontSize, weight: .semibold))
-                    .foregroundColor(isConnected ? primaryTextColor : .white)
-            }
-            .frame(maxWidth: .infinity)
-            .frame(height: height)
-        }
-    }
 }
 
 // MARK: - Widget

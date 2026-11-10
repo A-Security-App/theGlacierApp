@@ -189,6 +189,12 @@ extension GlacierAccountModel {
             UserDefaults.standard.set(newValue, forKey: key)
         }
     }
+    /// `lastKnownBackendSubscribed`, but `nil` when the backend has never answered for this account
+    /// on this device, rather than defaulting to `false`. For decisions that must not act on a guess.
+    public var lastKnownBackendSubscribedIfKnown: Bool? {
+        let key = GlacierAccountModel.backendSubscribedKeyPrefix + uniqueId
+        return UserDefaults.standard.object(forKey: key) as? Bool
+    }
     /// Last successful phone-number count from the backend `/subscription` endpoint (0, 1, 2, or 5).
     /// Defaults to `0` until the endpoint is queried and a response is persisted.
     public var lastKnownBackendPhoneNumbers: Int {
